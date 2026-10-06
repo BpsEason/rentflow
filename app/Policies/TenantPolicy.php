@@ -1,66 +1,75 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Policies;
 
+use Illuminate\Foundation\Auth\User as AuthUser;
 use App\Models\Tenant;
-use App\Models\User;
-use Illuminate\Auth\Access\Response;
+use Illuminate\Auth\Access\HandlesAuthorization;
 
 class TenantPolicy
 {
-    /**
-     * Determine whether the user can view any models.
-     */
-    public function viewAny(User $user): bool
+    use HandlesAuthorization;
+    
+    public function viewAny(AuthUser $authUser): bool
     {
-        return $user->hasRole('Super Admin');
+        return $authUser->can('ViewAny:Tenant');
     }
 
-    /**
-     * Determine whether the user can view the model.
-     */
-    public function view(User $user, Tenant $tenant): bool
+    public function view(AuthUser $authUser, Tenant $tenant): bool
     {
-        return $user->hasRole('Super Admin');
+        return $authUser->can('View:Tenant');
     }
 
-    /**
-     * Determine whether the user can create models.
-     */
-    public function create(User $user): bool
+    public function create(AuthUser $authUser): bool
     {
-        return $user->hasRole('Super Admin');
+        return $authUser->can('Create:Tenant');
     }
 
-    /**
-     * Determine whether the user can update the model.
-     */
-    public function update(User $user, Tenant $tenant): bool
+    public function update(AuthUser $authUser, Tenant $tenant): bool
     {
-        return $user->hasRole('Super Admin');
+        return $authUser->can('Update:Tenant');
     }
 
-    /**
-     * Determine whether the user can delete the model.
-     */
-    public function delete(User $user, Tenant $tenant): bool
+    public function delete(AuthUser $authUser, Tenant $tenant): bool
     {
-        return $user->hasRole('Super Admin');
+        return $authUser->can('Delete:Tenant');
     }
 
-    /**
-     * Determine whether the user can restore the model.
-     */
-    public function restore(User $user, Tenant $tenant): bool
+    public function deleteAny(AuthUser $authUser): bool
     {
-        return $user->hasRole('Super Admin');
+        return $authUser->can('DeleteAny:Tenant');
     }
 
-    /**
-     * Determine whether the user can permanently delete the model.
-     */
-    public function forceDelete(User $user, Tenant $tenant): bool
+    public function restore(AuthUser $authUser, Tenant $tenant): bool
     {
-        return $user->hasRole('Super Admin');
+        return $authUser->can('Restore:Tenant');
     }
+
+    public function forceDelete(AuthUser $authUser, Tenant $tenant): bool
+    {
+        return $authUser->can('ForceDelete:Tenant');
+    }
+
+    public function forceDeleteAny(AuthUser $authUser): bool
+    {
+        return $authUser->can('ForceDeleteAny:Tenant');
+    }
+
+    public function restoreAny(AuthUser $authUser): bool
+    {
+        return $authUser->can('RestoreAny:Tenant');
+    }
+
+    public function replicate(AuthUser $authUser, Tenant $tenant): bool
+    {
+        return $authUser->can('Replicate:Tenant');
+    }
+
+    public function reorder(AuthUser $authUser): bool
+    {
+        return $authUser->can('Reorder:Tenant');
+    }
+
 }
