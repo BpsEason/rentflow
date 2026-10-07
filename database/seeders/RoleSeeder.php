@@ -56,6 +56,17 @@ class RoleSeeder extends Seeder
             'Create:VehiclePricing',
             'Update:VehiclePricing',
             'Delete:VehiclePricing',
+            // Holiday 相關權限 - 只有 Super Admin 可以存取
+            'ViewAny:Holiday',
+            'View:Holiday',
+            'Create:Holiday',
+            'Update:Holiday',
+            'Delete:Holiday',
+            'DeleteAny:Holiday',
+            'Restore:Holiday',
+            'ForceDelete:Holiday',
+            'ForceDeleteAny:Holiday',
+            'RestoreAny:Holiday',
         ];
 
         foreach ($allRequiredPermissions as $permissionName) {

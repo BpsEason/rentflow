@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             VehicleSeeder::class,
             VehiclePricingSeeder::class,
+            HolidaySeeder::class,
         ]);
     }
 }
