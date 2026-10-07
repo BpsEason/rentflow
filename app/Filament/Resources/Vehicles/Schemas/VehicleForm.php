@@ -70,7 +70,11 @@ class VehicleForm
                     ->schema([
                         Select::make('status')
                             ->label('車輛狀態')
-                            ->options(VehicleStatus::class)
+                            ->options([
+                                VehicleStatus::AVAILABLE->value => '可用',
+                                VehicleStatus::MAINTENANCE->value => '維修中',
+                                VehicleStatus::INACTIVE->value => '停用',
+                            ])
                             ->required()
                             ->placeholder('選擇車輛狀態'),
 

@@ -12,7 +12,11 @@ class VehiclePricingFactory extends Factory
     public function definition(): array
     {
         $tenant = Tenant::inRandomOrder()->first() ?? Tenant::factory()->create();
-        $vehicle = Vehicle::where('tenant_id', $tenant->id)->inRandomOrder()->first() ?? Vehicle::factory()->create(['tenant_id' => $tenant->id]);
+        // 尋找還沒有定價的車輛，如果沒有就創建新的
+        $vehicle = Vehicle::where('tenant_id', $tenant->id)
+            ->whereDoesntHave('pricing')
+            ->inRandomOrder()
+            ->first() ?? Vehicle::factory()->create(['tenant_id' => $tenant->id]);
 
         $weekdayPrice = fake()->randomFloat(2, 1000, 3000);
 

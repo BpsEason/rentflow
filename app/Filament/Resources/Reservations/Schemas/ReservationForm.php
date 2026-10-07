@@ -86,6 +86,10 @@ class ReservationForm
                         'default' => 1,
                         'lg' => 5,
                     ])
+                    ->columns([
+                        'default' => 1,
+                        'lg' => 2,
+                    ])
                     ->schema([
                         Forms\Components\Select::make('status')
                             ->label('狀態')
@@ -97,18 +101,21 @@ class ReservationForm
                                 Reservation::STATUS_CANCELLED => '已取消',
                             ])
                             ->required()
-                            ->placeholder('選擇狀態'),
+                            ->placeholder('選擇狀態')
+                            ->columnSpan(1),
 
                         Forms\Components\TextInput::make('rental_days')
                             ->label('租用天數')
                             ->disabled()
-                            ->placeholder('系統自動計算'),
+                            ->placeholder('系統自動計算')
+                            ->columnSpan(1),
 
                         Forms\Components\TextInput::make('amount')
                             ->label('總金額')
                             ->disabled()
                             ->prefix('$')
-                            ->placeholder('系統自動計算'),
+                            ->placeholder('系統自動計算')
+                            ->columnSpanFull(),
                     ]),
             ]);
     }

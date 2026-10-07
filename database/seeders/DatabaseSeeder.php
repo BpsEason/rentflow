@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
             HolidaySeeder::class,
             CustomerSeeder::class,
             ReservationSeeder::class,
+            OrderSeeder::class,
         ]);
     }
 }

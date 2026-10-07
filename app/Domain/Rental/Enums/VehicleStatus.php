@@ -4,7 +4,7 @@ namespace App\Domain\Rental\Enums;
 
 enum VehicleStatus: string
 {
-    case AVAILABLE = 'available';
-    case MAINTENANCE = 'maintenance';
-    case INACTIVE = 'inactive';
+    case AVAILABLE = 'AVAILABLE';
+    case MAINTENANCE = 'MAINTENANCE';
+    case INACTIVE = 'INACTIVE';
 }

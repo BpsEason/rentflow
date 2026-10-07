@@ -30,9 +30,8 @@ class ReservationTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'status' => 'AVAILABLE'
         ]);
-        VehiclePricing::factory()->create([
-            'tenant_id' => $this->tenant->id,
-            'vehicle_id' => $this->vehicle->id,
+        // 更新現有的定價，而不是創建新的，因為 VehicleFactory 已經自動創建了
+        $this->vehicle->pricing()->update([
             'weekday_price' => 1000,
             'weekend_price' => 1200,
             'holiday_price' => 1500,

@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use App\Services\PricingService;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Builder;
 use Carbon\Carbon;
@@ -10,6 +12,7 @@ use Illuminate\Support\Facades\DB;
 
 class Reservation extends Model
 {
+    use HasFactory;
     const STATUS_PENDING = 'PENDING';
     const STATUS_CONFIRMED = 'CONFIRMED';
     const STATUS_PICKED_UP = 'PICKED_UP';
@@ -59,6 +62,11 @@ class Reservation extends Model
         return $this->belongsTo(Vehicle::class);
     }
 
+    public function order(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(Order::class);
+    }
+
     public static function hasTimeConflict(int $vehicleId, Carbon $startAt, Carbon $endAt, ?int $excludeReservationId = null): bool
     {
         $query = self::where('vehicle_id', $vehicleId)
@@ -75,42 +83,12 @@ class Reservation extends Model
 
     public static function calculateRentalDays(Carbon $startAt, Carbon $endAt): int
     {
-        $diffInMinutes = $startAt->diffInMinutes($endAt);
-        return (int)ceil($diffInMinutes / (24 * 60));
+        return app(PricingService::class)->calculateRentalDays($startAt, $endAt);
     }
 
     public static function calculateAmount(Vehicle $vehicle, Carbon $startAt, Carbon $endAt): array
     {
-        $rentalDays = self::calculateRentalDays($startAt, $endAt);
-        $pricing = $vehicle->pricing;
-        $amount = 0;
-
-        $holidays = Holiday::where('tenant_id', $vehicle->tenant_id)
-            ->get()
-            ->pluck('date')
-            ->map(fn($date) => Carbon::parse($date))
-            ->toArray();
-
-        $current = $startAt->copy();
-        for ($i = 0; $i < $rentalDays; $i++) {
-            $isHoliday = collect($holidays)->contains(fn($holiday) => $holiday->isSameDay($current));
-            $isWeekend = in_array($current->dayOfWeek, [0, 6]); // 0 = Sunday, 6 = Saturday
-
-            if ($isHoliday) {
-                $amount += $pricing->holiday_price;
-            } elseif ($isWeekend) {
-                $amount += $pricing->weekend_price;
-            } else {
-                $amount += $pricing->weekday_price;
-            }
-
-            $current->addDay();
-        }
-
-        return [
-            'rental_days' => $rentalDays,
-            'amount' => $amount,
-        ];
+        return app(PricingService::class)->calculateTotalAmount($vehicle, $startAt, $endAt);
     }
 
     public static function validateMinimumRentalTime(Carbon $startAt, Carbon $endAt): bool
