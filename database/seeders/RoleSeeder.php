@@ -50,6 +50,12 @@ class RoleSeeder extends Seeder
             'Create:Vehicle',
             'Update:Vehicle',
             'Delete:Vehicle',
+            // VehiclePricing 相關權限
+            'ViewAny:VehiclePricing',
+            'View:VehiclePricing',
+            'Create:VehiclePricing',
+            'Update:VehiclePricing',
+            'Delete:VehiclePricing',
         ];
 
         foreach ($allRequiredPermissions as $permissionName) {
@@ -75,6 +81,12 @@ class RoleSeeder extends Seeder
             'Create:Vehicle',
             'Update:Vehicle',
             'Delete:Vehicle',
+            // VehiclePricing 相關權限 - 可以管理租戶下的車輛定價
+            'ViewAny:VehiclePricing',
+            'View:VehiclePricing',
+            'Create:VehiclePricing',
+            'Update:VehiclePricing',
+            'Delete:VehiclePricing',
         ];
 
         // Tenant Staff 權限：只有基本檢視權限
@@ -85,6 +97,9 @@ class RoleSeeder extends Seeder
             // Vehicle 相關權限 - 只能檢視
             'ViewAny:Vehicle',
             'View:Vehicle',
+            // VehiclePricing 相關權限 - 只能檢視
+            'ViewAny:VehiclePricing',
+            'View:VehiclePricing',
         ];
 
         // 驗證 Tenant Admin 所有宣告的權限都存在

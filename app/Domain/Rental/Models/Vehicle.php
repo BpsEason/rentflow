@@ -31,9 +31,9 @@ class Vehicle extends Model
         return $this->belongsTo(Tenant::class);
     }
 
-    public function pricing(): HasMany
+    public function pricing(): HasOne
     {
-        return $this->hasMany(VehiclePricing::class);
+        return $this->hasOne(\App\Domain\Rental\Models\VehiclePricing::class);
     }
 
     public function reservations(): HasMany

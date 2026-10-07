@@ -218,6 +218,20 @@ return [
                 'replicate',
                 'reorder',
             ],
+            \App\Domain\Rental\Models\VehiclePricing::class => [
+                'viewAny',
+                'view',
+                'create',
+                'update',
+                'delete',
+                'deleteAny',
+                'restore',
+                'forceDelete',
+                'forceDeleteAny',
+                'restoreAny',
+                'replicate',
+                'reorder',
+            ],
         ],
         'exclude' => [
             //

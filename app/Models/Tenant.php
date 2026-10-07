@@ -21,6 +21,16 @@ class Tenant extends Model implements HasName
         return $this->belongsToMany(User::class)->withPivot('role')->withTimestamps();
     }
 
+    public function vehicles()
+    {
+        return $this->hasMany(\App\Domain\Rental\Models\Vehicle::class);
+    }
+
+    public function vehiclePricings()
+    {
+        return $this->hasMany(\App\Domain\Rental\Models\VehiclePricing::class);
+    }
+
     public function getFilamentName(): string
     {
         return $this->name;
