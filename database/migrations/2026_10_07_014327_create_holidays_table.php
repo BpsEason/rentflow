@@ -13,9 +13,12 @@ return new class extends Migration
     {
         Schema::create('holidays', function (Blueprint $table) {
             $table->id()->comment('國定假日ID');
-            $table->date('date')->unique()->comment('國定假日日期');
+            $table->foreignId('tenant_id')->constrained()->onDelete('cascade');
+            $table->date('date')->comment('國定假日日期');
             $table->string('name')->comment('國定假日名稱');
             $table->timestamps();
+
+            $table->unique(['tenant_id', 'date']);
         });
     }
 

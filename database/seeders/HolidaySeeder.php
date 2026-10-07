@@ -48,11 +48,15 @@ class HolidaySeeder extends Seeder
             ['2027-12-25', '行憲紀念日'],
         ];
 
-        foreach ($holidays as [$date, $name]) {
-            Holiday::updateOrCreate(
-                ['date' => $date],
-                ['name' => $name]
-            );
+        $tenants = \App\Models\Tenant::all();
+
+        foreach ($tenants as $tenant) {
+            foreach ($holidays as [$date, $name]) {
+                Holiday::updateOrCreate(
+                    ['tenant_id' => $tenant->id, 'date' => $date],
+                    ['name' => $name]
+                );
+            }
         }
     }
 }

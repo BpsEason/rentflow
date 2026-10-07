@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             VehiclePricingSeeder::class,
             HolidaySeeder::class,
             CustomerSeeder::class,
+            ReservationSeeder::class,
         ]);
     }
 }
