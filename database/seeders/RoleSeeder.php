@@ -44,6 +44,12 @@ class RoleSeeder extends Seeder
             'Create:User',
             'Update:User',
             'Delete:User',
+            // Vehicle 相關權限
+            'ViewAny:Vehicle',
+            'View:Vehicle',
+            'Create:Vehicle',
+            'Update:Vehicle',
+            'Delete:Vehicle',
         ];
 
         foreach ($allRequiredPermissions as $permissionName) {
@@ -57,26 +63,28 @@ class RoleSeeder extends Seeder
 
         // Tenant Admin 權限：可以管理 Tenant 內的使用者
         $tenantAdminPermissions = [
-            // Tenant 相關權限
-            'ViewAny:Tenant',
-            'View:Tenant',
-            'Update:Tenant',
             // User 相關權限 - 可以管理租戶下的使用者
             'ViewAny:User',
             'View:User',
             'Create:User',
             'Update:User',
             'Delete:User',
+            // Vehicle 相關權限 - 可以管理租戶下的車輛
+            'ViewAny:Vehicle',
+            'View:Vehicle',
+            'Create:Vehicle',
+            'Update:Vehicle',
+            'Delete:Vehicle',
         ];
 
         // Tenant Staff 權限：只有基本檢視權限
         $tenantStaffPermissions = [
-            // Tenant 相關權限 - 只能檢視
-            'ViewAny:Tenant',
-            'View:Tenant',
             // User 相關權限 - 只能檢視
             'ViewAny:User',
             'View:User',
+            // Vehicle 相關權限 - 只能檢視
+            'ViewAny:Vehicle',
+            'View:Vehicle',
         ];
 
         // 驗證 Tenant Admin 所有宣告的權限都存在

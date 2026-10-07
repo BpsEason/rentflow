@@ -4,10 +4,13 @@ namespace App\Models;
 
 use Filament\Models\Contracts\HasName;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Tenant extends Model implements HasName
 {
+    use HasFactory;
+
     protected $fillable = [
         'name',
         'slug',

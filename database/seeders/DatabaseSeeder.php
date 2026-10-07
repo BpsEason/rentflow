@@ -15,6 +15,7 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             TenantSeeder::class,
             UserSeeder::class,
+            VehicleSeeder::class,
         ]);
     }
 }
