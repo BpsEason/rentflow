@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Roles\Schemas;
 
+use App\Filament\Resources\Shared\Concerns\HasDefaultFormLayout;
 use BezhanSalleh\FilamentShield\Traits\HasShieldFormComponents;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Component;
@@ -13,6 +14,7 @@ use Illuminate\Database\Eloquent\Model;
 class RoleForm
 {
     use HasShieldFormComponents;
+    use HasDefaultFormLayout;
 
     /**
      * Override the parent's setPermissionStateForRecordPermissions to directly check permissions relationship
@@ -41,31 +43,38 @@ class RoleForm
 
     public static function configure(Schema $schema): Schema
     {
-        return $schema
+        return static::applyDefaultLayout($schema)
             ->components([
-                Grid::make()
-                    ->schema([
-                        Section::make()
-                            ->schema([
-                                TextInput::make('name')
-                                    ->label('名稱')
-                                    ->required()
-                                    ->unique(ignoreRecord: true)
-                                    ->maxLength(255),
-                                TextInput::make('guard_name')
-                                    ->label('守衛名稱')
-                                    ->required()
-                                    ->default('web')
-                                    ->maxLength(255),
-                                static::getSelectAllFormComponent(),
-                            ])
-                            ->columns([
-                                'sm' => 2,
-                                'lg' => 3,
-                            ])
-                            ->columnSpanFull(),
+                Section::make('角色基本資料')
+                    ->description('建立系統角色並設定基本識別資訊，角色用於群組化權限設定')
+                    ->icon('heroicon-o-shield-check')
+                    ->columnSpan([
+                        'default' => 1,
+                        'lg' => 12,
                     ])
-                    ->columnSpanFull(),
+                    ->columns([
+                        'default' => 1,
+                        'lg' => 4,
+                    ])
+                    ->schema([
+                        TextInput::make('name')
+                            ->label('角色名稱')
+                            ->required()
+                            ->unique(ignoreRecord: true)
+                            ->maxLength(255)
+                            ->placeholder('輸入角色名稱，例如：編輯、管理員'),
+                        TextInput::make('guard_name')
+                            ->label('守衛名稱')
+                            ->required()
+                            ->default('web')
+                            ->maxLength(255)
+                            ->placeholder('web'),
+                        static::getSelectAllFormComponent()
+                            ->columnSpan([
+                                'default' => 1,
+                                'lg' => 2,
+                            ]),
+                    ]),
                 static::getShieldFormComponents(),
             ]);
     }
