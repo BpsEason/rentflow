@@ -1,0 +1,49 @@
+version: "3.8"
+
+services:
+    app:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        container_name: rentflow-app
+        restart: unless-stopped
+        working_dir: /var/www/html
+        volumes:
+            - ./:/var/www/html
+        networks:
+            - rentflow-network
+
+    nginx:
+        image: nginx:alpine
+        container_name: rentflow-nginx
+        restart: unless-stopped
+        ports:
+            - "8000:80"
+        volumes:
+            - ./:/var/www/html
+            - ./docker/nginx/conf.d:/etc/nginx/conf.d
+        depends_on:
+            - app
+        networks:
+            - rentflow-network
+
+    redis:
+        image: redis:7-alpine
+        container_name: rentflow-redis
+        restart: unless-stopped
+        volumes:
+            - redis-data:/data
+        networks:
+            - rentflow-network
+        healthcheck:
+            test: ["CMD", "redis-cli", "ping"]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+
+networks:
+    rentflow-network:
+        driver: bridge
+
+volumes:
+    redis-data:
