@@ -13,7 +13,7 @@ class CreateReservation extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        $data['tenant_id'] = Auth::user()->tenant_id;
+        $data['tenant_id'] = filament()->getTenant()->id;
         return $data;
     }
 

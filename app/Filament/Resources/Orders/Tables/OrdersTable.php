@@ -4,9 +4,10 @@ namespace App\Filament\Resources\Orders\Tables;
 
 use App\Models\Order;
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\EditAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\EditAction;
+use Filament\Actions\Action;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -77,6 +78,69 @@ class OrdersTable
     {
         return [
             EditAction::make(),
+            Action::make('confirm')
+                ->label('確認訂單')
+                ->color('info')
+                ->icon('heroicon-o-check-circle')
+                ->requiresConfirmation()
+                ->visible(fn(\App\Models\Order $record) => $record->status === \App\Models\Order::STATUS_PENDING)
+                ->action(function (\App\Models\Order $record) {
+                    try {
+                        $record->confirm();
+                        \Filament\Notifications\Notification::make()
+                            ->title('訂單已確認')
+                            ->success()
+                            ->send();
+                    } catch (\RuntimeException $e) {
+                        \Filament\Notifications\Notification::make()
+                            ->title('操作失敗')
+                            ->body($e->getMessage())
+                            ->danger()
+                            ->send();
+                    }
+                }),
+            Action::make('cancel')
+                ->label('取消訂單')
+                ->color('danger')
+                ->icon('heroicon-o-x-circle')
+                ->requiresConfirmation()
+                ->visible(fn(\App\Models\Order $record) => in_array($record->status, [\App\Models\Order::STATUS_PENDING, \App\Models\Order::STATUS_CONFIRMED]))
+                ->action(function (\App\Models\Order $record) {
+                    try {
+                        $record->cancel();
+                        \Filament\Notifications\Notification::make()
+                            ->title('訂單已取消')
+                            ->success()
+                            ->send();
+                    } catch (\RuntimeException $e) {
+                        \Filament\Notifications\Notification::make()
+                            ->title('操作失敗')
+                            ->body($e->getMessage())
+                            ->danger()
+                            ->send();
+                    }
+                }),
+            Action::make('complete')
+                ->label('完成訂單')
+                ->color('success')
+                ->icon('heroicon-o-archive-box')
+                ->requiresConfirmation()
+                ->visible(fn(\App\Models\Order $record) => $record->status === \App\Models\Order::STATUS_CONFIRMED)
+                ->action(function (\App\Models\Order $record) {
+                    try {
+                        $record->complete();
+                        \Filament\Notifications\Notification::make()
+                            ->title('訂單已完成')
+                            ->success()
+                            ->send();
+                    } catch (\RuntimeException $e) {
+                        \Filament\Notifications\Notification::make()
+                            ->title('操作失敗')
+                            ->body($e->getMessage())
+                            ->danger()
+                            ->send();
+                    }
+                }),
             DeleteAction::make(),
         ];
     }

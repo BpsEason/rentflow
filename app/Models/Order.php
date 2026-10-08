@@ -95,4 +95,40 @@ class Order extends Model
     {
         $query->where('tenant_id', $tenantId);
     }
+
+    /**
+     * 確認訂單
+     */
+    public function confirm(): void
+    {
+        if (!in_array($this->status, [self::STATUS_PENDING])) {
+            throw new \RuntimeException('只有待處理狀態的訂單可以被確認');
+        }
+
+        $this->update(['status' => self::STATUS_CONFIRMED]);
+    }
+
+    /**
+     * 取消訂單
+     */
+    public function cancel(): void
+    {
+        if (!in_array($this->status, [self::STATUS_PENDING, self::STATUS_CONFIRMED])) {
+            throw new \RuntimeException('只有待處理或已確認狀態的訂單可以被取消');
+        }
+
+        $this->update(['status' => self::STATUS_CANCELLED]);
+    }
+
+    /**
+     * 完成訂單
+     */
+    public function complete(): void
+    {
+        if (!in_array($this->status, [self::STATUS_CONFIRMED])) {
+            throw new \RuntimeException('只有已確認狀態的訂單可以被完成');
+        }
+
+        $this->update(['status' => self::STATUS_COMPLETED]);
+    }
 }

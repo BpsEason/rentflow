@@ -192,4 +192,52 @@ class Reservation extends Model
             return $this;
         });
     }
+
+    /**
+     * 確認預約
+     */
+    public function confirm(): void
+    {
+        if (!in_array($this->status, [self::STATUS_PENDING])) {
+            throw new \RuntimeException('只有待確認狀態的預約可以被確認');
+        }
+
+        $this->update(['status' => self::STATUS_CONFIRMED]);
+    }
+
+    /**
+     * 取消預約
+     */
+    public function cancel(): void
+    {
+        if (!in_array($this->status, [self::STATUS_PENDING, self::STATUS_CONFIRMED])) {
+            throw new \RuntimeException('只有待確認或已確認狀態的預約可以被取消');
+        }
+
+        $this->update(['status' => self::STATUS_CANCELLED]);
+    }
+
+    /**
+     * 標記為已取車
+     */
+    public function pickUp(): void
+    {
+        if (!in_array($this->status, [self::STATUS_CONFIRMED])) {
+            throw new \RuntimeException('只有已確認狀態的預約可以辦理取車');
+        }
+
+        $this->update(['status' => self::STATUS_PICKED_UP]);
+    }
+
+    /**
+     * 標記為已歸還
+     */
+    public function return(): void
+    {
+        if (!in_array($this->status, [self::STATUS_PICKED_UP])) {
+            throw new \RuntimeException('只有已取車狀態的預約可以辦理歸還');
+        }
+
+        $this->update(['status' => self::STATUS_RETURNED]);
+    }
 }

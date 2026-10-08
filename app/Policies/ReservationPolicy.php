@@ -21,7 +21,8 @@ class ReservationPolicy
      */
     public function view(User $user, Reservation $reservation): bool
     {
-        return $user->can('view_reservation') && $user->tenant_id === $reservation->tenant_id;
+        $userTenants = $user->tenants->pluck('id')->toArray();
+        return $user->can('view_reservation') && in_array($reservation->tenant_id, $userTenants);
     }
 
     /**
@@ -37,7 +38,8 @@ class ReservationPolicy
      */
     public function update(User $user, Reservation $reservation): bool
     {
-        return $user->can('update_reservation') && $user->tenant_id === $reservation->tenant_id;
+        $userTenants = $user->tenants->pluck('id')->toArray();
+        return $user->can('update_reservation') && in_array($reservation->tenant_id, $userTenants);
     }
 
     /**
@@ -45,7 +47,8 @@ class ReservationPolicy
      */
     public function delete(User $user, Reservation $reservation): bool
     {
-        return $user->can('delete_reservation') && $user->tenant_id === $reservation->tenant_id;
+        $userTenants = $user->tenants->pluck('id')->toArray();
+        return $user->can('delete_reservation') && in_array($reservation->tenant_id, $userTenants);
     }
 
     /**
