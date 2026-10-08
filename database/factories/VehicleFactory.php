@@ -31,13 +31,15 @@ class VehicleFactory extends Factory
     public function configure()
     {
         return $this->afterCreating(function (Vehicle $vehicle) {
-            // 檢查是否已經存在相同的租戶和車輛組合的定價，避免重複創建
             if (!\App\Models\VehiclePricing::where('tenant_id', $vehicle->tenant_id)
                 ->where('vehicle_id', $vehicle->id)
                 ->exists()) {
-                \App\Models\VehiclePricing::factory()->create([
+                \App\Models\VehiclePricing::create([
                     'tenant_id' => $vehicle->tenant_id,
                     'vehicle_id' => $vehicle->id,
+                    'weekday_price' => 1000.00,
+                    'weekend_price' => 1200.00,
+                    'holiday_price' => 1500.00,
                 ]);
             }
         });

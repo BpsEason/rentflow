@@ -15,6 +15,7 @@
         "tymon/jwt-auth": "^2.3"
     },
     "require-dev": {
+        "darkaonline/l5-swagger": "^11.1",
         "fakerphp/faker": "^1.23",
         "laravel/pail": "^1.2.2",
         "laravel/pint": "^1.13",

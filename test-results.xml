@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="CLI Arguments" tests="9" assertions="1" errors="8" failures="1" skipped="0" time="0.428419">
+    <testsuite name="Tests\Feature\Api\Reservations\CreateReservationTest" file="C:\laragon\www\rentflow\tests\Feature\Api\Reservations\CreateReservationTest.php" tests="3" assertions="0" errors="3" failures="0" skipped="0" time="0.219325">
+      <testcase name="test_can_create_reservation" file="C:\laragon\www\rentflow\tests\Feature\Api\Reservations\CreateReservationTest.php" line="17" class="Tests\Feature\Api\Reservations\CreateReservationTest" classname="Tests.Feature.Api.Reservations.CreateReservationTest" assertions="0" time="0.182380">
+        <error type="Illuminate\Database\UniqueConstraintViolationException">Tests\Feature\Api\Reservations\CreateReservationTest::test_can_create_reservation&#13;
+Illuminate\Database\UniqueConstraintViolationException: SQLSTATE[23000]: Integrity constraint violation: 19 UNIQUE constraint failed: vehicle_pricing.tenant_id, vehicle_pricing.vehicle_id (Connection: sqlite, Database: :memory:, SQL: insert into "vehicle_pricing" ("tenant_id", "vehicle_id", "weekday_price", "weekend_price", "holiday_price", "updated_at", "created_at") values (1, 1, 1000, 1500, 2000, 2026-10-08 07:06:36, 2026-10-08 07:06:36))
+&#13;
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Connection.php:838
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Connection.php:794
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Connection.php:573
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Connection.php:537
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Query\Processors\Processor.php:32
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Query\Builder.php:4170
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Builder.php:2237
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Model.php:1436
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Model.php:1401
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Model.php:1240
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Factories\Factory.php:370
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Collections\Traits\EnumeratesValues.php:275
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Factories\Factory.php:365
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Factories\Factory.php:321
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Factories\Factory.php:315
+C:\laragon\www\rentflow\tests\Feature\Api\Reservations\CreateReservationTest.php:29</error>
+      </testcase>
+      <testcase name="test_cannot_create_reservation_with_time_conflict" file="C:\laragon\www\rentflow\tests\Feature\Api\Reservations\CreateReservationTest.php" line="75" class="Tests\Feature\Api\Reservations\CreateReservationTest" classname="Tests.Feature.Api.Reservations.CreateReservationTest" assertions="0" time="0.017967">
+        <error type="Illuminate\Database\UniqueConstraintViolationException">Tests\Feature\Api\Reservations\CreateReservationTest::test_cannot_create_reservation_with_time_conflict&#13;
+Illuminate\Database\UniqueConstraintViolationException: SQLSTATE[23000]: Integrity constraint violation: 19 UNIQUE constraint failed: vehicle_pricing.tenant_id, vehicle_pricing.vehicle_id (Connection: sqlite, Database: :memory:, SQL: insert into "vehicle_pricing" ("tenant_id", "vehicle_id", "weekday_price", "weekend_price", "holiday_price", "updated_at", "created_at") values (1, 1, 1282.07, 1538.484, 1923.105, 2026-10-08 07:06:36, 2026-10-08 07:06:36))
+&#13;
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Connection.php:838
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Connection.php:794
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Connection.php:573
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Connection.php:537
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Query\Processors\Processor.php:32
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Query\Builder.php:4170
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Builder.php:2237
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Model.php:1436
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Model.php:1401
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Model.php:1240
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Factories\Factory.php:370
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Collections\Traits\EnumeratesValues.php:275
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Factories\Factory.php:365
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Factories\Factory.php:321
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Factories\Factory.php:315
+C:\laragon\www\rentflow\tests\Feature\Api\Reservations\CreateReservationTest.php:85</error>
+      </testcase>
+      <testcase name="test_cannot_create_reservation_with_less_than_minimum_hours" file="C:\laragon\www\rentflow\tests\Feature\Api\Reservations\CreateReservationTest.php" line="122" class="Tests\Feature\Api\Reservations\CreateReservationTest" classname="Tests.Feature.Api.Reservations.CreateReservationTest" assertions="0" time="0.018978">
+        <error type="Illuminate\Database\UniqueConstraintViolationException">Tests\Feature\Api\Reservations\CreateReservationTest::test_cannot_create_reservation_with_less_than_minimum_hours&#13;
+Illuminate\Database\UniqueConstraintViolationException: SQLSTATE[23000]: Integrity constraint violation: 19 UNIQUE constraint failed: vehicle_pricing.tenant_id, vehicle_pricing.vehicle_id (Connection: sqlite, Database: :memory:, SQL: insert into "vehicle_pricing" ("tenant_id", "vehicle_id", "weekday_price", "weekend_price", "holiday_price", "updated_at", "created_at") values (1, 1, 1780.44, 2136.528, 2670.66, 2026-10-08 07:06:36, 2026-10-08 07:06:36))
+&#13;
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Connection.php:838
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Connection.php:794
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Connection.php:573
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Connection.php:537
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Query\Processors\Processor.php:32
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Query\Builder.php:4170
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Builder.php:2237
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Model.php:1436
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Model.php:1401
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Model.php:1240
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Factories\Factory.php:370
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Collections\Traits\EnumeratesValues.php:275
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Factories\Factory.php:365
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Factories\Factory.php:321
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Factories\Factory.php:315
+C:\laragon\www\rentflow\tests\Feature\Api\Reservations\CreateReservationTest.php:132</error>
+      </testcase>
+    </testsuite>
+    <testsuite name="Tests\Feature\Api\Reservations\ConfirmReservationTest" file="C:\laragon\www\rentflow\tests\Feature\Api\Reservations\ConfirmReservationTest.php" tests="2" assertions="0" errors="2" failures="0" skipped="0" time="0.039061">
+      <testcase name="test_can_confirm_pending_reservation" file="C:\laragon\www\rentflow\tests\Feature\Api\Reservations\ConfirmReservationTest.php" line="18" class="Tests\Feature\Api\Reservations\ConfirmReservationTest" classname="Tests.Feature.Api.Reservations.ConfirmReservationTest" assertions="0" time="0.018831">
+        <error type="Illuminate\Database\UniqueConstraintViolationException">Tests\Feature\Api\Reservations\ConfirmReservationTest::test_can_confirm_pending_reservation&#13;
+Illuminate\Database\UniqueConstraintViolationException: SQLSTATE[23000]: Integrity constraint violation: 19 UNIQUE constraint failed: vehicle_pricing.tenant_id, vehicle_pricing.vehicle_id (Connection: sqlite, Database: :memory:, SQL: insert into "vehicle_pricing" ("tenant_id", "vehicle_id", "weekday_price", "weekend_price", "holiday_price", "updated_at", "created_at") values (1, 1, 1998.53, 2398.236, 2997.795, 2026-10-08 07:06:36, 2026-10-08 07:06:36))
+&#13;
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Connection.php:838
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Connection.php:794
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Connection.php:573
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Connection.php:537
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Query\Processors\Processor.php:32
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Query\Builder.php:4170
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Builder.php:2237
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Model.php:1436
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Model.php:1401
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Model.php:1240
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Factories\Factory.php:370
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Collections\Traits\EnumeratesValues.php:275
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Factories\Factory.php:365
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Factories\Factory.php:321
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Factories\Factory.php:315
+C:\laragon\www\rentflow\tests\Feature\Api\Reservations\ConfirmReservationTest.php:28</error>
+      </testcase>
+      <testcase name="test_cannot_confirm_already_confirmed_reservation" file="C:\laragon\www\rentflow\tests\Feature\Api\Reservations\ConfirmReservationTest.php" line="57" class="Tests\Feature\Api\Reservations\ConfirmReservationTest" classname="Tests.Feature.Api.Reservations.ConfirmReservationTest" assertions="0" time="0.020230">
+        <error type="Illuminate\Database\UniqueConstraintViolationException">Tests\Feature\Api\Reservations\ConfirmReservationTest::test_cannot_confirm_already_confirmed_reservation&#13;
+Illuminate\Database\UniqueConstraintViolationException: SQLSTATE[23000]: Integrity constraint violation: 19 UNIQUE constraint failed: vehicle_pricing.tenant_id, vehicle_pricing.vehicle_id (Connection: sqlite, Database: :memory:, SQL: insert into "vehicle_pricing" ("tenant_id", "vehicle_id", "weekday_price", "weekend_price", "holiday_price", "updated_at", "created_at") values (1, 1, 2258.38, 2710.056, 3387.57, 2026-10-08 07:06:36, 2026-10-08 07:06:36))
+&#13;
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Connection.php:838
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Connection.php:794
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Connection.php:573
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Connection.php:537
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Query\Processors\Processor.php:32
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Query\Builder.php:4170
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Builder.php:2237
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Model.php:1436
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Model.php:1401
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Model.php:1240
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Factories\Factory.php:370
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Collections\Traits\EnumeratesValues.php:275
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Factories\Factory.php:365
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Factories\Factory.php:321
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Factories\Factory.php:315
+C:\laragon\www\rentflow\tests\Feature\Api\Reservations\ConfirmReservationTest.php:67</error>
+      </testcase>
+    </testsuite>
+    <testsuite name="Tests\Feature\Api\Reservations\CancelReservationTest" file="C:\laragon\www\rentflow\tests\Feature\Api\Reservations\CancelReservationTest.php" tests="2" assertions="0" errors="2" failures="0" skipped="0" time="0.038170">
+      <testcase name="test_can_cancel_pending_reservation" file="C:\laragon\www\rentflow\tests\Feature\Api\Reservations\CancelReservationTest.php" line="18" class="Tests\Feature\Api\Reservations\CancelReservationTest" classname="Tests.Feature.Api.Reservations.CancelReservationTest" assertions="0" time="0.018221">
+        <error type="Illuminate\Database\UniqueConstraintViolationException">Tests\Feature\Api\Reservations\CancelReservationTest::test_can_cancel_pending_reservation&#13;
+Illuminate\Database\UniqueConstraintViolationException: SQLSTATE[23000]: Integrity constraint violation: 19 UNIQUE constraint failed: vehicle_pricing.tenant_id, vehicle_pricing.vehicle_id (Connection: sqlite, Database: :memory:, SQL: insert into "vehicle_pricing" ("tenant_id", "vehicle_id", "weekday_price", "weekend_price", "holiday_price", "updated_at", "created_at") values (1, 1, 2385.16, 2862.192, 3577.74, 2026-10-08 07:06:36, 2026-10-08 07:06:36))
+&#13;
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Connection.php:838
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Connection.php:794
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Connection.php:573
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Connection.php:537
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Query\Processors\Processor.php:32
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Query\Builder.php:4170
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Builder.php:2237
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Model.php:1436
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Model.php:1401
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Model.php:1240
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Factories\Factory.php:370
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Collections\Traits\EnumeratesValues.php:275
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Factories\Factory.php:365
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Factories\Factory.php:321
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Factories\Factory.php:315
+C:\laragon\www\rentflow\tests\Feature\Api\Reservations\CancelReservationTest.php:28</error>
+      </testcase>
+      <testcase name="test_cannot_cancel_already_picked_up_reservation" file="C:\laragon\www\rentflow\tests\Feature\Api\Reservations\CancelReservationTest.php" line="57" class="Tests\Feature\Api\Reservations\CancelReservationTest" classname="Tests.Feature.Api.Reservations.CancelReservationTest" assertions="0" time="0.019949">
+        <error type="Illuminate\Database\UniqueConstraintViolationException">Tests\Feature\Api\Reservations\CancelReservationTest::test_cannot_cancel_already_picked_up_reservation&#13;
+Illuminate\Database\UniqueConstraintViolationException: SQLSTATE[23000]: Integrity constraint violation: 19 UNIQUE constraint failed: vehicle_pricing.tenant_id, vehicle_pricing.vehicle_id (Connection: sqlite, Database: :memory:, SQL: insert into "vehicle_pricing" ("tenant_id", "vehicle_id", "weekday_price", "weekend_price", "holiday_price", "updated_at", "created_at") values (1, 1, 1499.59, 1799.508, 2249.385, 2026-10-08 07:06:36, 2026-10-08 07:06:36))
+&#13;
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Connection.php:838
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Connection.php:794
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Connection.php:573
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Connection.php:537
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Query\Processors\Processor.php:32
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Query\Builder.php:4170
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Builder.php:2237
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Model.php:1436
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Model.php:1401
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Model.php:1240
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Factories\Factory.php:370
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Collections\Traits\EnumeratesValues.php:275
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Factories\Factory.php:365
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Factories\Factory.php:321
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Factories\Factory.php:315
+C:\laragon\www\rentflow\tests\Feature\Api\Reservations\CancelReservationTest.php:67</error>
+      </testcase>
+    </testsuite>
+    <testsuite name="Tests\Feature\Api\Reservations\TenantIsolationTest" file="C:\laragon\www\rentflow\tests\Feature\Api\Reservations\TenantIsolationTest.php" tests="2" assertions="1" errors="1" failures="1" skipped="0" time="0.131863">
+      <testcase name="test_cannot_access_reservation_from_another_tenant" file="C:\laragon\www\rentflow\tests\Feature\Api\Reservations\TenantIsolationTest.php" line="18" class="Tests\Feature\Api\Reservations\TenantIsolationTest" classname="Tests.Feature.Api.Reservations.TenantIsolationTest" assertions="0" time="0.025064">
+        <error type="Illuminate\Database\UniqueConstraintViolationException">Tests\Feature\Api\Reservations\TenantIsolationTest::test_cannot_access_reservation_from_another_tenant&#13;
+Illuminate\Database\UniqueConstraintViolationException: SQLSTATE[23000]: Integrity constraint violation: 19 UNIQUE constraint failed: vehicle_pricing.tenant_id, vehicle_pricing.vehicle_id (Connection: sqlite, Database: :memory:, SQL: insert into "vehicle_pricing" ("tenant_id", "vehicle_id", "weekday_price", "weekend_price", "holiday_price", "updated_at", "created_at") values (2, 1, 2733.44, 3280.128, 4100.16, 2026-10-08 07:06:36, 2026-10-08 07:06:36))
+&#13;
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Connection.php:838
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Connection.php:794
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Connection.php:573
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Connection.php:537
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Query\Processors\Processor.php:32
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Query\Builder.php:4170
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Builder.php:2237
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Model.php:1436
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Model.php:1401
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Model.php:1240
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Factories\Factory.php:370
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Collections\Traits\EnumeratesValues.php:275
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Factories\Factory.php:365
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Factories\Factory.php:321
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Factories\Factory.php:315
+C:\laragon\www\rentflow\tests\Feature\Api\Reservations\TenantIsolationTest.php:33</error>
+      </testcase>
+      <testcase name="test_user_without_any_tenant_cannot_create_reservation" file="C:\laragon\www\rentflow\tests\Feature\Api\Reservations\TenantIsolationTest.php" line="68" class="Tests\Feature\Api\Reservations\TenantIsolationTest" classname="Tests.Feature.Api.Reservations.TenantIsolationTest" assertions="1" time="0.106799">
+        <failure type="PHPUnit\Framework\ExpectationFailedException">Tests\Feature\Api\Reservations\TenantIsolationTest::test_user_without_any_tenant_cannot_create_reservation&#13;
+Expected response status code [403] but received 404.
+Failed asserting that 404 is identical to 403.
+&#13;
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Testing\TestResponseAssert.php:45
+C:\laragon\www\rentflow\vendor\laravel\framework\src\Illuminate\Testing\TestResponse.php:175
+C:\laragon\www\rentflow\tests\Feature\Api\Reservations\TenantIsolationTest.php:82</failure>
+      </testcase>
+    </testsuite>
+  </testsuite>
+</testsuites>

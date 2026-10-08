@@ -11,21 +11,32 @@ class VehiclePricingFactory extends Factory
 {
     public function definition(): array
     {
-        $tenant = Tenant::inRandomOrder()->first() ?? Tenant::factory()->create();
-        // 尋找還沒有定價的車輛，如果沒有就創建新的
-        $vehicle = Vehicle::where('tenant_id', $tenant->id)
-            ->whereDoesntHave('pricing')
-            ->inRandomOrder()
-            ->first() ?? Vehicle::factory()->create(['tenant_id' => $tenant->id]);
-
         $weekdayPrice = fake()->randomFloat(2, 1000, 3000);
 
         return [
-            'tenant_id' => $tenant->id,
-            'vehicle_id' => $vehicle->id,
+            'tenant_id' => Tenant::factory(),
+            'vehicle_id' => Vehicle::factory(),
             'weekday_price' => $weekdayPrice,
-            'weekend_price' => $weekdayPrice * 1.2,
-            'holiday_price' => $weekdayPrice * 1.5,
+            'weekend_price' => round($weekdayPrice * 1.2, 2),
+            'holiday_price' => round($weekdayPrice * 1.5, 2),
         ];
+    }
+
+    public function create($attributes = [], ?\Illuminate\Database\Eloquent\Model $parent = null)
+    {
+        $rawAttributes = is_array($attributes) ? $attributes : [];
+
+        if (isset($rawAttributes['vehicle_id'], $rawAttributes['tenant_id'])) {
+            $existing = VehiclePricing::where('tenant_id', $rawAttributes['tenant_id'])
+                ->where('vehicle_id', $rawAttributes['vehicle_id'])
+                ->first();
+
+            if ($existing) {
+                $existing->update(array_merge($this->definition(), $rawAttributes));
+                return $existing;
+            }
+        }
+
+        return parent::create($attributes, $parent);
     }
 }

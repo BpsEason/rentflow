@@ -106,7 +106,7 @@ class Reservation extends Model
                 ->firstOrFail();
 
             if ($vehicle->status !== 'AVAILABLE') {
-                throw new \Exception('車輛目前無法租用，車輛ID: ' . $vehicle->id . '，狀態: ' . $vehicle->status);
+                throw new \Exception('車輛目前無法租用', 400);
             }
 
             $customer = Customer::where('id', $data['customer_id'])
@@ -117,7 +117,7 @@ class Reservation extends Model
             $endAt = Carbon::parse($data['end_at']);
 
             if ($endAt->lte($startAt)) {
-                throw new \Exception('結束時間必須晚於開始時間');
+                throw new \Exception('結束時間必須晚於開始時間', 422);
             }
 
             if (!self::validateMinimumRentalTime($startAt, $endAt)) {
@@ -125,7 +125,7 @@ class Reservation extends Model
             }
 
             if (self::hasTimeConflict($vehicle->id, $startAt, $endAt)) {
-                throw new \Exception('指定時間區間內車輛已被預約');
+                throw new \Exception('指定時間區間內車輛已被預約', 409);
             }
 
             $pricingData = self::calculateAmount($vehicle, $startAt, $endAt);
