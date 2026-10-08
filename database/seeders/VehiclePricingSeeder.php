@@ -21,33 +21,63 @@ class VehiclePricingSeeder extends Seeder
          * - 小車便宜、七人座與休旅明顯較高
          */
         $vehicleBasePrices = [
-            // 小型車
-            'Toyota Vios' => [
-                'weekday' => 1300,
-                'weekend' => 1600,
-                'holiday' => 2000,
+            // 經濟型 - 小型車
+            'Toyota Yaris' => [
+                'weekday' => 1200,
+                'weekend' => 1500,
+                'holiday' => 1900,
             ],
             'Honda Fit' => [
                 'weekday' => 1400,
                 'weekend' => 1700,
                 'holiday' => 2100,
             ],
+            'Mazda 3' => [
+                'weekday' => 1500,
+                'weekend' => 1800,
+                'holiday' => 2200,
+            ],
 
             // 中型房車
-            'Toyota Altis' => [
+            'Toyota Corolla Altis' => [
                 'weekday' => 1800,
                 'weekend' => 2200,
                 'holiday' => 2700,
             ],
 
-            // 國產休旅
-            'Luxgen U6' => [
+            // SUV/休旅車
+            'Toyota Corolla Cross' => [
                 'weekday' => 2000,
                 'weekend' => 2500,
-                'holiday' => 3000,
+                'holiday' => 3100,
+            ],
+            'Toyota RAV4' => [
+                'weekday' => 2400,
+                'weekend' => 3000,
+                'holiday' => 3700,
+            ],
+            'Honda HR-V' => [
+                'weekday' => 2200,
+                'weekend' => 2700,
+                'holiday' => 3300,
+            ],
+            'Nissan Kicks' => [
+                'weekday' => 2100,
+                'weekend' => 2600,
+                'holiday' => 3200,
+            ],
+            'Mazda CX-5' => [
+                'weekday' => 2500,
+                'weekend' => 3100,
+                'holiday' => 3800,
+            ],
+            'Honda CR-V' => [
+                'weekday' => 2800,
+                'weekend' => 3500,
+                'holiday' => 4200,
             ],
 
-            // 七人座
+            // 七人座/多人座
             'Toyota Sienta' => [
                 'weekday' => 2500,
                 'weekend' => 3200,
@@ -58,12 +88,10 @@ class VehiclePricingSeeder extends Seeder
                 'weekend' => 2800,
                 'holiday' => 3400,
             ],
-
-            // 中型休旅（較高價）
-            'Honda CR-V' => [
-                'weekday' => 2800,
-                'weekend' => 3500,
-                'holiday' => 4200,
+            'Toyota Innova' => [
+                'weekday' => 2000,
+                'weekend' => 2500,
+                'holiday' => 3000,
             ],
         ];
 

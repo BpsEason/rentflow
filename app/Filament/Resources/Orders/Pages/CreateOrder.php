@@ -21,6 +21,15 @@ class CreateOrder extends CreateRecord
 
     protected function mutateFormDataBeforeFill(array $data): array
     {
+        // 如果已經選擇了預約，預先填入金額
+        if (isset($data['reservation_id'])) {
+            $reservation = Reservation::find($data['reservation_id']);
+            if ($reservation) {
+                $data['total_amount'] = $reservation->amount;
+                $data['order_number'] = Order::generateOrderNumber($reservation->tenant_id);
+            }
+        }
+
         return $data;
     }
 }

@@ -40,7 +40,15 @@ class OrderForm
                             ->required()
                             ->searchable()
                             ->preload()
-                            ->disabledOn('edit'),
+                            ->disabledOn('edit')
+                            ->afterStateUpdated(function ($state, Forms\Set $set) {
+                                if ($state) {
+                                    $reservation = Reservation::find($state);
+                                    if ($reservation) {
+                                        $set('total_amount', $reservation->amount);
+                                    }
+                                }
+                            }),
                     ]),
 
                 Section::make('訂單金額與狀態')

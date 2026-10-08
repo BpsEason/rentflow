@@ -42,8 +42,11 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->widgets([
-                AccountWidget::class,
-                FilamentInfoWidget::class,
+                \App\Filament\Widgets\DashboardStatsWidget::class,
+                \App\Filament\Widgets\ReservationTrendWidget::class,
+                \App\Filament\Widgets\VehicleUtilizationWidget::class,
+                \App\Filament\Widgets\PendingActionsWidget::class,
+                \App\Filament\Widgets\RecentReservationsWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,
