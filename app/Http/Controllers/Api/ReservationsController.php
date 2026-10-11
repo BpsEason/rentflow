@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use OpenApi\Attributes as OA;
 use App\Http\Requests\Reservations\CreateReservationRequest;
 use App\Http\Resources\ReservationResource;
 use App\Support\ApiResponse;

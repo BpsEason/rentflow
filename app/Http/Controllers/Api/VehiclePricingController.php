@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use OpenApi\Attributes as OA;
 use App\Http\Requests\Api\VehiclePricings\StoreVehiclePricingRequest;
 use App\Http\Requests\Api\VehiclePricings\UpdateVehiclePricingRequest;
 use App\Http\Resources\VehiclePricingResource;

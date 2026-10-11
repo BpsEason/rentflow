@@ -1,0 +1,533 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "RentFlow API",
+        "description": "RentFlow 專業租賃管理平台 API 文件",
+        "version": "1.0.0"
+    },
+    "paths": {
+        "/api/v1/auth/login": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "使用者登入",
+                "description": "使用email和password取得JWT認證token",
+                "operationId": "fb66b153966d9fac2e999136ef0ade67",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "admin@example.com"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "password"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "登入成功",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "認證失敗",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "驗證錯誤",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/me": {
+            "get": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "取得當前使用者資訊",
+                "description": "取得目前登入使用者的詳細資訊",
+                "operationId": "5389aaa95512ef0b6ec88f262ecee7f0",
+                "responses": {
+                    "200": {
+                        "description": "成功取得使用者資訊",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "未授權",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/auth/logout": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "使用者登出",
+                "description": "使當前JWT token失效",
+                "operationId": "307ed0512855922b2280792376bb2095",
+                "responses": {
+                    "200": {
+                        "description": "登出成功",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "未授權",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "伺服器錯誤",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/auth/refresh": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "刷新JWT token",
+                "description": "取得新的存取token",
+                "operationId": "40586da4366a27fa3381f9299144b55f",
+                "responses": {
+                    "200": {
+                        "description": "刷新成功",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "未授權",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/customers": {
+            "get": {
+                "tags": [
+                    "Customers"
+                ],
+                "summary": "取得客戶列表",
+                "description": "取得目前租戶的所有客戶列表",
+                "operationId": "fddf8e3800951c00bc5fbd50026d7e6a",
+                "responses": {
+                    "200": {
+                        "description": "成功取得客戶列表",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Customers"
+                ],
+                "summary": "建立客戶",
+                "description": "建立新客戶",
+                "operationId": "59d57e1ee7b485895d41c89b775a8779",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "email",
+                                    "phone"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "王小明"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "ming@example.com"
+                                    },
+                                    "phone": {
+                                        "type": "string",
+                                        "example": "0912345678"
+                                    },
+                                    "is_active": {
+                                        "type": "boolean",
+                                        "example": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "客戶建立成功",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/customers/{customer}": {
+            "get": {
+                "tags": [
+                    "Customers"
+                ],
+                "summary": "取得單一客戶詳情",
+                "description": "取得指定客戶詳情",
+                "operationId": "587ea0335388642630306babd000e904",
+                "parameters": [
+                    {
+                        "name": "customer",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功取得客戶詳情",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "客戶不存在"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Customers"
+                ],
+                "summary": "更新客戶資訊",
+                "description": "更新指定客戶資訊",
+                "operationId": "126e2c91a3915a8ff8cd7e2f54746a79",
+                "parameters": [
+                    {
+                        "name": "customer",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "更新客戶成功",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "客戶不存在"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Customers"
+                ],
+                "summary": "刪除客戶",
+                "description": "刪除指定客戶",
+                "operationId": "5d24426c090343993cec2b0f8372a6f0",
+                "parameters": [
+                    {
+                        "name": "customer",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "刪除客戶成功"
+                    },
+                    "404": {
+                        "description": "客戶不存在"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "ApiSuccessResponse": {
+                "title": "API 成功回應",
+                "properties": {
+                    "status": {
+                        "type": "string",
+                        "example": "success"
+                    },
+                    "message": {
+                        "type": "string",
+                        "example": "操作成功"
+                    },
+                    "data": {
+                        "type": "object"
+                    },
+                    "meta": {
+                        "type": "object"
+                    }
+                },
+                "type": "object"
+            },
+            "ApiErrorResponse": {
+                "title": "API 錯誤回應",
+                "properties": {
+                    "status": {
+                        "type": "string",
+                        "example": "error"
+                    },
+                    "message": {
+                        "type": "string",
+                        "example": "操作失敗"
+                    },
+                    "data": {
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "meta": {
+                        "type": "object"
+                    }
+                },
+                "type": "object"
+            },
+            "ValidationErrorResponse": {
+                "title": "驗證錯誤回應",
+                "properties": {
+                    "status": {
+                        "type": "string",
+                        "example": "error"
+                    },
+                    "message": {
+                        "type": "string",
+                        "example": "驗證失敗"
+                    },
+                    "data": {
+                        "properties": {
+                            "errors": {
+                                "type": "object"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "meta": {
+                        "type": "object"
+                    }
+                },
+                "type": "object"
+            },
+            "User": {
+                "title": "使用者資料",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "管理員"
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "example": "admin@example.com"
+                    },
+                    "phone": {
+                        "type": "string",
+                        "example": "0912345678"
+                    },
+                    "is_active": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-01-01T00:00:00Z"
+                    }
+                },
+                "type": "object"
+            },
+            "AuthTokenData": {
+                "title": "認證Token資料",
+                "properties": {
+                    "access_token": {
+                        "type": "string"
+                    },
+                    "token_type": {
+                        "type": "string",
+                        "example": "Bearer"
+                    },
+                    "expires_in": {
+                        "type": "integer",
+                        "example": 3600
+                    },
+                    "user": {
+                        "$ref": "#/components/schemas/User"
+                    }
+                },
+                "type": "object"
+            }
+        },
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "bearerFormat": "JWT",
+                "scheme": "bearer"
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Customers",
+            "description": "客戶管理相關API"
+        },
+        {
+            "name": "Authentication",
+            "description": "Authentication"
+        }
+    ]
+}

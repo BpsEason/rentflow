@@ -10,10 +10,9 @@ use App\Models\Customer;
 use App\Support\ApiResponse;
 use App\Support\TenantContext;
 use Illuminate\Http\JsonResponse;
+use OpenApi\Attributes as OA;
 
-/**
- * @OA\Tag(name="Customers", description="客戶管理相關API")
- */
+#[OA\Tag(name: "Customers", description: "客戶管理相關API")]
 class CustomerController extends Controller
 {
     public function __construct(
@@ -31,20 +30,16 @@ class CustomerController extends Controller
         });
     }
 
-    /**
-     * @OA\Get(
-     *     path="/api/v1/customers",
-     *     summary="取得客戶列表",
-     *     description="取得目前租戶的所有客戶列表",
-     *     tags={"Customers"},
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Response(
-     *         response=200,
-     *         description="成功取得客戶列表",
-     *         @OA\JsonContent(ref="#/components/schemas/ApiSuccessResponse")
-     *     )
-     * )
-     */
+    #[OA\Get(
+        path: "/api/v1/customers",
+        summary: "取得客戶列表",
+        description: "取得目前租戶的所有客戶列表",
+        tags: ["Customers"],
+        security: [["bearerAuth" => []]],
+        responses: [
+            new OA\Response(response: 200, description: "成功取得客戶列表", content: new OA\JsonContent(ref: "#/components/schemas/ApiSuccessResponse"))
+        ]
+    )]
     public function index(): JsonResponse
     {
         $tenantId = $this->tenantContext->getCurrentTenantId();
@@ -56,30 +51,28 @@ class CustomerController extends Controller
         );
     }
 
-    /**
-     * @OA\Post(
-     *     path="/api/v1/customers",
-     *     summary="建立客戶",
-     *     description="建立新客戶",
-     *     tags={"Customers"},
-     *     security={{"bearerAuth":{}}},
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             required={"name","email","phone"},
-     *             @OA\Property(property="name", type="string", example="王小明"),
-     *             @OA\Property(property="email", type="string", format="email", example="ming@example.com"),
-     *             @OA\Property(property="phone", type="string", example="0912345678"),
-     *             @OA\Property(property="is_active", type="boolean", example=true)
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=201,
-     *         description="客戶建立成功",
-     *         @OA\JsonContent(ref="#/components/schemas/ApiSuccessResponse")
-     *     )
-     * )
-     */
+    #[OA\Post(
+        path: "/api/v1/customers",
+        summary: "建立客戶",
+        description: "建立新客戶",
+        tags: ["Customers"],
+        security: [["bearerAuth" => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ["name", "email", "phone"],
+                properties: [
+                    new OA\Property(property: "name", type: "string", example: "王小明"),
+                    new OA\Property(property: "email", type: "string", format: "email", example: "ming@example.com"),
+                    new OA\Property(property: "phone", type: "string", example: "0912345678"),
+                    new OA\Property(property: "is_active", type: "boolean", example: true)
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 201, description: "客戶建立成功", content: new OA\JsonContent(ref: "#/components/schemas/ApiSuccessResponse"))
+        ]
+    )]
     public function store(StoreCustomerRequest $request): JsonResponse
     {
         $tenantId = $this->tenantContext->getCurrentTenantId();
@@ -96,22 +89,20 @@ class CustomerController extends Controller
         );
     }
 
-    /**
-     * @OA\Get(
-     *     path="/api/v1/customers/{customer}",
-     *     summary="取得單一客戶詳情",
-     *     description="取得指定客戶詳情",
-     *     tags={"Customers"},
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(name="customer", in="path", required=true, @OA\Schema(type="integer")),
-     *     @OA\Response(
-     *         response=200,
-     *         description="成功取得客戶詳情",
-     *         @OA\JsonContent(ref="#/components/schemas/ApiSuccessResponse")
-     *     ),
-     *     @OA\Response(response=404, description="客戶不存在")
-     * )
-     */
+    #[OA\Get(
+        path: "/api/v1/customers/{customer}",
+        summary: "取得單一客戶詳情",
+        description: "取得指定客戶詳情",
+        tags: ["Customers"],
+        security: [["bearerAuth" => []]],
+        parameters: [
+            new OA\Parameter(name: "customer", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+        ],
+        responses: [
+            new OA\Response(response: 200, description: "成功取得客戶詳情", content: new OA\JsonContent(ref: "#/components/schemas/ApiSuccessResponse")),
+            new OA\Response(response: 404, description: "客戶不存在")
+        ]
+    )]
     public function show($id): JsonResponse
     {
         $tenantId = $this->tenantContext->getCurrentTenantId();
@@ -127,22 +118,20 @@ class CustomerController extends Controller
         );
     }
 
-    /**
-     * @OA\Put(
-     *     path="/api/v1/customers/{customer}",
-     *     summary="更新客戶資訊",
-     *     description="更新指定客戶資訊",
-     *     tags={"Customers"},
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(name="customer", in="path", required=true, @OA\Schema(type="integer")),
-     *     @OA\Response(
-     *         response=200,
-     *         description="更新客戶成功",
-     *         @OA\JsonContent(ref="#/components/schemas/ApiSuccessResponse")
-     *     ),
-     *     @OA\Response(response=404, description="客戶不存在")
-     * )
-     */
+    #[OA\Put(
+        path: "/api/v1/customers/{customer}",
+        summary: "更新客戶資訊",
+        description: "更新指定客戶資訊",
+        tags: ["Customers"],
+        security: [["bearerAuth" => []]],
+        parameters: [
+            new OA\Parameter(name: "customer", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+        ],
+        responses: [
+            new OA\Response(response: 200, description: "更新客戶成功", content: new OA\JsonContent(ref: "#/components/schemas/ApiSuccessResponse")),
+            new OA\Response(response: 404, description: "客戶不存在")
+        ]
+    )]
     public function update(UpdateCustomerRequest $request, $id): JsonResponse
     {
         $tenantId = $this->tenantContext->getCurrentTenantId();
@@ -160,18 +149,20 @@ class CustomerController extends Controller
         );
     }
 
-    /**
-     * @OA\Delete(
-     *     path="/api/v1/customers/{customer}",
-     *     summary="刪除客戶",
-     *     description="刪除指定客戶",
-     *     tags={"Customers"},
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(name="customer", in="path", required=true, @OA\Schema(type="integer")),
-     *     @OA\Response(response=200, description="刪除客戶成功"),
-     *     @OA\Response(response=404, description="客戶不存在")
-     * )
-     */
+    #[OA\Delete(
+        path: "/api/v1/customers/{customer}",
+        summary: "刪除客戶",
+        description: "刪除指定客戶",
+        tags: ["Customers"],
+        security: [["bearerAuth" => []]],
+        parameters: [
+            new OA\Parameter(name: "customer", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+        ],
+        responses: [
+            new OA\Response(response: 200, description: "刪除客戶成功"),
+            new OA\Response(response: 404, description: "客戶不存在")
+        ]
+    )]
     public function destroy($id): JsonResponse
     {
         $tenantId = $this->tenantContext->getCurrentTenantId();
