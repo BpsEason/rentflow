@@ -15,12 +15,19 @@ class Customer extends Model
         'email',
         'phone',
         'is_active',
+        'id_number',
+        'license_number',
+        'license_expiry',
+        'address',
+        'emergency_contact_name',
+        'emergency_contact_phone',
     ];
 
     protected function casts(): array
     {
         return [
             'is_active' => 'boolean',
+            'license_expiry' => 'date',
         ];
     }
 

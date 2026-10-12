@@ -168,6 +168,7 @@ const route = useRoute();
 const today = ref(new Date().toISOString().split("T")[0]);
 
 // Get query params from URL (passed from home page search)
+const queryLocation = route.query.location as string;
 const queryPickup = route.query.pickup as string;
 const queryReturn = route.query.return as string;
 
@@ -183,7 +184,7 @@ const pagination = ref({
 });
 
 const filters = ref({
-    search: "",
+    search: queryLocation || "",
     pickupDate: queryPickup || "",
     returnDate: queryReturn || "",
 });

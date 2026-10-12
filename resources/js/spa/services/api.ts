@@ -1,5 +1,11 @@
 import axios from "axios";
 
+// 從目前URL路徑中提取租戶slug
+function getCurrentTenantSlug(): string | null {
+    const pathParts = window.location.pathname.split("/").filter(Boolean);
+    return pathParts.length > 0 ? pathParts[0] : null;
+}
+
 const api = axios.create({
     baseURL: import.meta.env.VITE_API_URL || "/api/v1",
     headers: {
@@ -8,13 +14,24 @@ const api = axios.create({
     },
 });
 
-// 請求攔截器：加入認證 token
+// 請求攔截器：加入認證 token 和動態從URL提取的租戶識別
 api.interceptors.request.use(
     (config) => {
         const token = localStorage.getItem("token");
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
+
+        // 處理公開API請求，將tenantSlug加入URL路徑
+        const tenantSlug = getCurrentTenantSlug();
+        if (tenantSlug && config.url?.includes("/public/")) {
+            // 替換URL中的 /public/ 為 /public/{tenantSlug}/
+            config.url = config.url.replace(
+                "/public/",
+                `/public/${tenantSlug}/`,
+            );
+        }
+
         return config;
     },
     (error) => {
@@ -29,8 +46,13 @@ api.interceptors.response.use(
         // 處理 401 未授權錯誤
         if (error.response?.status === 401) {
             localStorage.removeItem("token");
-            // 可以在這裡導向登入頁面
-            window.location.href = "/login";
+            // 從目前URL路徑中提取租戶slug，保持正確的租戶前綴
+            const pathParts = window.location.pathname
+                .split("/")
+                .filter(Boolean);
+            const tenantSlug = pathParts.length > 0 ? pathParts[0] : "default";
+            // 導向到正確的租戶登入頁面
+            window.location.href = `/${tenantSlug}/login`;
         }
         return Promise.reject(error);
     },

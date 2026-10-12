@@ -5,7 +5,7 @@
                 <!-- Back Button -->
                 <div class="mb-6">
                     <router-link
-                        to="/my-bookings"
+                        :to="`/${tenantSlug}/my-bookings`"
                         class="inline-flex items-center text-blue-900 hover:text-blue-700 transition"
                     >
                         <svg
@@ -482,6 +482,7 @@ import api from "../services/api";
 
 const route = useRoute();
 const router = useRouter();
+const tenantSlug = route.params.tenantSlug as string;
 const reservationId = route.params.id as string;
 
 const loading = ref(true);
@@ -573,7 +574,7 @@ const fetchReservation = async () => {
             error.value = "找不到指定的預約資訊";
         } else if (e.response?.status === 401) {
             error.value = "您需要登入才能查看此預約資訊";
-            setTimeout(() => router.push("/login"), 3000);
+            setTimeout(() => router.push(`/${tenantSlug}/login`), 3000);
         } else {
             error.value = "載入預約資訊失敗，請稍後再試";
         }

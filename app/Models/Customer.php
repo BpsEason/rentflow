@@ -15,6 +15,12 @@ class Customer extends Model
         'name',
         'email',
         'phone',
+        'id_number',
+        'license_number',
+        'license_expiry',
+        'address',
+        'emergency_contact_name',
+        'emergency_contact_phone',
         'is_active',
     ];
 

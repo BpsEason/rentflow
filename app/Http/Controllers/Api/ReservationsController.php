@@ -24,9 +24,14 @@ class ReservationsController extends Controller
     public function __construct(
         private readonly TenantContext $tenantContext
     ) {
-        // 中間件：認證 + 解析租戶
-        $this->middleware('auth:api');
+        // 中間件：除了訪客預約端點外，其他都需要認證
+        $this->middleware('auth:api')->except(['guestStore']);
         $this->middleware(function ($request, $next) {
+            // 公開端點不需要檢查登入用戶的租戶上下文
+            if ($request->route()->getActionMethod() === 'guestStore') {
+                return $next($request);
+            }
+
             $tenant = $this->tenantContext->getCurrentTenant();
 
             if (!$tenant) {
@@ -131,6 +136,7 @@ class ReservationsController extends Controller
                 201
             );
         } catch (\Throwable $e) {
+            \Log::error('Guest reservation error: ' . $e->getMessage(), ['exception' => $e]);
             return $this->handleException($e);
         }
     }
@@ -160,6 +166,7 @@ class ReservationsController extends Controller
                 '預約確認成功'
             );
         } catch (\Throwable $e) {
+            \Log::error('Guest reservation error: ' . $e->getMessage(), ['exception' => $e]);
             return $this->handleException($e);
         }
     }
@@ -197,6 +204,7 @@ class ReservationsController extends Controller
                 '預約取消成功'
             );
         } catch (\Throwable $e) {
+            \Log::error('Guest reservation error: ' . $e->getMessage(), ['exception' => $e, 'trace' => $e->getTraceAsString()]);
             return $this->handleException($e);
         }
     }
@@ -269,6 +277,122 @@ class ReservationsController extends Controller
             return ApiResponse::success(
                 new ReservationResource($reservation),
                 '辦理歸還成功'
+            );
+        } catch (\Throwable $e) {
+            return $this->handleException($e);
+        }
+    }
+
+    #[OA\Post(
+        path: "/api/v1/public/reservations",
+        summary: "訪客創建預約",
+        description: "未登入的訪客可以創建車輛預約，系統會自動創建或匹配客戶資料",
+        tags: ["Reservations"],
+        parameters: [
+            new OA\Parameter(name: "X-Tenant-Slug", in: "header", required: true, schema: new OA\Schema(type: "string"), description: "租戶唯一識別碼")
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ["vehicle_id", "pickup_date", "pickup_time", "return_date", "return_time", "customer_name", "customer_phone", "customer_email", "customer_id_number", "license_number", "license_expiry"],
+                properties: [
+                    new OA\Property(property: "vehicle_id", type: "integer", example: 1),
+                    new OA\Property(property: "pickup_date", type: "string", format: "date", example: "2026-10-15"),
+                    new OA\Property(property: "pickup_time", type: "string", example: "10:00"),
+                    new OA\Property(property: "return_date", type: "string", format: "date", example: "2026-10-18"),
+                    new OA\Property(property: "return_time", type: "string", example: "18:00"),
+                    new OA\Property(property: "customer_name", type: "string", example: "陳志明"),
+                    new OA\Property(property: "customer_phone", type: "string", example: "0912345678"),
+                    new OA\Property(property: "customer_email", type: "string", example: "chen@example.com"),
+                    new OA\Property(property: "customer_id_number", type: "string", example: "A123456789"),
+                    new OA\Property(property: "license_number", type: "string", example: "1234567890"),
+                    new OA\Property(property: "license_expiry", type: "string", format: "date", example: "2031-10-10"),
+                    new OA\Property(property: "address", type: "string", example: "台北市大安區...", nullable: true),
+                    new OA\Property(property: "emergency_contact_name", type: "string", example: "王小美", nullable: true),
+                    new OA\Property(property: "emergency_contact_phone", type: "string", example: "0987654321", nullable: true),
+                    new OA\Property(property: "notes", type: "string", example: "需要兒童座椅", nullable: true),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 201, description: "預約建立成功", content: new OA\JsonContent(ref: "#/components/schemas/ApiSuccessResponse")),
+            new OA\Response(response: 403, description: "無法解析租戶資訊", content: new OA\JsonContent(ref: "#/components/schemas/ApiErrorResponse")),
+            new OA\Response(response: 400, description: "參數錯誤或車輛不可用", content: new OA\JsonContent(ref: "#/components/schemas/ApiErrorResponse")),
+            new OA\Response(response: 404, description: "車輛不存在", content: new OA\JsonContent(ref: "#/components/schemas/ApiErrorResponse"))
+        ]
+    )]
+    public function guestStore(\App\Http\Requests\Reservations\StoreGuestReservationRequest $request, CreateReservation $useCase): JsonResponse
+    {
+        try {
+            $tenant = $this->tenantContext->getCurrentTenant();
+
+            if (!$tenant) {
+                return ApiResponse::error('無法解析租戶資訊，請確認租戶 slug 正確且租戶已開啟公開服務', null, [], 403);
+            }
+
+            // 租戶已由TenantContext驗證，tenant_id將由後端自動設定，不信任前端任何提交的tenant_id
+
+            // Reject foreign-tenant vehicle IDs before creating or updating customer data.
+            if (!\App\Models\Vehicle::where('tenant_id', $tenant->id)
+                ->whereKey($request->vehicle_id)
+                ->exists()) {
+                return ApiResponse::error('車輛不存在', null, [], 404);
+            }
+
+            // 合併日期和時間
+            $startAt = $request->pickup_date . ' ' . $request->pickup_time;
+            $endAt = $request->return_date . ' ' . $request->return_time;
+
+            // 查找或創建客戶
+            $customer = \App\Models\Customer::firstOrCreate(
+                [
+                    'tenant_id' => $tenant->id,
+                    'email' => $request->customer_email,
+                ],
+                [
+                    'name' => $request->customer_name,
+                    'phone' => $request->customer_phone,
+                    'id_number' => $request->customer_id_number,
+                    'license_number' => $request->license_number,
+                    'license_expiry' => $request->license_expiry,
+                    'address' => $request->address,
+                    'emergency_contact_name' => $request->emergency_contact_name,
+                    'emergency_contact_phone' => $request->emergency_contact_phone,
+                    'is_active' => true,
+                ]
+            );
+
+            // 如果客戶已存在，更新最新資訊
+            if (!$customer->wasRecentlyCreated) {
+                $customer->update([
+                    'name' => $request->customer_name,
+                    'phone' => $request->customer_phone,
+                    'id_number' => $request->customer_id_number,
+                    'license_number' => $request->license_number,
+                    'license_expiry' => $request->license_expiry,
+                    'address' => $request->address,
+                    'emergency_contact_name' => $request->emergency_contact_name,
+                    'emergency_contact_phone' => $request->emergency_contact_phone,
+                ]);
+            }
+
+            // 使用現有的CreateReservationUseCases創建預約
+            $createData = \App\Domain\Reservations\DTO\CreateReservationData::fromArray([
+                'vehicle_id' => $request->vehicle_id,
+                'customer_id' => $customer->id,
+                'start_at' => $startAt,
+                'end_at' => $endAt,
+                'notes' => $request->notes,
+            ]);
+
+            $reservation = $useCase->execute($createData);
+            $reservation->load(['customer', 'vehicle']);
+
+            return ApiResponse::success(
+                new \App\Http\Resources\ReservationResource($reservation),
+                '預約建立成功',
+                [],
+                201
             );
         } catch (\Throwable $e) {
             return $this->handleException($e);

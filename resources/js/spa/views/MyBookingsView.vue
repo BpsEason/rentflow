@@ -85,7 +85,7 @@
                         開始瀏覽我們的車輛，找到適合您的理想車款
                     </p>
                     <router-link
-                        to="/vehicles"
+                        :to="`/${tenantSlug}/vehicles`"
                         class="mt-6 inline-flex items-center px-4 py-2 bg-blue-900 hover:bg-blue-800 text-white rounded-lg font-medium transition"
                     >
                         瀏覽車輛
@@ -207,7 +207,13 @@
                                 <!-- Action Buttons -->
                                 <div class="flex lg:flex-col gap-3">
                                     <router-link
-                                        :to="`/my-bookings/${booking.id}`"
+                                        :to="{
+                                            name: 'my-booking-detail',
+                                            params: {
+                                                tenantSlug,
+                                                id: booking.id,
+                                            },
+                                        }"
                                         class="px-4 py-2 bg-blue-900 hover:bg-blue-800 text-white rounded-lg font-medium transition text-center text-sm"
                                     >
                                         查看詳情
@@ -279,11 +285,13 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
-import { useRouter } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 import PublicLayout from "../components/Layout/PublicLayout.vue";
 import api from "../services/api";
 
 const router = useRouter();
+const route = useRoute();
+const tenantSlug = route.params.tenantSlug as string;
 
 const tabs = [
     { label: "全部", value: "all" },
@@ -389,7 +397,7 @@ const fetchBookings = async () => {
         console.error("Failed to fetch bookings:", e);
         if (e.response?.status === 401) {
             error.value = "您需要登入才能查看預約";
-            setTimeout(() => router.push("/login"), 3000);
+            setTimeout(() => router.push(`/${tenantSlug}/login`), 3000);
         } else {
             error.value = "載入預約列表失敗，請稍後再試";
         }

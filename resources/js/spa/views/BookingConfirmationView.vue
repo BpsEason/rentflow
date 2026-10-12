@@ -178,13 +178,13 @@
                     <!-- Action Buttons -->
                     <div class="flex flex-col sm:flex-row gap-4 justify-center">
                         <router-link
-                            to="/my-bookings"
+                            :to="{ name: 'my-bookings', params: { tenantSlug } }"
                             class="px-8 py-3 bg-blue-900 hover:bg-blue-800 text-white rounded-lg font-medium transition text-center"
                         >
                             查看我的預約
                         </router-link>
                         <router-link
-                            to="/vehicles"
+                            :to="{ name: 'vehicles', params: { tenantSlug } }"
                             class="px-8 py-3 border border-blue-900 text-blue-900 hover:bg-blue-50 rounded-lg font-medium transition text-center"
                         >
                             繼續瀏覽車輛
@@ -234,7 +234,7 @@
                             重新載入
                         </button>
                         <router-link
-                            to="/"
+                            :to="{ name: 'home', params: { tenantSlug } }"
                             class="px-8 py-3 border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg font-medium transition"
                         >
                             返回首頁
@@ -254,6 +254,7 @@ import api from "../services/api";
 
 const route = useRoute();
 const router = useRouter();
+const tenantSlug = route.params.tenantSlug as string;
 const reservationId = route.params.id as string;
 
 const loading = ref(true);
@@ -289,7 +290,7 @@ const fetchReservation = async () => {
             error.value = "找不到指定的預約資訊，請確認預約編號是否正確";
         } else if (e.response?.status === 401) {
             error.value = "您需要登入才能查看此預約資訊";
-            setTimeout(() => router.push("/login"), 3000);
+            setTimeout(() => router.push(`/${tenantSlug}/login`), 3000);
         } else {
             error.value = "載入預約資訊失敗，請稍後再試";
         }

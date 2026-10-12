@@ -36,6 +36,39 @@ class CustomersTable
                     ->searchable()
                     ->sortable(),
 
+                TextColumn::make('id_number')
+                    ->label('身分證字號')
+                    ->formatStateUsing(fn (?string $state): ?string => $state
+                        ? str_repeat('•', max(strlen($state) - 4, 0)) . substr($state, -4)
+                        : null)
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                TextColumn::make('license_number')
+                    ->label('駕照號碼')
+                    ->formatStateUsing(fn (?string $state): ?string => $state
+                        ? str_repeat('•', max(strlen($state) - 4, 0)) . substr($state, -4)
+                        : null)
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                TextColumn::make('license_expiry')
+                    ->label('駕照有效日期')
+                    ->date('Y-m-d')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                TextColumn::make('address')
+                    ->label('聯絡地址')
+                    ->limit(30)
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                TextColumn::make('emergency_contact_name')
+                    ->label('緊急聯絡人')
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                TextColumn::make('emergency_contact_phone')
+                    ->label('緊急聯絡電話')
+                    ->toggleable(isToggledHiddenByDefault: true),
+
                 ToggleColumn::make('is_active')
                     ->label('啟用狀態')
                     ->sortable(),

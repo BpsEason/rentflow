@@ -5,7 +5,7 @@
                 <!-- Back Button -->
                 <div class="mb-6">
                     <router-link
-                        :to="`/vehicles/${vehicleId}`"
+                        :to="`/${tenantSlug}/vehicles/${vehicleId}`"
                         class="inline-flex items-center text-blue-900 hover:text-blue-700 transition"
                     >
                         <svg
@@ -563,6 +563,7 @@ import api from "../services/api";
 
 const route = useRoute();
 const router = useRouter();
+const tenantSlug = route.params.tenantSlug as string;
 const vehicleId = route.params.vehicleId as string;
 
 // Get query params from previous page
@@ -702,10 +703,12 @@ const submitBooking = async () => {
         };
 
         // Submit to API
-        const response = await api.post("/reservations", bookingData);
+        const response = await api.post("/public/reservations", bookingData);
 
         // Redirect to confirmation page
-        router.push(`/booking/confirmation/${response.data.data.id}`);
+        router.push(
+            `/${tenantSlug}/booking/confirmation/${response.data.data.id}`,
+        );
     } catch (e: any) {
         console.error("Booking submission failed:", e);
         if (e.response?.data?.message) {

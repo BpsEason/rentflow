@@ -30,7 +30,8 @@ class TenantSeeder extends Seeder
         foreach ($tenants as $tenant) {
             Tenant::updateOrCreate(
                 ['slug' => $tenant['slug']],
-                ['name' => $tenant['name']]
+                ['name' => $tenant['name']],
+                ['is_public' => 1]
             );
         }
     }

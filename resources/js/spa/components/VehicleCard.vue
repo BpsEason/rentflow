@@ -86,7 +86,7 @@
                     <span class="text-gray-500 text-sm">/天</span>
                 </div>
                 <router-link
-                    :to="`/vehicles/${vehicle.id}`"
+                    :to="`/${tenantSlug}/vehicles/${vehicle.id}`"
                     class="bg-blue-900 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition text-sm font-medium"
                 >
                     查看詳情
@@ -97,6 +97,11 @@
 </template>
 
 <script setup lang="ts">
+import { useRoute } from "vue-router";
+
+const route = useRoute();
+const tenantSlug = route.params.tenantSlug as string;
+
 interface VehiclePricing {
     daily_rate: number;
 }

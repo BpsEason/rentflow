@@ -5,7 +5,10 @@
             <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between items-center h-16">
                     <!-- Logo -->
-                    <router-link to="/" class="flex items-center">
+                    <router-link
+                        :to="`/${tenantSlug}`"
+                        class="flex items-center"
+                    >
                         <span class="text-2xl font-bold text-blue-900"
                             >RentFlow</span
                         >
@@ -14,12 +17,12 @@
                     <!-- Desktop Navigation -->
                     <div class="hidden md:flex items-center space-x-8">
                         <router-link
-                            to="/"
+                            :to="`/${tenantSlug}`"
                             class="text-gray-700 hover:text-slate-900 transition"
                             >首頁</router-link
                         >
                         <router-link
-                            to="/vehicles"
+                            :to="`/${tenantSlug}/vehicles`"
                             class="text-gray-700 hover:text-slate-900 transition"
                             >瀏覽車輛</router-link
                         >
@@ -33,7 +36,7 @@
                         <div class="flex items-center space-x-4">
                             <template v-if="isLoggedIn">
                                 <router-link
-                                    to="/my-bookings"
+                                    :to="`/${tenantSlug}/my-bookings`"
                                     class="text-gray-700 hover:text-slate-900 transition"
                                     >我的預約</router-link
                                 >
@@ -46,13 +49,13 @@
                             </template>
                             <template v-else>
                                 <router-link
-                                    to="/login"
+                                    :to="`/${tenantSlug}/login`"
                                     class="text-gray-700 hover:text-slate-900 transition"
                                 >
                                     登入
                                 </router-link>
                                 <router-link
-                                    to="/vehicles"
+                                    :to="`/${tenantSlug}/vehicles`"
                                     class="bg-amber-600 hover:bg-amber-500 text-white px-4 py-2 rounded-lg font-medium transition"
                                 >
                                     立即租車
@@ -95,13 +98,13 @@
                     <div class="flex flex-col space-y-4">
                         <router-link
                             @click="mobileMenuOpen = false"
-                            to="/"
+                            :to="`/${tenantSlug}`"
                             class="text-gray-700 hover:text-blue-900"
                             >首頁</router-link
                         >
                         <router-link
                             @click="mobileMenuOpen = false"
-                            to="/vehicles"
+                            :to="`/${tenantSlug}/vehicles`"
                             class="text-gray-700 hover:text-blue-900"
                             >瀏覽車輛</router-link
                         >
@@ -114,7 +117,7 @@
                         <template v-if="isLoggedIn">
                             <router-link
                                 @click="mobileMenuOpen = false"
-                                to="/my-bookings"
+                                :to="`/${tenantSlug}/my-bookings`"
                                 class="text-gray-700 hover:text-blue-900"
                                 >我的預約</router-link
                             >
@@ -128,13 +131,13 @@
                         <template v-else>
                             <router-link
                                 @click="mobileMenuOpen = false"
-                                to="/login"
+                                :to="`/${tenantSlug}/login`"
                                 class="text-slate-900 font-medium"
                                 >登入</router-link
                             >
                             <router-link
                                 @click="mobileMenuOpen = false"
-                                to="/vehicles"
+                                :to="`/${tenantSlug}/vehicles`"
                                 class="bg-amber-600 text-white px-4 py-2 rounded-lg text-center font-medium"
                             >
                                 立即租車
@@ -168,14 +171,14 @@
                         <ul class="space-y-2 text-gray-400">
                             <li>
                                 <router-link
-                                    to="/"
+                                    :to="`/${tenantSlug}`"
                                     class="hover:text-white transition"
                                     >首頁</router-link
                                 >
                             </li>
                             <li>
                                 <router-link
-                                    to="/vehicles"
+                                    :to="`/${tenantSlug}/vehicles`"
                                     class="hover:text-white transition"
                                     >瀏覽車輛</router-link
                                 >
@@ -213,19 +216,22 @@
 
 <script setup lang="ts">
 import { ref, computed } from "vue";
-import { useRouter } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 
 const router = useRouter();
+const route = useRoute();
 const mobileMenuOpen = ref(false);
 
 const isLoggedIn = computed(() => {
     return !!localStorage.getItem("token");
 });
 
+const tenantSlug = route.params.tenantSlug as string;
+
 const logout = () => {
     localStorage.removeItem("token");
     mobileMenuOpen.value = false;
-    router.push("/");
+    router.push(`/${tenantSlug}`);
 };
 </script>
 

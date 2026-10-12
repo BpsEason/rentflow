@@ -154,8 +154,11 @@
 
 <script setup lang="ts">
 import { ref } from "vue";
-import { useRouter } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 import api from "../services/api";
+
+const route = useRoute();
+const tenantSlug = route.params.tenantSlug as string;
 
 interface LoginForm {
     email: string;
@@ -183,7 +186,7 @@ const handleLogin = async () => {
 
         if (response.data.access_token) {
             localStorage.setItem("token", response.data.access_token);
-            router.push("/my-bookings");
+            router.push(`/${tenantSlug}/my-bookings`);
         }
     } catch (e: any) {
         error.value =

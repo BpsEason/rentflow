@@ -14,6 +14,7 @@ class Tenant extends Model implements HasName
     protected $fillable = [
         'name',
         'slug',
+        'is_public',
     ];
 
     public function users(): BelongsToMany

@@ -5,7 +5,7 @@
                 <!-- Back Button -->
                 <div class="mb-6">
                     <router-link
-                        to="/vehicles"
+                        :to="`/${tenantSlug}/vehicles`"
                         class="inline-flex items-center text-blue-900 hover:text-blue-700 transition"
                     >
                         <svg
@@ -569,6 +569,7 @@ import api from "../services/api";
 
 const route = useRoute();
 const router = useRouter();
+const tenantSlug = route.params.tenantSlug as string;
 const vehicleId = route.params.id as string;
 
 const loading = ref(true);
@@ -679,7 +680,7 @@ const proceedToBooking = () => {
 
     // Pass booking data to booking page
     router.push({
-        path: `/booking/${vehicleId}`,
+        path: `/${tenantSlug}/booking/${vehicleId}`,
         query: {
             pickupDate: bookingDates.value.pickupDate,
             pickupTime: bookingDates.value.pickupTime,

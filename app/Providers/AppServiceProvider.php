@@ -21,8 +21,8 @@ class AppServiceProvider extends ServiceProvider
         // 綁定 Repository 接口到實現
         $this->app->bind(ReservationRepositoryInterface::class, EloquentReservationRepository::class);
 
-        // 註冊 TenantContext 作為單例
-        $this->app->singleton(\App\Support\TenantContext::class);
+        // Tenant context must not leak between requests in long-running workers.
+        $this->app->scoped(\App\Support\TenantContext::class);
     }
 
     /**

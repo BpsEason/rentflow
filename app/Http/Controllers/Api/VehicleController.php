@@ -217,19 +217,22 @@ class VehicleController extends Controller
     #[OA\Get(
         path: "/api/v1/public/vehicles",
         summary: "公開取得車輛列表",
-        description: "取得第一個租戶的所有可租用車輛列表，供前台公開存取",
+        description: "取得目前租戶的所有可租用車輛列表，供前台公開存取",
         tags: ["Vehicles"],
+        parameters: [
+            new OA\Parameter(name: "X-Tenant-Slug", in: "header", required: true, schema: new OA\Schema(type: "string"), description: "租戶唯一識別碼")
+        ],
         responses: [
-            new OA\Response(response: 200, description: "成功取得車輛列表", content: new OA\JsonContent(ref: "#/components/schemas/ApiSuccessResponse"))
+            new OA\Response(response: 200, description: "成功取得車輛列表", content: new OA\JsonContent(ref: "#/components/schemas/ApiSuccessResponse")),
+            new OA\Response(response: 403, description: "無法解析租戶資訊", content: new OA\JsonContent(ref: "#/components/schemas/ApiErrorResponse"))
         ]
     )]
     public function publicIndex(): JsonResponse
     {
-        // 公開端點預設使用第一個租戶（單租戶場景）
-        $tenant = Tenant::first();
+        $tenant = $this->tenantContext->getCurrentTenant();
 
         if (!$tenant) {
-            return ApiResponse::error('系統尚未設定任何租戶', null, [], 404);
+            return ApiResponse::error('無法解析租戶資訊，請確認租戶 slug 正確且租戶已開啟公開服務', null, [], 403);
         }
 
         // 只返回可用的車輛，包含定價資訊
@@ -253,20 +256,21 @@ class VehicleController extends Controller
         description: "取得指定車輛詳情，供前台公開存取",
         tags: ["Vehicles"],
         parameters: [
-            new OA\Parameter(name: "id", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+            new OA\Parameter(name: "id", in: "path", required: true, schema: new OA\Schema(type: "integer")),
+            new OA\Parameter(name: "X-Tenant-Slug", in: "header", required: true, schema: new OA\Schema(type: "string"), description: "租戶唯一識別碼")
         ],
         responses: [
             new OA\Response(response: 200, description: "成功取得車輛詳情", content: new OA\JsonContent(ref: "#/components/schemas/ApiSuccessResponse")),
+            new OA\Response(response: 403, description: "無法解析租戶資訊", content: new OA\JsonContent(ref: "#/components/schemas/ApiErrorResponse")),
             new OA\Response(response: 404, description: "車輛不存在", content: new OA\JsonContent(ref: "#/components/schemas/ApiErrorResponse"))
         ]
     )]
-    public function publicShow($id): JsonResponse
+    public function publicShow($tenantSlug, $id): JsonResponse
     {
-        // 公開端點預設使用第一個租戶（單租戶場景）
-        $tenant = Tenant::first();
+        $tenant = $this->tenantContext->getCurrentTenant();
 
         if (!$tenant) {
-            return ApiResponse::error('系統尚未設定任何租戶', null, [], 404);
+            return ApiResponse::error('無法解析租戶資訊，請確認租戶 slug 正確且租戶已開啟公開服務', null, [], 403);
         }
 
         $vehicle = Vehicle::where('tenant_id', $tenant->id)

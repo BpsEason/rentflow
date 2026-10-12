@@ -17,6 +17,25 @@ class TenantContext
         $this->currentTenant = $tenant;
     }
 
+    /** Resolve and validate the tenant selected by the public route. */
+    public function resolvePublicTenant(): ?Tenant
+    {
+        $tenantSlug = request()?->route('tenantSlug');
+        if (!$tenantSlug) {
+            return null;
+        }
+
+        $tenant = Tenant::where('slug', $tenantSlug)
+            ->where('is_public', true)
+            ->first();
+
+        if ($tenant) {
+            $this->setCurrentTenant($tenant);
+        }
+
+        return $tenant;
+    }
+
     /**
      * Get the current tenant
      */
@@ -37,6 +56,7 @@ class TenantContext
 
             $this->currentTenant = $user->tenants()->first();
 
+            // 保留管理端的Super Admin邏輯，但只在管理端認證環境下觸發
             if (!$this->currentTenant && $user->hasRole('Super Admin')) {
                 $this->currentTenant = Tenant::first();
             }

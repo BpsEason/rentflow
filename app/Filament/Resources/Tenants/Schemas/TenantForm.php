@@ -20,11 +20,11 @@ class TenantForm
                     ->icon('heroicon-o-building-office')
                     ->columnSpan([
                         'default' => 1,
-                        'lg' => 8,
+                        'lg' => 12,
                     ])
                     ->columns([
                         'default' => 1,
-                        'lg' => 2,
+                        'lg' => 3,
                     ])
                     ->schema([
                         TextInput::make('name')
@@ -40,6 +40,11 @@ class TenantForm
                             ->maxLength(255)
                             ->helperText('此識別碼將用於系統URL路由，請勿隨意修改')
                             ->placeholder('輸入系統識別碼'),
+
+                        \Filament\Forms\Components\Toggle::make('is_public')
+                            ->label('允許公開租車服務')
+                            ->helperText('開啟後此租戶的車輛將可在前台公開展示並接受訪客預約')
+                            ->default(false),
                     ]),
             ]);
     }

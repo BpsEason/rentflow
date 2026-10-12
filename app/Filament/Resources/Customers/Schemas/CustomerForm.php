@@ -6,6 +6,8 @@ use App\Filament\Resources\Shared\Concerns\HasDefaultFormLayout;
 use Filament\Schemas\Schema;
 use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Toggle;
 
 class CustomerForm
@@ -74,6 +76,50 @@ class CustomerForm
                             ->label('啟用狀態')
                             ->default(true)
                             ->helperText('關閉後客戶將無法建立新的預約'),
+                    ]),
+
+                Section::make('身分與駕駛資料')
+                    ->description('選填的身分及駕照資料')
+                    ->icon('heroicon-o-identification')
+                    ->columnSpanFull()
+                    ->columns([
+                        'default' => 1,
+                        'lg' => 2,
+                    ])
+                    ->schema([
+                        TextInput::make('id_number')
+                            ->label('身分證字號')
+                            ->maxLength(255)
+                            ->autocomplete(false),
+
+                        TextInput::make('license_number')
+                            ->label('駕照號碼')
+                            ->maxLength(255)
+                            ->autocomplete(false),
+
+                        DatePicker::make('license_expiry')
+                            ->label('駕照有效日期')
+                            ->native(false),
+                    ]),
+
+                Section::make('地址與緊急聯絡人')
+                    ->columnSpanFull()
+                    ->columns([
+                        'default' => 1,
+                        'lg' => 2,
+                    ])
+                    ->schema([
+                        Textarea::make('address')
+                            ->label('聯絡地址')
+                            ->columnSpanFull(),
+
+                        TextInput::make('emergency_contact_name')
+                            ->label('緊急聯絡人姓名')
+                            ->maxLength(255),
+
+                        TextInput::make('emergency_contact_phone')
+                            ->label('緊急聯絡人電話')
+                            ->maxLength(255),
                     ]),
             ]);
     }
