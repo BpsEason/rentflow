@@ -58,8 +58,6 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: "id", type: "integer", example: 1),
         new OA\Property(property: "name", type: "string", example: "管理員"),
         new OA\Property(property: "email", type: "string", format: "email", example: "admin@example.com"),
-        new OA\Property(property: "phone", type: "string", example: "0912345678"),
-        new OA\Property(property: "is_active", type: "boolean", example: true),
         new OA\Property(property: "created_at", type: "string", format: "date-time", example: "2024-01-01T00:00:00Z")
     ]
 )]

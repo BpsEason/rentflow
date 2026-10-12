@@ -12,9 +12,7 @@ use App\Support\ApiResponse;
 use App\Support\TenantContext;
 use Illuminate\Http\JsonResponse;
 
-/**
- * @OA\Tag(name="Orders", description="訂單管理與 Lifecycle 相關API")
- */
+#[OA\Tag(name: "Orders", description: "訂單管理與 Lifecycle 相關API")]
 class OrderController extends Controller
 {
     public function __construct(
@@ -32,20 +30,17 @@ class OrderController extends Controller
         });
     }
 
-    /**
-     * @OA\Get(
-     *     path="/api/v1/orders",
-     *     summary="取得訂單列表",
-     *     description="取得目前租戶的所有訂單列表",
-     *     tags={"Orders"},
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Response(
-     *         response=200,
-     *         description="成功取得訂單列表",
-     *         @OA\JsonContent(ref="#/components/schemas/ApiSuccessResponse")
-     *     )
-     * )
-     */
+    #[OA\Get(
+        path: "/api/v1/orders",
+        summary: "取得訂單列表",
+        description: "取得目前租戶的所有訂單列表",
+        tags: ["Orders"],
+        security: [["bearerAuth" => []]],
+        responses: [
+            new OA\Response(response: 200, description: "成功取得訂單列表", content: new OA\JsonContent(ref: "#/components/schemas/ApiSuccessResponse")),
+            new OA\Response(response: 401, description: "未授權", content: new OA\JsonContent(ref: "#/components/schemas/ApiErrorResponse"))
+        ]
+    )]
     public function index(): JsonResponse
     {
         $tenantId = $this->tenantContext->getCurrentTenantId();
@@ -57,28 +52,27 @@ class OrderController extends Controller
         );
     }
 
-    /**
-     * @OA\Post(
-     *     path="/api/v1/orders",
-     *     summary="建立訂單",
-     *     description="從現有已確認或已取車之預約建立訂單",
-     *     tags={"Orders"},
-     *     security={{"bearerAuth":{}}},
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             required={"reservation_id"},
-     *             @OA\Property(property="reservation_id", type="integer", example=1)
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=201,
-     *         description="建立訂單成功",
-     *         @OA\JsonContent(ref="#/components/schemas/ApiSuccessResponse")
-     *     ),
-     *     @OA\Response(response=409, description="預約狀態無效或訂單已存在")
-     * )
-     */
+    #[OA\Post(
+        path: "/api/v1/orders",
+        summary: "建立訂單",
+        description: "從現有已確認或已取車之預約建立訂單",
+        tags: ["Orders"],
+        security: [["bearerAuth" => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ["reservation_id"],
+                properties: [
+                    new OA\Property(property: "reservation_id", type: "integer", example: 1)
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 201, description: "建立訂單成功", content: new OA\JsonContent(ref: "#/components/schemas/ApiSuccessResponse")),
+            new OA\Response(response: 404, description: "預約不存在", content: new OA\JsonContent(ref: "#/components/schemas/ApiErrorResponse")),
+            new OA\Response(response: 409, description: "預約狀態無效或訂單已存在", content: new OA\JsonContent(ref: "#/components/schemas/ApiErrorResponse"))
+        ]
+    )]
     public function store(StoreOrderRequest $request): JsonResponse
     {
         $tenantId = $this->tenantContext->getCurrentTenantId();
@@ -105,22 +99,20 @@ class OrderController extends Controller
         }
     }
 
-    /**
-     * @OA\Get(
-     *     path="/api/v1/orders/{order}",
-     *     summary="取得單一訂單詳情",
-     *     description="取得指定訂單詳情",
-     *     tags={"Orders"},
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(name="order", in="path", required=true, @OA\Schema(type="integer")),
-     *     @OA\Response(
-     *         response=200,
-     *         description="成功取得訂單詳情",
-     *         @OA\JsonContent(ref="#/components/schemas/ApiSuccessResponse")
-     *     ),
-     *     @OA\Response(response=404, description="訂單不存在")
-     * )
-     */
+    #[OA\Get(
+        path: "/api/v1/orders/{order}",
+        summary: "取得單一訂單詳情",
+        description: "取得指定訂單詳情",
+        tags: ["Orders"],
+        security: [["bearerAuth" => []]],
+        parameters: [
+            new OA\Parameter(name: "order", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+        ],
+        responses: [
+            new OA\Response(response: 200, description: "成功取得訂單詳情", content: new OA\JsonContent(ref: "#/components/schemas/ApiSuccessResponse")),
+            new OA\Response(response: 404, description: "訂單不存在", content: new OA\JsonContent(ref: "#/components/schemas/ApiErrorResponse"))
+        ]
+    )]
     public function show($id): JsonResponse
     {
         $tenantId = $this->tenantContext->getCurrentTenantId();
@@ -136,18 +128,21 @@ class OrderController extends Controller
         );
     }
 
-    /**
-     * @OA\Post(
-     *     path="/api/v1/orders/{order}/confirm",
-     *     summary="確認訂單",
-     *     description="將待處理狀態的訂單轉為已確認",
-     *     tags={"Orders"},
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(name="order", in="path", required=true, @OA\Schema(type="integer")),
-     *     @OA\Response(response=200, description="確認訂單成功"),
-     *     @OA\Response(response=409, description="訂單狀態無法確認")
-     * )
-     */
+    #[OA\Post(
+        path: "/api/v1/orders/{order}/confirm",
+        summary: "確認訂單",
+        description: "將待處理狀態的訂單轉為已確認",
+        tags: ["Orders"],
+        security: [["bearerAuth" => []]],
+        parameters: [
+            new OA\Parameter(name: "order", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+        ],
+        responses: [
+            new OA\Response(response: 200, description: "確認訂單成功", content: new OA\JsonContent(ref: "#/components/schemas/ApiSuccessResponse")),
+            new OA\Response(response: 404, description: "訂單不存在", content: new OA\JsonContent(ref: "#/components/schemas/ApiErrorResponse")),
+            new OA\Response(response: 409, description: "訂單狀態無法確認", content: new OA\JsonContent(ref: "#/components/schemas/ApiErrorResponse"))
+        ]
+    )]
     public function confirm($id): JsonResponse
     {
         $tenantId = $this->tenantContext->getCurrentTenantId();
@@ -170,18 +165,21 @@ class OrderController extends Controller
         }
     }
 
-    /**
-     * @OA\Post(
-     *     path="/api/v1/orders/{order}/complete",
-     *     summary="完成訂單",
-     *     description="將已確認狀態的訂單轉為完成",
-     *     tags={"Orders"},
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(name="order", in="path", required=true, @OA\Schema(type="integer")),
-     *     @OA\Response(response=200, description="完成訂單成功"),
-     *     @OA\Response(response=409, description="訂單狀態無法完成")
-     * )
-     */
+    #[OA\Post(
+        path: "/api/v1/orders/{order}/complete",
+        summary: "完成訂單",
+        description: "將已確認狀態的訂單轉為完成",
+        tags: ["Orders"],
+        security: [["bearerAuth" => []]],
+        parameters: [
+            new OA\Parameter(name: "order", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+        ],
+        responses: [
+            new OA\Response(response: 200, description: "完成訂單成功", content: new OA\JsonContent(ref: "#/components/schemas/ApiSuccessResponse")),
+            new OA\Response(response: 404, description: "訂單不存在", content: new OA\JsonContent(ref: "#/components/schemas/ApiErrorResponse")),
+            new OA\Response(response: 409, description: "訂單狀態無法完成", content: new OA\JsonContent(ref: "#/components/schemas/ApiErrorResponse"))
+        ]
+    )]
     public function complete($id): JsonResponse
     {
         $tenantId = $this->tenantContext->getCurrentTenantId();
@@ -204,18 +202,21 @@ class OrderController extends Controller
         }
     }
 
-    /**
-     * @OA\Post(
-     *     path="/api/v1/orders/{order}/cancel",
-     *     summary="取消訂單",
-     *     description="將訂單轉為已取消",
-     *     tags={"Orders"},
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(name="order", in="path", required=true, @OA\Schema(type="integer")),
-     *     @OA\Response(response=200, description="取消訂單成功"),
-     *     @OA\Response(response=409, description="訂單狀態無法取消")
-     * )
-     */
+    #[OA\Post(
+        path: "/api/v1/orders/{order}/cancel",
+        summary: "取消訂單",
+        description: "將訂單轉為已取消",
+        tags: ["Orders"],
+        security: [["bearerAuth" => []]],
+        parameters: [
+            new OA\Parameter(name: "order", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+        ],
+        responses: [
+            new OA\Response(response: 200, description: "取消訂單成功", content: new OA\JsonContent(ref: "#/components/schemas/ApiSuccessResponse")),
+            new OA\Response(response: 404, description: "訂單不存在", content: new OA\JsonContent(ref: "#/components/schemas/ApiErrorResponse")),
+            new OA\Response(response: 409, description: "訂單狀態無法取消", content: new OA\JsonContent(ref: "#/components/schemas/ApiErrorResponse"))
+        ]
+    )]
     public function cancel($id): JsonResponse
     {
         $tenantId = $this->tenantContext->getCurrentTenantId();

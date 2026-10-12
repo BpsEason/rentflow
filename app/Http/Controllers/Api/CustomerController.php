@@ -132,6 +132,20 @@ class CustomerController extends Controller
             new OA\Response(response: 404, description: "客戶不存在")
         ]
     )]
+    #[OA\Patch(
+        path: "/api/v1/customers/{customer}",
+        summary: "部分更新客戶資訊",
+        description: "部分更新指定客戶資訊",
+        tags: ["Customers"],
+        security: [["bearerAuth" => []]],
+        parameters: [
+            new OA\Parameter(name: "customer", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+        ],
+        responses: [
+            new OA\Response(response: 200, description: "更新客戶成功", content: new OA\JsonContent(ref: "#/components/schemas/ApiSuccessResponse")),
+            new OA\Response(response: 404, description: "客戶不存在")
+        ]
+    )]
     public function update(UpdateCustomerRequest $request, $id): JsonResponse
     {
         $tenantId = $this->tenantContext->getCurrentTenantId();

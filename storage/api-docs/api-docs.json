@@ -388,6 +388,1299 @@
                         "bearerAuth": []
                     }
                 ]
+            },
+            "patch": {
+                "tags": [
+                    "Customers"
+                ],
+                "summary": "部分更新客戶資訊",
+                "description": "部分更新指定客戶資訊",
+                "operationId": "7a5f4e07f79a78319a3e51062475b3af",
+                "parameters": [
+                    {
+                        "name": "customer",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "更新客戶成功",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "客戶不存在"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/orders": {
+            "get": {
+                "tags": [
+                    "Orders"
+                ],
+                "summary": "取得訂單列表",
+                "description": "取得目前租戶的所有訂單列表",
+                "operationId": "6390e58970c6b576bd8c1ec198cb5fbb",
+                "responses": {
+                    "200": {
+                        "description": "成功取得訂單列表",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "未授權",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Orders"
+                ],
+                "summary": "建立訂單",
+                "description": "從現有已確認或已取車之預約建立訂單",
+                "operationId": "8cb746eb001b58ac915930ba43cfdf0d",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "reservation_id"
+                                ],
+                                "properties": {
+                                    "reservation_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "建立訂單成功",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "預約不存在",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "預約狀態無效或訂單已存在",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/orders/{order}": {
+            "get": {
+                "tags": [
+                    "Orders"
+                ],
+                "summary": "取得單一訂單詳情",
+                "description": "取得指定訂單詳情",
+                "operationId": "29e4676537faf0c969a79eb39e944a39",
+                "parameters": [
+                    {
+                        "name": "order",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功取得訂單詳情",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "訂單不存在",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/orders/{order}/confirm": {
+            "post": {
+                "tags": [
+                    "Orders"
+                ],
+                "summary": "確認訂單",
+                "description": "將待處理狀態的訂單轉為已確認",
+                "operationId": "f6e7f093b23447e5780d68683daef9a6",
+                "parameters": [
+                    {
+                        "name": "order",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "確認訂單成功",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "訂單不存在",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "訂單狀態無法確認",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/orders/{order}/complete": {
+            "post": {
+                "tags": [
+                    "Orders"
+                ],
+                "summary": "完成訂單",
+                "description": "將已確認狀態的訂單轉為完成",
+                "operationId": "4ef77bba2500af59336f68132740bdf3",
+                "parameters": [
+                    {
+                        "name": "order",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "完成訂單成功",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "訂單不存在",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "訂單狀態無法完成",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/orders/{order}/cancel": {
+            "post": {
+                "tags": [
+                    "Orders"
+                ],
+                "summary": "取消訂單",
+                "description": "將訂單轉為已取消",
+                "operationId": "65b310314f60aa35656c74ebbf2abf8a",
+                "parameters": [
+                    {
+                        "name": "order",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "取消訂單成功",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "訂單不存在",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "訂單狀態無法取消",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/reservations": {
+            "get": {
+                "tags": [
+                    "Reservations"
+                ],
+                "summary": "取得所有預約",
+                "description": "取得目前租戶的所有預約列表",
+                "operationId": "169bc8b1fc95ea4eff86fe5205d19f71",
+                "responses": {
+                    "200": {
+                        "description": "成功取得預約列表",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "未授權",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Reservations"
+                ],
+                "summary": "創建新預約",
+                "description": "建立一個新的車輛預約",
+                "operationId": "31c25fe18e70ad373bed0ec678b08388",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "vehicle_id",
+                                    "customer_id",
+                                    "start_date",
+                                    "end_date"
+                                ],
+                                "properties": {
+                                    "vehicle_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "customer_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "start_date": {
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "example": "2024-01-01T10:00:00Z"
+                                    },
+                                    "end_date": {
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "example": "2024-01-05T10:00:00Z"
+                                    },
+                                    "notes": {
+                                        "type": "string",
+                                        "example": "需要兒童座椅"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "預約創建成功",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "車輛時間衝突",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "驗證錯誤",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/reservations/{reservation}": {
+            "get": {
+                "tags": [
+                    "Reservations"
+                ],
+                "summary": "取得單一預約詳情",
+                "description": "取得指定預約的詳細資訊",
+                "operationId": "6ff2746881c604013f3d6e0fe6d37c3c",
+                "parameters": [
+                    {
+                        "name": "reservation",
+                        "in": "path",
+                        "description": "預約ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功取得預約詳情",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "預約不存在",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/reservations/{reservation}/confirm": {
+            "post": {
+                "tags": [
+                    "Reservations"
+                ],
+                "summary": "確認預約",
+                "description": "將待確認的預約標記為已確認",
+                "operationId": "380d69e36b51057711d47f223bd549dd",
+                "parameters": [
+                    {
+                        "name": "reservation",
+                        "in": "path",
+                        "description": "預約ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "預約確認成功",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "預約狀態無法確認",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/reservations/{reservation}/cancel": {
+            "post": {
+                "tags": [
+                    "Reservations"
+                ],
+                "summary": "取消預約",
+                "description": "取消現有預約",
+                "operationId": "d911e59aac7fcf65e67f848c906956a9",
+                "parameters": [
+                    {
+                        "name": "reservation",
+                        "in": "path",
+                        "description": "預約ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "reason": {
+                                        "type": "string",
+                                        "example": "客戶取消行程"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "預約取消成功",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "預約狀態無法取消",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/reservations/{reservation}/pickup": {
+            "post": {
+                "tags": [
+                    "Reservations"
+                ],
+                "summary": "辦理取車",
+                "description": "將已確認的預約標記為已取車",
+                "operationId": "043199263854617ffcbadcf8a29737c2",
+                "parameters": [
+                    {
+                        "name": "reservation",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "取車成功",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "預約不存在",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "預約狀態無效",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/reservations/{reservation}/return": {
+            "post": {
+                "tags": [
+                    "Reservations"
+                ],
+                "summary": "辦理歸還",
+                "description": "將已取車的預約標記為已歸還",
+                "operationId": "af5909e01044745783056dc632894d67",
+                "parameters": [
+                    {
+                        "name": "reservation",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "歸還成功",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "預約不存在",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "預約狀態無效",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/vehicles": {
+            "get": {
+                "tags": [
+                    "Vehicles"
+                ],
+                "summary": "取得車輛列表",
+                "description": "取得目前租戶的所有車輛列表",
+                "operationId": "10efb9c44d1ac573e8f8062b0da56b39",
+                "responses": {
+                    "200": {
+                        "description": "成功取得車輛列表",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Vehicles"
+                ],
+                "summary": "建立車輛",
+                "description": "建立新車輛",
+                "operationId": "fa4da63b949121411c0d7246cc826c0c",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "plate_number"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Toyota Altis"
+                                    },
+                                    "plate_number": {
+                                        "type": "string",
+                                        "example": "ABC-1234"
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "example": "AVAILABLE"
+                                    },
+                                    "seats": {
+                                        "type": "integer",
+                                        "example": 5
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "舒適轎車"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "建立車輛成功",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/vehicles/{vehicle}": {
+            "get": {
+                "tags": [
+                    "Vehicles"
+                ],
+                "summary": "取得單一車輛詳情",
+                "description": "取得指定車輛詳情",
+                "operationId": "accd7f140295acc8ba9691a73a675df4",
+                "parameters": [
+                    {
+                        "name": "vehicle",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功取得車輛詳情",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "車輛不存在",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Vehicles"
+                ],
+                "summary": "更新車輛資訊",
+                "description": "更新指定車輛資訊",
+                "operationId": "4066da2c4c1f8e2b0d5c79c681694746",
+                "parameters": [
+                    {
+                        "name": "vehicle",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "更新車輛成功",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "車輛不存在",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Vehicles"
+                ],
+                "summary": "刪除車輛",
+                "description": "刪除指定車輛",
+                "operationId": "20ad6af0320b021a4f9ea91c990b8397",
+                "parameters": [
+                    {
+                        "name": "vehicle",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "刪除車輛成功",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "車輛不存在",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "patch": {
+                "tags": [
+                    "Vehicles"
+                ],
+                "summary": "部分更新車輛資訊",
+                "description": "部分更新指定車輛資訊",
+                "operationId": "7811b9172b063f3f6ed70d840ed61d1a",
+                "parameters": [
+                    {
+                        "name": "vehicle",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "更新車輛成功",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "車輛不存在",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/vehicle-pricings": {
+            "get": {
+                "tags": [
+                    "Vehicle Pricings"
+                ],
+                "summary": "取得車輛定價列表",
+                "description": "取得目前租戶的所有車輛定價列表",
+                "operationId": "466bade59e40f27fc4a64b7736927a79",
+                "responses": {
+                    "200": {
+                        "description": "成功取得車輛定價列表",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Vehicle Pricings"
+                ],
+                "summary": "建立車輛定價",
+                "description": "建立車輛定價設定",
+                "operationId": "239a55cf9f84387be0534f6370e94e9b",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "vehicle_id",
+                                    "weekday_price",
+                                    "weekend_price",
+                                    "holiday_price"
+                                ],
+                                "properties": {
+                                    "vehicle_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "weekday_price": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 1500
+                                    },
+                                    "weekend_price": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 2000
+                                    },
+                                    "holiday_price": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 2500
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "建立車輛定價成功",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/vehicle-pricings/{vehicle_pricing}": {
+            "get": {
+                "tags": [
+                    "Vehicle Pricings"
+                ],
+                "summary": "取得單一車輛定價詳情",
+                "description": "取得指定車輛定價詳情",
+                "operationId": "8ca41b81684a93a917c13870c24919ca",
+                "parameters": [
+                    {
+                        "name": "vehicle_pricing",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功取得車輛定價詳情",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "車輛定價不存在",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Vehicle Pricings"
+                ],
+                "summary": "更新車輛定價資訊",
+                "description": "更新指定車輛定價資訊",
+                "operationId": "99ba41ead9ef6cea8dedefc07f480dc4",
+                "parameters": [
+                    {
+                        "name": "vehicle_pricing",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "更新車輛定價成功",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "車輛定價不存在",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Vehicle Pricings"
+                ],
+                "summary": "刪除車輛定價",
+                "description": "刪除指定車輛定價",
+                "operationId": "10332b6fbe20e72b13d2ea984b4e31ff",
+                "parameters": [
+                    {
+                        "name": "vehicle_pricing",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "刪除車輛定價成功",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "車輛定價不存在",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "patch": {
+                "tags": [
+                    "Vehicle Pricings"
+                ],
+                "summary": "部分更新車輛定價資訊",
+                "description": "部分更新指定車輛定價資訊",
+                "operationId": "42f4ad6ff4947635c561173c594f8ec4",
+                "parameters": [
+                    {
+                        "name": "vehicle_pricing",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "更新車輛定價成功",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "車輛定價不存在",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         }
     },
@@ -475,14 +1768,6 @@
                         "format": "email",
                         "example": "admin@example.com"
                     },
-                    "phone": {
-                        "type": "string",
-                        "example": "0912345678"
-                    },
-                    "is_active": {
-                        "type": "boolean",
-                        "example": true
-                    },
                     "created_at": {
                         "type": "string",
                         "format": "date-time",
@@ -524,6 +1809,22 @@
         {
             "name": "Customers",
             "description": "客戶管理相關API"
+        },
+        {
+            "name": "Orders",
+            "description": "訂單管理與 Lifecycle 相關API"
+        },
+        {
+            "name": "Reservations",
+            "description": "預約管理相關API"
+        },
+        {
+            "name": "Vehicles",
+            "description": "車輛管理相關API"
+        },
+        {
+            "name": "Vehicle Pricings",
+            "description": "車輛定價管理相關API"
         },
         {
             "name": "Authentication",

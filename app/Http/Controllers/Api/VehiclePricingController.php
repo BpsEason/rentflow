@@ -13,9 +13,7 @@ use App\Support\ApiResponse;
 use App\Support\TenantContext;
 use Illuminate\Http\JsonResponse;
 
-/**
- * @OA\Tag(name="Vehicle Pricings", description="車輛定價管理相關API")
- */
+#[OA\Tag(name: "Vehicle Pricings", description: "車輛定價管理相關API")]
 class VehiclePricingController extends Controller
 {
     public function __construct(
@@ -33,20 +31,16 @@ class VehiclePricingController extends Controller
         });
     }
 
-    /**
-     * @OA\Get(
-     *     path="/api/v1/vehicle-pricings",
-     *     summary="取得車輛定價列表",
-     *     description="取得目前租戶的所有車輛定價列表",
-     *     tags={"Vehicle Pricings"},
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Response(
-     *         response=200,
-     *         description="成功取得車輛定價列表",
-     *         @OA\JsonContent(ref="#/components/schemas/ApiSuccessResponse")
-     *     )
-     * )
-     */
+    #[OA\Get(
+        path: "/api/v1/vehicle-pricings",
+        summary: "取得車輛定價列表",
+        description: "取得目前租戶的所有車輛定價列表",
+        tags: ["Vehicle Pricings"],
+        security: [["bearerAuth" => []]],
+        responses: [
+            new OA\Response(response: 200, description: "成功取得車輛定價列表", content: new OA\JsonContent(ref: "#/components/schemas/ApiSuccessResponse"))
+        ]
+    )]
     public function index(): JsonResponse
     {
         $tenantId = $this->tenantContext->getCurrentTenantId();
@@ -58,30 +52,28 @@ class VehiclePricingController extends Controller
         );
     }
 
-    /**
-     * @OA\Post(
-     *     path="/api/v1/vehicle-pricings",
-     *     summary="建立車輛定價",
-     *     description="建立車輛定價設定",
-     *     tags={"Vehicle Pricings"},
-     *     security={{"bearerAuth":{}}},
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             required={"vehicle_id","weekday_price","weekend_price","holiday_price"},
-     *             @OA\Property(property="vehicle_id", type="integer", example=1),
-     *             @OA\Property(property="weekday_price", type="number", format="float", example=1500.00),
-     *             @OA\Property(property="weekend_price", type="number", format="float", example=2000.00),
-     *             @OA\Property(property="holiday_price", type="number", format="float", example=2500.00)
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=201,
-     *         description="建立車輛定價成功",
-     *         @OA\JsonContent(ref="#/components/schemas/ApiSuccessResponse")
-     *     )
-     * )
-     */
+    #[OA\Post(
+        path: "/api/v1/vehicle-pricings",
+        summary: "建立車輛定價",
+        description: "建立車輛定價設定",
+        tags: ["Vehicle Pricings"],
+        security: [["bearerAuth" => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ["vehicle_id", "weekday_price", "weekend_price", "holiday_price"],
+                properties: [
+                    new OA\Property(property: "vehicle_id", type: "integer", example: 1),
+                    new OA\Property(property: "weekday_price", type: "number", format: "float", example: 1500.00),
+                    new OA\Property(property: "weekend_price", type: "number", format: "float", example: 2000.00),
+                    new OA\Property(property: "holiday_price", type: "number", format: "float", example: 2500.00)
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 201, description: "建立車輛定價成功", content: new OA\JsonContent(ref: "#/components/schemas/ApiSuccessResponse"))
+        ]
+    )]
     public function store(StoreVehiclePricingRequest $request): JsonResponse
     {
         $tenantId = $this->tenantContext->getCurrentTenantId();
@@ -107,22 +99,20 @@ class VehiclePricingController extends Controller
         );
     }
 
-    /**
-     * @OA\Get(
-     *     path="/api/v1/vehicle-pricings/{vehiclePricing}",
-     *     summary="取得單一車輛定價詳情",
-     *     description="取得指定車輛定價詳情",
-     *     tags={"Vehicle Pricings"},
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(name="vehiclePricing", in="path", required=true, @OA\Schema(type="integer")),
-     *     @OA\Response(
-     *         response=200,
-     *         description="成功取得車輛定價詳情",
-     *         @OA\JsonContent(ref="#/components/schemas/ApiSuccessResponse")
-     *     ),
-     *     @OA\Response(response=404, description="車輛定價不存在")
-     * )
-     */
+    #[OA\Get(
+        path: "/api/v1/vehicle-pricings/{vehicle_pricing}",
+        summary: "取得單一車輛定價詳情",
+        description: "取得指定車輛定價詳情",
+        tags: ["Vehicle Pricings"],
+        security: [["bearerAuth" => []]],
+        parameters: [
+            new OA\Parameter(name: "vehicle_pricing", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+        ],
+        responses: [
+            new OA\Response(response: 200, description: "成功取得車輛定價詳情", content: new OA\JsonContent(ref: "#/components/schemas/ApiSuccessResponse")),
+            new OA\Response(response: 404, description: "車輛定價不存在", content: new OA\JsonContent(ref: "#/components/schemas/ApiErrorResponse"))
+        ]
+    )]
     public function show($id): JsonResponse
     {
         $tenantId = $this->tenantContext->getCurrentTenantId();
@@ -138,22 +128,34 @@ class VehiclePricingController extends Controller
         );
     }
 
-    /**
-     * @OA\Put(
-     *     path="/api/v1/vehicle-pricings/{vehiclePricing}",
-     *     summary="更新車輛定價資訊",
-     *     description="更新指定車輛定價資訊",
-     *     tags={"Vehicle Pricings"},
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(name="vehiclePricing", in="path", required=true, @OA\Schema(type="integer")),
-     *     @OA\Response(
-     *         response=200,
-     *         description="更新車輛定價成功",
-     *         @OA\JsonContent(ref="#/components/schemas/ApiSuccessResponse")
-     *     ),
-     *     @OA\Response(response=404, description="車輛定價不存在")
-     * )
-     */
+    #[OA\Put(
+        path: "/api/v1/vehicle-pricings/{vehicle_pricing}",
+        summary: "更新車輛定價資訊",
+        description: "更新指定車輛定價資訊",
+        tags: ["Vehicle Pricings"],
+        security: [["bearerAuth" => []]],
+        parameters: [
+            new OA\Parameter(name: "vehicle_pricing", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+        ],
+        responses: [
+            new OA\Response(response: 200, description: "更新車輛定價成功", content: new OA\JsonContent(ref: "#/components/schemas/ApiSuccessResponse")),
+            new OA\Response(response: 404, description: "車輛定價不存在", content: new OA\JsonContent(ref: "#/components/schemas/ApiErrorResponse"))
+        ]
+    )]
+    #[OA\Patch(
+        path: "/api/v1/vehicle-pricings/{vehicle_pricing}",
+        summary: "部分更新車輛定價資訊",
+        description: "部分更新指定車輛定價資訊",
+        tags: ["Vehicle Pricings"],
+        security: [["bearerAuth" => []]],
+        parameters: [
+            new OA\Parameter(name: "vehicle_pricing", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+        ],
+        responses: [
+            new OA\Response(response: 200, description: "更新車輛定價成功", content: new OA\JsonContent(ref: "#/components/schemas/ApiSuccessResponse")),
+            new OA\Response(response: 404, description: "車輛定價不存在", content: new OA\JsonContent(ref: "#/components/schemas/ApiErrorResponse"))
+        ]
+    )]
     public function update(UpdateVehiclePricingRequest $request, $id): JsonResponse
     {
         $tenantId = $this->tenantContext->getCurrentTenantId();
@@ -171,18 +173,20 @@ class VehiclePricingController extends Controller
         );
     }
 
-    /**
-     * @OA\Delete(
-     *     path="/api/v1/vehicle-pricings/{vehiclePricing}",
-     *     summary="刪除車輛定價",
-     *     description="刪除指定車輛定價",
-     *     tags={"Vehicle Pricings"},
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(name="vehiclePricing", in="path", required=true, @OA\Schema(type="integer")),
-     *     @OA\Response(response=200, description="刪除車輛定價成功"),
-     *     @OA\Response(response=404, description="車輛定價不存在")
-     * )
-     */
+    #[OA\Delete(
+        path: "/api/v1/vehicle-pricings/{vehicle_pricing}",
+        summary: "刪除車輛定價",
+        description: "刪除指定車輛定價",
+        tags: ["Vehicle Pricings"],
+        security: [["bearerAuth" => []]],
+        parameters: [
+            new OA\Parameter(name: "vehicle_pricing", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+        ],
+        responses: [
+            new OA\Response(response: 200, description: "刪除車輛定價成功", content: new OA\JsonContent(ref: "#/components/schemas/ApiSuccessResponse")),
+            new OA\Response(response: 404, description: "車輛定價不存在", content: new OA\JsonContent(ref: "#/components/schemas/ApiErrorResponse"))
+        ]
+    )]
     public function destroy($id): JsonResponse
     {
         $tenantId = $this->tenantContext->getCurrentTenantId();

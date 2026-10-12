@@ -18,9 +18,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
 use Illuminate\Http\Request;
 
-/**
- * @OA\Tag(name="Reservations", description="預約管理相關API")
- */
+#[OA\Tag(name: "Reservations", description: "預約管理相關API")]
 class ReservationsController extends Controller
 {
     public function __construct(
@@ -39,25 +37,17 @@ class ReservationsController extends Controller
         });
     }
 
-    /**
-     * @OA\Get(
-     *     path="/api/v1/reservations",
-     *     summary="取得所有預約",
-     *     description="取得目前租戶的所有預約列表",
-     *     tags={"Reservations"},
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Response(
-     *         response=200,
-     *         description="成功取得預約列表",
-     *         @OA\JsonContent(ref="#/components/schemas/ApiSuccessResponse")
-     *     ),
-     *     @OA\Response(
-     *         response=401,
-     *         description="未授權",
-     *         @OA\JsonContent(ref="#/components/schemas/ApiErrorResponse")
-     *     )
-     * )
-     */
+    #[OA\Get(
+        path: "/api/v1/reservations",
+        summary: "取得所有預約",
+        description: "取得目前租戶的所有預約列表",
+        tags: ["Reservations"],
+        security: [["bearerAuth" => []]],
+        responses: [
+            new OA\Response(response: 200, description: "成功取得預約列表", content: new OA\JsonContent(ref: "#/components/schemas/ApiSuccessResponse")),
+            new OA\Response(response: 401, description: "未授權", content: new OA\JsonContent(ref: "#/components/schemas/ApiErrorResponse"))
+        ]
+    )]
     public function index(ReservationRepositoryInterface $reservationRepository): JsonResponse
     {
         $tenantId = $this->tenantContext->getCurrentTenantId();
@@ -69,32 +59,20 @@ class ReservationsController extends Controller
         );
     }
 
-    /**
-     * @OA\Get(
-     *     path="/api/v1/reservations/{reservation}",
-     *     summary="取得單一預約詳情",
-     *     description="取得指定預約的詳細資訊",
-     *     tags={"Reservations"},
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(
-     *         name="reservation",
-     *         in="path",
-     *         required=true,
-     *         description="預約ID",
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="成功取得預約詳情",
-     *         @OA\JsonContent(ref="#/components/schemas/ApiSuccessResponse")
-     *     ),
-     *     @OA\Response(
-     *         response=404,
-     *         description="預約不存在",
-     *         @OA\JsonContent(ref="#/components/schemas/ApiErrorResponse")
-     *     )
-     * )
-     */
+    #[OA\Get(
+        path: "/api/v1/reservations/{reservation}",
+        summary: "取得單一預約詳情",
+        description: "取得指定預約的詳細資訊",
+        tags: ["Reservations"],
+        security: [["bearerAuth" => []]],
+        parameters: [
+            new OA\Parameter(name: "reservation", in: "path", required: true, description: "預約ID", schema: new OA\Schema(type: "integer"))
+        ],
+        responses: [
+            new OA\Response(response: 200, description: "成功取得預約詳情", content: new OA\JsonContent(ref: "#/components/schemas/ApiSuccessResponse")),
+            new OA\Response(response: 404, description: "預約不存在", content: new OA\JsonContent(ref: "#/components/schemas/ApiErrorResponse"))
+        ]
+    )]
     public function show($reservationId, ReservationRepositoryInterface $reservationRepository): JsonResponse
     {
         $tenantId = $this->tenantContext->getCurrentTenantId();
@@ -110,41 +88,31 @@ class ReservationsController extends Controller
         );
     }
 
-    /**
-     * @OA\Post(
-     *     path="/api/v1/reservations",
-     *     summary="創建新預約",
-     *     description="建立一個新的車輛預約",
-     *     tags={"Reservations"},
-     *     security={{"bearerAuth":{}}},
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             required={"vehicle_id","customer_id","start_date","end_date"},
-     *             @OA\Property(property="vehicle_id", type="integer", example=1),
-     *             @OA\Property(property="customer_id", type="integer", example=1),
-     *             @OA\Property(property="start_date", type="string", format="date-time", example="2024-01-01T10:00:00Z"),
-     *             @OA\Property(property="end_date", type="string", format="date-time", example="2024-01-05T10:00:00Z"),
-     *             @OA\Property(property="notes", type="string", example="需要兒童座椅")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=201,
-     *         description="預約創建成功",
-     *         @OA\JsonContent(ref="#/components/schemas/ApiSuccessResponse")
-     *     ),
-     *     @OA\Response(
-     *         response=409,
-     *         description="車輛時間衝突",
-     *         @OA\JsonContent(ref="#/components/schemas/ApiErrorResponse")
-     *     ),
-     *     @OA\Response(
-     *         response=422,
-     *         description="驗證錯誤",
-     *         @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse")
-     *     )
-     * )
-     */
+    #[OA\Post(
+        path: "/api/v1/reservations",
+        summary: "創建新預約",
+        description: "建立一個新的車輛預約",
+        tags: ["Reservations"],
+        security: [["bearerAuth" => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ["vehicle_id", "customer_id", "start_date", "end_date"],
+                properties: [
+                    new OA\Property(property: "vehicle_id", type: "integer", example: 1),
+                    new OA\Property(property: "customer_id", type: "integer", example: 1),
+                    new OA\Property(property: "start_date", type: "string", format: "date-time", example: "2024-01-01T10:00:00Z"),
+                    new OA\Property(property: "end_date", type: "string", format: "date-time", example: "2024-01-05T10:00:00Z"),
+                    new OA\Property(property: "notes", type: "string", example: "需要兒童座椅")
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 201, description: "預約創建成功", content: new OA\JsonContent(ref: "#/components/schemas/ApiSuccessResponse")),
+            new OA\Response(response: 409, description: "車輛時間衝突", content: new OA\JsonContent(ref: "#/components/schemas/ApiErrorResponse")),
+            new OA\Response(response: 422, description: "驗證錯誤", content: new OA\JsonContent(ref: "#/components/schemas/ValidationErrorResponse"))
+        ]
+    )]
     public function store(CreateReservationRequest $request, CreateReservation $useCase): JsonResponse
     {
         try {
@@ -167,32 +135,20 @@ class ReservationsController extends Controller
         }
     }
 
-    /**
-     * @OA\Post(
-     *     path="/api/v1/reservations/{reservation}/confirm",
-     *     summary="確認預約",
-     *     description="將待確認的預約標記為已確認",
-     *     tags={"Reservations"},
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(
-     *         name="reservation",
-     *         in="path",
-     *         required=true,
-     *         description="預約ID",
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="預約確認成功",
-     *         @OA\JsonContent(ref="#/components/schemas/ApiSuccessResponse")
-     *     ),
-     *     @OA\Response(
-     *         response=409,
-     *         description="預約狀態無法確認",
-     *         @OA\JsonContent(ref="#/components/schemas/ApiErrorResponse")
-     *     )
-     * )
-     */
+    #[OA\Post(
+        path: "/api/v1/reservations/{reservation}/confirm",
+        summary: "確認預約",
+        description: "將待確認的預約標記為已確認",
+        tags: ["Reservations"],
+        security: [["bearerAuth" => []]],
+        parameters: [
+            new OA\Parameter(name: "reservation", in: "path", required: true, description: "預約ID", schema: new OA\Schema(type: "integer"))
+        ],
+        responses: [
+            new OA\Response(response: 200, description: "預約確認成功", content: new OA\JsonContent(ref: "#/components/schemas/ApiSuccessResponse")),
+            new OA\Response(response: 409, description: "預約狀態無法確認", content: new OA\JsonContent(ref: "#/components/schemas/ApiErrorResponse"))
+        ]
+    )]
     public function confirm($reservationId, ConfirmReservation $useCase): JsonResponse
     {
         try {
@@ -208,37 +164,27 @@ class ReservationsController extends Controller
         }
     }
 
-    /**
-     * @OA\Post(
-     *     path="/api/v1/reservations/{reservation}/cancel",
-     *     summary="取消預約",
-     *     description="取消現有預約",
-     *     tags={"Reservations"},
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(
-     *         name="reservation",
-     *         in="path",
-     *         required=true,
-     *         description="預約ID",
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\RequestBody(
-     *         @OA\JsonContent(
-     *             @OA\Property(property="reason", type="string", example="客戶取消行程")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="預約取消成功",
-     *         @OA\JsonContent(ref="#/components/schemas/ApiSuccessResponse")
-     *     ),
-     *     @OA\Response(
-     *         response=409,
-     *         description="預約狀態無法取消",
-     *         @OA\JsonContent(ref="#/components/schemas/ApiErrorResponse")
-     *     )
-     * )
-     */
+    #[OA\Post(
+        path: "/api/v1/reservations/{reservation}/cancel",
+        summary: "取消預約",
+        description: "取消現有預約",
+        tags: ["Reservations"],
+        security: [["bearerAuth" => []]],
+        parameters: [
+            new OA\Parameter(name: "reservation", in: "path", required: true, description: "預約ID", schema: new OA\Schema(type: "integer"))
+        ],
+        requestBody: new OA\RequestBody(
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: "reason", type: "string", example: "客戶取消行程")
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: "預約取消成功", content: new OA\JsonContent(ref: "#/components/schemas/ApiSuccessResponse")),
+            new OA\Response(response: 409, description: "預約狀態無法取消", content: new OA\JsonContent(ref: "#/components/schemas/ApiErrorResponse"))
+        ]
+    )]
     public function cancel($reservationId, CancelReservation $useCase, Request $request): JsonResponse
     {
         try {
@@ -255,18 +201,21 @@ class ReservationsController extends Controller
         }
     }
 
-    /**
-     * @OA\Post(
-     *     path="/api/v1/reservations/{reservation}/pickup",
-     *     summary="辦理取車",
-     *     description="將已確認的預約標記為已取車",
-     *     tags={"Reservations"},
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(name="reservation", in="path", required=true, @OA\Schema(type="integer")),
-     *     @OA\Response(response=200, description="取車成功"),
-     *     @OA\Response(response=409, description="預約狀態無效")
-     * )
-     */
+    #[OA\Post(
+        path: "/api/v1/reservations/{reservation}/pickup",
+        summary: "辦理取車",
+        description: "將已確認的預約標記為已取車",
+        tags: ["Reservations"],
+        security: [["bearerAuth" => []]],
+        parameters: [
+            new OA\Parameter(name: "reservation", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+        ],
+        responses: [
+            new OA\Response(response: 200, description: "取車成功", content: new OA\JsonContent(ref: "#/components/schemas/ApiSuccessResponse")),
+            new OA\Response(response: 404, description: "預約不存在", content: new OA\JsonContent(ref: "#/components/schemas/ApiErrorResponse")),
+            new OA\Response(response: 409, description: "預約狀態無效", content: new OA\JsonContent(ref: "#/components/schemas/ApiErrorResponse"))
+        ]
+    )]
     public function pickup($reservationId, ReservationRepositoryInterface $reservationRepository): JsonResponse
     {
         $tenantId = $this->tenantContext->getCurrentTenantId();
@@ -289,18 +238,21 @@ class ReservationsController extends Controller
         }
     }
 
-    /**
-     * @OA\Post(
-     *     path="/api/v1/reservations/{reservation}/return",
-     *     summary="辦理歸還",
-     *     description="將已取車的預約標記為已歸還",
-     *     tags={"Reservations"},
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(name="reservation", in="path", required=true, @OA\Schema(type="integer")),
-     *     @OA\Response(response=200, description="歸還成功"),
-     *     @OA\Response(response=409, description="預約狀態無效")
-     * )
-     */
+    #[OA\Post(
+        path: "/api/v1/reservations/{reservation}/return",
+        summary: "辦理歸還",
+        description: "將已取車的預約標記為已歸還",
+        tags: ["Reservations"],
+        security: [["bearerAuth" => []]],
+        parameters: [
+            new OA\Parameter(name: "reservation", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+        ],
+        responses: [
+            new OA\Response(response: 200, description: "歸還成功", content: new OA\JsonContent(ref: "#/components/schemas/ApiSuccessResponse")),
+            new OA\Response(response: 404, description: "預約不存在", content: new OA\JsonContent(ref: "#/components/schemas/ApiErrorResponse")),
+            new OA\Response(response: 409, description: "預約狀態無效", content: new OA\JsonContent(ref: "#/components/schemas/ApiErrorResponse"))
+        ]
+    )]
     public function return($reservationId, ReservationRepositoryInterface $reservationRepository): JsonResponse
     {
         $tenantId = $this->tenantContext->getCurrentTenantId();
