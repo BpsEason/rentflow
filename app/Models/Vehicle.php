@@ -22,7 +22,20 @@ class Vehicle extends Model
         'status',
         'seats',
         'description',
+        'image',
     ];
+
+    /**
+     * Get the full URL for the vehicle image
+     */
+    public function getImageUrlAttribute()
+    {
+        if ($this->image) {
+            return asset('storage/' . $this->image);
+        }
+
+        return null;
+    }
 
     public function tenant(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {

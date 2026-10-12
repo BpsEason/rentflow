@@ -13,6 +13,23 @@ class VehicleSeeder extends Seeder
      */
     public function run(): void
     {
+        // 車型與圖片的對應表 - 每個車型對應一張固定的圖片
+        $vehicleImageMap = [
+            'Toyota Yaris' => 'vehicles/toyota-yaris.jpg',
+            'Toyota Corolla Altis' => 'vehicles/toyota-corolla-altis.jpg',
+            'Toyota Corolla Cross' => 'vehicles/toyota-corolla-cross.jpg',
+            'Toyota RAV4' => 'vehicles/toyota-rav4.jpg',
+            'Toyota Sienta' => 'vehicles/toyota-sienta.jpg',
+            'Toyota Innova' => 'vehicles/toyota-innova.jpg',
+            'Honda Fit' => 'vehicles/honda-fit.jpg',
+            'Honda HR-V' => 'vehicles/honda-hrv.jpg',
+            'Honda CR-V' => 'vehicles/honda-crv.jpg',
+            'Nissan Kicks' => 'vehicles/nissan-kicks.jpg',
+            'Mazda 3' => 'vehicles/mazda-3.jpg',
+            'Mazda CX-5' => 'vehicles/mazda-cx5.jpg',
+            'Mitsubishi Zinger' => 'vehicles/mitsubishi-zinger.jpg',
+        ];
+
         // 更貼近台灣租車行實際會有的車款 - 總共15台車，符合70%可用、15%保養中、15%停用的比例
         $vehiclesTemplate = [
             // available（可出租）- 11台 (73%)
@@ -130,6 +147,9 @@ class VehicleSeeder extends Seeder
             foreach ($vehiclesTemplate as $index => $vehicleData) {
                 $plateNumber = $prefix . '-' . $plateNumbers[$index];
 
+                // 取得對應的圖片路徑
+                $imagePath = $vehicleImageMap[$vehicleData['name']] ?? null;
+
                 Vehicle::updateOrCreate(
                     [
                         'tenant_id'    => $tenant->id,
@@ -140,6 +160,7 @@ class VehicleSeeder extends Seeder
                         'status'      => $vehicleData['status'],
                         'seats'       => $vehicleData['seats'],
                         'description' => $vehicleData['description'],
+                        'image'       => $imagePath,
                     ]
                 );
             }

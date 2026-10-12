@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('welcome');
-});
+// SPA 應用程式 - 捕獲所有非 /admin 和 /api 的路徑
+Route::get('/{any}', function () {
+    return view('spa');
+})->where('any', '^(?!admin|api).*$');

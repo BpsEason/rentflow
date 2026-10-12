@@ -1,3 +1,24 @@
+# 第一階段：前端建置 - 使用 Node.js 來建置 Vue SPA
+FROM node:20-alpine AS frontend-builder
+
+# 設定工作目錄
+WORKDIR /build
+
+# 複製前端依賴檔案
+COPY package*.json ./
+COPY vite.config.js ./
+COPY tsconfig.json ./
+COPY tsconfig.node.json ./
+
+# 複製前端原始碼
+COPY resources/ ./resources/
+COPY public/ ./public/
+
+# 安裝前端依賴並建置
+RUN npm ci
+RUN npm run build
+
+# 第二階段：PHP 執行環境 - 只用來執行 Laravel
 FROM php:8.4-fpm
 
 # 安裝系統依賴
@@ -11,6 +32,8 @@ RUN apt-get update && apt-get install -y \
     unzip \
     libzip-dev \
     libicu-dev \
+    nodejs \
+    npm \
     && rm -rf /var/lib/apt/lists/*
 
 # 安裝 PHP 擴展
@@ -44,6 +67,15 @@ RUN chmod +x /entrypoint.sh
 
 # 設定工作目錄
 WORKDIR /var/www/html
+
+# 複製 Laravel 程式碼
+COPY . .
+
+# 從前端建置階段複製已編譯的前端資產到 public/build
+COPY --from=frontend-builder /build/public/build/ ./public/build/
+
+# 安裝 PHP 依賴
+RUN composer install --optimize-autoloader --no-dev
 
 # 啟動 entrypoint
 ENTRYPOINT ["/entrypoint.sh"]

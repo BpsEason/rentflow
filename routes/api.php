@@ -29,6 +29,13 @@ Route::prefix('v1')->group(function () {
         Route::get('/me', [AuthController::class, 'me'])->middleware('auth:api');
     });
 
+    // 公開可存取的路由（不需要登入）
+    Route::prefix('public')->group(function () {
+        // 公開車輛列表與詳情
+        Route::get('/vehicles', [VehicleController::class, 'publicIndex']);
+        Route::get('/vehicles/{id}', [VehicleController::class, 'publicShow']);
+    });
+
     // 需要認證的路由
     Route::middleware('auth:api')->group(function () {
         // 客戶相關 API

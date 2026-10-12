@@ -8,6 +8,7 @@ use App\Http\Requests\Api\Vehicles\StoreVehicleRequest;
 use App\Http\Requests\Api\Vehicles\UpdateVehicleRequest;
 use App\Http\Resources\VehicleResource;
 use App\Models\Vehicle;
+use App\Models\Tenant;
 use App\Support\ApiResponse;
 use App\Support\TenantContext;
 use Illuminate\Http\JsonResponse;
@@ -18,8 +19,14 @@ class VehicleController extends Controller
     public function __construct(
         private readonly TenantContext $tenantContext
     ) {
-        $this->middleware('auth:api');
+        // 只有需要認證的方法才套用auth中介層
+        $this->middleware('auth:api')->except(['publicIndex', 'publicShow']);
         $this->middleware(function ($request, $next) {
+            // 公開端點不需要檢查租戶上下文，它們會自己處理租戶邏輯
+            if (in_array($request->route()->getActionMethod(), ['publicIndex', 'publicShow'])) {
+                return $next($request);
+            }
+
             $tenant = $this->tenantContext->getCurrentTenant();
 
             if (!$tenant) {
@@ -202,5 +209,78 @@ class VehicleController extends Controller
         $vehicle->delete();
 
         return ApiResponse::success(null, '刪除車輛成功');
+    }
+
+    /**
+     * 公開取得車輛列表（不需要登入）
+     */
+    #[OA\Get(
+        path: "/api/v1/public/vehicles",
+        summary: "公開取得車輛列表",
+        description: "取得第一個租戶的所有可租用車輛列表，供前台公開存取",
+        tags: ["Vehicles"],
+        responses: [
+            new OA\Response(response: 200, description: "成功取得車輛列表", content: new OA\JsonContent(ref: "#/components/schemas/ApiSuccessResponse"))
+        ]
+    )]
+    public function publicIndex(): JsonResponse
+    {
+        // 公開端點預設使用第一個租戶（單租戶場景）
+        $tenant = Tenant::first();
+
+        if (!$tenant) {
+            return ApiResponse::error('系統尚未設定任何租戶', null, [], 404);
+        }
+
+        // 只返回可用的車輛，包含定價資訊
+        $vehicles = Vehicle::where('tenant_id', $tenant->id)
+            ->where('status', 'AVAILABLE')
+            ->with('pricing')
+            ->paginate(15);
+
+        return ApiResponse::paginate(
+            VehicleResource::collection($vehicles),
+            '取得車輛列表成功'
+        );
+    }
+
+    /**
+     * 公開取得單一車輛詳情（不需要登入）
+     */
+    #[OA\Get(
+        path: "/api/v1/public/vehicles/{id}",
+        summary: "公開取得車輛詳情",
+        description: "取得指定車輛詳情，供前台公開存取",
+        tags: ["Vehicles"],
+        parameters: [
+            new OA\Parameter(name: "id", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+        ],
+        responses: [
+            new OA\Response(response: 200, description: "成功取得車輛詳情", content: new OA\JsonContent(ref: "#/components/schemas/ApiSuccessResponse")),
+            new OA\Response(response: 404, description: "車輛不存在", content: new OA\JsonContent(ref: "#/components/schemas/ApiErrorResponse"))
+        ]
+    )]
+    public function publicShow($id): JsonResponse
+    {
+        // 公開端點預設使用第一個租戶（單租戶場景）
+        $tenant = Tenant::first();
+
+        if (!$tenant) {
+            return ApiResponse::error('系統尚未設定任何租戶', null, [], 404);
+        }
+
+        $vehicle = Vehicle::where('tenant_id', $tenant->id)
+            ->with('pricing')
+            ->where('id', $id)
+            ->first();
+
+        if (!$vehicle) {
+            return ApiResponse::error('車輛不存在', null, [], 404);
+        }
+
+        return ApiResponse::success(
+            new VehicleResource($vehicle),
+            '取得車輛詳情成功'
+        );
     }
 }

@@ -9,6 +9,7 @@ use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\FileUpload;
 
 class VehicleForm
 {
@@ -54,6 +55,16 @@ class VehicleForm
                             ->rows(3)
                             ->nullable()
                             ->placeholder('輸入車輛的詳細描述')
+                            ->columnSpan([
+                                'default' => 1,
+                                'lg' => 2,
+                            ]),
+
+                        FileUpload::make('image')
+                            ->label('車輛圖片')
+                            ->image()
+                            ->directory('vehicles')
+                            ->nullable()
                             ->columnSpan([
                                 'default' => 1,
                                 'lg' => 2,

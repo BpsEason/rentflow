@@ -10,6 +10,10 @@ services:
         working_dir: /var/www/html
         volumes:
             - ./:/var/www/html
+        environment:
+            - DB_HOST=host.docker.internal
+        extra_hosts:
+            - "host.docker.internal:host-gateway"
         networks:
             - rentflow-network
 
@@ -18,7 +22,7 @@ services:
         container_name: rentflow-nginx
         restart: unless-stopped
         ports:
-            - "8000:80"
+            - "8085:80"
         volumes:
             - ./:/var/www/html
             - ./docker/nginx/conf.d:/etc/nginx/conf.d
