@@ -128,4 +128,78 @@ class VehicleTest extends TestCase
         $this->assertInstanceOf(Tenant::class, $vehicle->tenant);
         $this->assertEquals($tenant->id, $vehicle->tenant->id);
     }
+
+    /** @test */
+    public function it_creates_vehicle_with_all_operational_fields(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $now = now();
+
+        $vehicle = Vehicle::create([
+            'tenant_id' => $tenant->id,
+            'name' => 'Full Featured Car',
+            'plate_number' => 'FULL-1234',
+            'status' => VehicleStatus::MAINTENANCE,
+            'seats' => 5,
+            'manufacture_year' => 2022,
+            'mileage' => 50000,
+            'fuel_type' => Vehicle::FUEL_HYBRID,
+            'transmission' => Vehicle::TRANSMISSION_AUTOMATIC,
+            'maintenance_start_at' => $now,
+            'maintenance_expected_end_at' => $now->copy()->addDays(3),
+            'maintenance_notes' => '定期保養與煞車檢查',
+        ]);
+
+        $this->assertEquals(2022, $vehicle->manufacture_year);
+        $this->assertEquals(50000, $vehicle->mileage);
+        $this->assertEquals(Vehicle::FUEL_HYBRID, $vehicle->fuel_type);
+        $this->assertEquals(Vehicle::TRANSMISSION_AUTOMATIC, $vehicle->transmission);
+        $this->assertEquals($now->toDateTimeString(), $vehicle->maintenance_start_at->toDateTimeString());
+        $this->assertEquals($now->copy()->addDays(3)->toDateTimeString(), $vehicle->maintenance_expected_end_at->toDateTimeString());
+        $this->assertEquals('定期保養與煞車檢查', $vehicle->maintenance_notes);
+    }
+
+    /** @test */
+    public function it_allows_null_values_for_operational_fields(): void
+    {
+        $tenant = Tenant::factory()->create();
+
+        $vehicle = Vehicle::create([
+            'tenant_id' => $tenant->id,
+            'name' => 'Minimal Car',
+            'plate_number' => 'MINI-5678',
+            'status' => VehicleStatus::AVAILABLE,
+            'seats' => 5,
+            // All operational fields are null
+        ]);
+
+        $this->assertNull($vehicle->manufacture_year);
+        $this->assertNull($vehicle->mileage);
+        $this->assertNull($vehicle->fuel_type);
+        $this->assertNull($vehicle->transmission);
+        $this->assertNull($vehicle->maintenance_start_at);
+        $this->assertNull($vehicle->maintenance_expected_end_at);
+        $this->assertNull($vehicle->maintenance_notes);
+    }
+
+    /** @test */
+    public function it_casts_numeric_fields_correctly(): void
+    {
+        $tenant = Tenant::factory()->create();
+
+        $vehicle = Vehicle::create([
+            'tenant_id' => $tenant->id,
+            'name' => 'Casting Test Car',
+            'plate_number' => 'CAST-9012',
+            'status' => VehicleStatus::AVAILABLE,
+            'seats' => 5,
+            'manufacture_year' => '2020', // String input
+            'mileage' => '75000', // String input
+        ]);
+
+        $this->assertIsInt($vehicle->manufacture_year);
+        $this->assertEquals(2020, $vehicle->manufacture_year);
+        $this->assertIsInt($vehicle->mileage);
+        $this->assertEquals(75000, $vehicle->mileage);
+    }
 }

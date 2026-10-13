@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Vehicles\Tables;
 
 use App\Domain\Rental\Enums\VehicleStatus;
+use App\Models\Vehicle;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -43,6 +44,37 @@ class VehiclesTable
                 TextColumn::make('seats')
                     ->label('座位數')
                     ->sortable(),
+
+                TextColumn::make('manufacture_year')
+                    ->label('出廠年份')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                TextColumn::make('mileage')
+                    ->label('里程數(公里)')
+                    ->sortable()
+                    ->formatStateUsing(fn($state) => $state ? number_format($state) : '-')
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                TextColumn::make('fuel_type')
+                    ->label('燃料類型')
+                    ->formatStateUsing(fn($state) => match ($state) {
+                        Vehicle::FUEL_PETROL => '汽油',
+                        Vehicle::FUEL_DIESEL => '柴油',
+                        Vehicle::FUEL_ELECTRIC => '電動',
+                        Vehicle::FUEL_HYBRID => '油電混合',
+                        default => '-',
+                    })
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                TextColumn::make('transmission')
+                    ->label('變速箱')
+                    ->formatStateUsing(fn($state) => match ($state) {
+                        Vehicle::TRANSMISSION_AUTOMATIC => '自排',
+                        Vehicle::TRANSMISSION_MANUAL => '手排',
+                        default => '-',
+                    })
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 TextColumn::make('created_at')
                     ->label('建立時間')

@@ -109,6 +109,16 @@ class Reservation extends Model
                 throw new \Exception('車輛目前無法租用', 400);
             }
 
+            // 檢查車輛是否處於維修時段內，如果預約時間與維修時間重疊，則不可租用
+            if ($vehicle->maintenance_start_at && $vehicle->maintenance_expected_end_at) {
+                $maintenanceStart = Carbon::parse($vehicle->maintenance_start_at);
+                $maintenanceEnd = Carbon::parse($vehicle->maintenance_expected_end_at);
+
+                if ($startAt->lessThan($maintenanceEnd) && $endAt->greaterThan($maintenanceStart)) {
+                    throw new \Exception('車輛目前處於維修時段，無法租用', 400);
+                }
+            }
+
             $customer = Customer::where('id', $data['customer_id'])
                 ->where('tenant_id', $data['tenant_id'])
                 ->firstOrFail();
@@ -154,6 +164,16 @@ class Reservation extends Model
 
             if ($vehicle->status !== 'AVAILABLE') {
                 throw new \Exception('車輛目前無法租用');
+            }
+
+            // 檢查車輛是否處於維修時段內，如果預約時間與維修時間重疊，則不可租用
+            if ($vehicle->maintenance_start_at && $vehicle->maintenance_expected_end_at) {
+                $maintenanceStart = Carbon::parse($vehicle->maintenance_start_at);
+                $maintenanceEnd = Carbon::parse($vehicle->maintenance_expected_end_at);
+
+                if ($startAt->lessThan($maintenanceEnd) && $endAt->greaterThan($maintenanceStart)) {
+                    throw new \Exception('車輛目前處於維修時段，無法租用', 400);
+                }
             }
 
             if (isset($data['customer_id'])) {

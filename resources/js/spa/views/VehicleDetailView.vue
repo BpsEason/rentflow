@@ -185,9 +185,98 @@
                                                     class="text-2xl font-bold text-gray-900"
                                                 >
                                                     {{
-                                                        vehicle.transmission ||
-                                                        "自排"
+                                                        vehicle.transmission ===
+                                                        "AUTOMATIC"
+                                                            ? "自排"
+                                                            : vehicle.transmission ===
+                                                                "MANUAL"
+                                                              ? "手排"
+                                                              : vehicle.transmission
                                                     }}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- 出廠年份 -->
+                                    <div
+                                        v-if="vehicle.manufacture_year"
+                                        class="bg-white p-6"
+                                    >
+                                        <div class="flex items-start">
+                                            <div
+                                                class="p-3 bg-blue-50 rounded-xl mr-4"
+                                            >
+                                                <svg
+                                                    class="w-6 h-6 text-blue-600"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    viewBox="0 0 24 24"
+                                                >
+                                                    <path
+                                                        stroke-linecap="round"
+                                                        stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M8 7V3m0 0V7m0-3h8m-8 18v-4m0 4h8m-8 0h-3a2 2 0 01-2-2V9a2 2 0 012-2h3m8 16h3a2 2 0 002-2V9a2 2 0 00-2-2h-3m-8 18h8m-8-18h8a2 2 0 012 2v12a2 2 0 01-2 2H7a2 2 0 01-2-2V9a2 2 0 012-2z"
+                                                    />
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <p
+                                                    class="text-xs text-gray-500 uppercase tracking-wide mb-1"
+                                                >
+                                                    出廠年份
+                                                </p>
+                                                <p
+                                                    class="text-2xl font-bold text-gray-900"
+                                                >
+                                                    {{
+                                                        vehicle.manufacture_year
+                                                    }}年
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- 里程數 -->
+                                    <div
+                                        v-if="vehicle.mileage"
+                                        class="bg-white p-6"
+                                    >
+                                        <div class="flex items-start">
+                                            <div
+                                                class="p-3 bg-indigo-50 rounded-xl mr-4"
+                                            >
+                                                <svg
+                                                    class="w-6 h-6 text-indigo-600"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    viewBox="0 0 24 24"
+                                                >
+                                                    <path
+                                                        stroke-linecap="round"
+                                                        stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
+                                                    />
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <p
+                                                    class="text-xs text-gray-500 uppercase tracking-wide mb-1"
+                                                >
+                                                    行駛里程
+                                                </p>
+                                                <p
+                                                    class="text-2xl font-bold text-gray-900"
+                                                >
+                                                    {{
+                                                        (
+                                                            vehicle.mileage /
+                                                            10000
+                                                        ).toFixed(1)
+                                                    }}<span
+                                                        class="text-sm font-normal text-gray-500 ml-1"
+                                                        >萬公里</span
+                                                    >
                                                 </p>
                                             </div>
                                         </div>
@@ -222,15 +311,29 @@
                                                     class="text-2xl font-bold text-gray-900"
                                                 >
                                                     {{
-                                                        vehicle.fuel_type ||
-                                                        "汽油"
+                                                        vehicle.fuel_type ===
+                                                        "PETROL"
+                                                            ? "汽油"
+                                                            : vehicle.fuel_type ===
+                                                                "DIESEL"
+                                                              ? "柴油"
+                                                              : vehicle.fuel_type ===
+                                                                  "ELECTRIC"
+                                                                ? "電動"
+                                                                : vehicle.fuel_type ===
+                                                                    "HYBRID"
+                                                                  ? "油電混合"
+                                                                  : vehicle.fuel_type
                                                     }}
                                                 </p>
                                             </div>
                                         </div>
                                     </div>
                                     <!-- 行李箱 -->
-                                    <div class="bg-white p-6">
+                                    <div
+                                        v-if="vehicle.luggage"
+                                        class="bg-white p-6"
+                                    >
                                         <div class="flex items-start">
                                             <div
                                                 class="p-3 bg-purple-50 rounded-xl mr-4"
@@ -245,7 +348,7 @@
                                                         stroke-linecap="round"
                                                         stroke-linejoin="round"
                                                         stroke-width="2"
-                                                        d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+                                                        d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
                                                     ></path>
                                                 </svg>
                                             </div>
@@ -253,15 +356,63 @@
                                                 <p
                                                     class="text-xs text-gray-500 uppercase tracking-wide mb-1"
                                                 >
-                                                    行李箱
+                                                    行李箱容量
                                                 </p>
                                                 <p
                                                     class="text-2xl font-bold text-gray-900"
                                                 >
-                                                    {{ vehicle.luggage || 3
+                                                    {{ vehicle.luggage
                                                     }}<span
                                                         class="text-sm font-normal text-gray-500 ml-1"
                                                         >件</span
+                                                    >
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- 維修中狀態 -->
+                                    <div
+                                        v-if="vehicle.maintenance_start_at"
+                                        class="bg-amber-50 p-6 border border-amber-200 rounded-xl"
+                                    >
+                                        <div class="flex items-start">
+                                            <div
+                                                class="p-3 bg-amber-100 rounded-xl mr-4"
+                                            >
+                                                <svg
+                                                    class="w-6 h-6 text-amber-600"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    viewBox="0 0 24 24"
+                                                >
+                                                    <path
+                                                        stroke-linecap="round"
+                                                        stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.635 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                                                    />
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <p
+                                                    class="text-xs text-amber-600 uppercase tracking-wide mb-1 font-semibold"
+                                                >
+                                                    車輛維修中
+                                                </p>
+                                                <p class="text-gray-700">
+                                                    預計維修至
+                                                    {{
+                                                        vehicle.maintenance_expected_end_at
+                                                    }}
+                                                    後恢復可預約
+                                                    <span
+                                                        v-if="
+                                                            vehicle.maintenance_notes
+                                                        "
+                                                        class="block mt-2 text-sm text-gray-600"
+                                                        >{{
+                                                            vehicle.maintenance_notes
+                                                        }}</span
                                                     >
                                                 </p>
                                             </div>
@@ -425,6 +576,51 @@
                                             倒車影像
                                         </div>
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 維修中狀態提示 -->
+                        <div
+                            v-if="vehicle.maintenance_start_at"
+                            class="col-span-2 bg-amber-50 p-6 border border-amber-200 rounded-2xl"
+                        >
+                            <div class="flex items-start">
+                                <div class="p-3 bg-amber-100 rounded-xl mr-4">
+                                    <svg
+                                        class="w-6 h-6 text-amber-600"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            stroke-width="2"
+                                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.635 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                                        />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p
+                                        class="text-xs text-amber-600 uppercase tracking-wide mb-1 font-semibold"
+                                    >
+                                        車輛維修中
+                                    </p>
+                                    <p class="text-gray-700">
+                                        預計維修至
+                                        {{
+                                            vehicle.maintenance_expected_end_at
+                                        }}
+                                        後恢復可預約
+                                        <span
+                                            v-if="vehicle.maintenance_notes"
+                                            class="block mt-2 text-sm text-gray-600"
+                                            >{{
+                                                vehicle.maintenance_notes
+                                            }}</span
+                                        >
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -737,7 +933,8 @@ const canBook = computed(() => {
         rentalDays.value > 0 &&
         !dateError.value &&
         !priceError.value &&
-        vehicle.value.status === "AVAILABLE"
+        vehicle.value.status === "AVAILABLE" &&
+        !vehicle.value.maintenance_start_at
     );
 });
 

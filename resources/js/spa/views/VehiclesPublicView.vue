@@ -206,10 +206,16 @@ const filters = ref({
 const filteredVehicles = computed(() => {
     let result = [...allVehicles.value];
 
+    // 過濾掉維修中的車輛
+    result = result.filter((v) => !v.maintenance_start_at);
+
     if (filters.value.search) {
         const searchLower = filters.value.search.toLowerCase();
-        result = result.filter((v) =>
-            v.name.toLowerCase().includes(searchLower),
+        result = result.filter(
+            (v) =>
+                v.name.toLowerCase().includes(searchLower) ||
+                (v.brand && v.brand.toLowerCase().includes(searchLower)) ||
+                (v.model && v.model.toLowerCase().includes(searchLower)),
         );
     }
 

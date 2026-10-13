@@ -15,6 +15,14 @@ class Vehicle extends Model
     const STATUS_MAINTENANCE = 'MAINTENANCE';
     const STATUS_INACTIVE = 'INACTIVE';
 
+    const FUEL_PETROL = 'PETROL';
+    const FUEL_DIESEL = 'DIESEL';
+    const FUEL_ELECTRIC = 'ELECTRIC';
+    const FUEL_HYBRID = 'HYBRID';
+
+    const TRANSMISSION_AUTOMATIC = 'AUTOMATIC';
+    const TRANSMISSION_MANUAL = 'MANUAL';
+
     protected $fillable = [
         'tenant_id',
         'name',
@@ -23,7 +31,24 @@ class Vehicle extends Model
         'seats',
         'description',
         'image',
+        'manufacture_year',
+        'mileage',
+        'fuel_type',
+        'transmission',
+        'maintenance_start_at',
+        'maintenance_expected_end_at',
+        'maintenance_notes',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'manufacture_year' => 'integer',
+            'mileage' => 'integer',
+            'maintenance_start_at' => 'datetime',
+            'maintenance_expected_end_at' => 'datetime',
+        ];
+    }
 
     /**
      * Get the full URL for the vehicle image

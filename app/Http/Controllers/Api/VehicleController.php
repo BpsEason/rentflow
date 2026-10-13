@@ -335,8 +335,19 @@ class VehicleController extends Controller
             ->with('pricing')
             ->get();
 
-        // 過濾掉在指定時間區間內有衝突的車輛
+        // 過濾掉在指定時間區間內有衝突的車輛，或是處於維修時段內的車輛
         $filteredVehicles = $availableVehicles->filter(function ($vehicle) use ($startAt, $endAt) {
+            // 檢查車輛是否處於維修時段內，如果維修時間與預約時間重疊，則不可租用
+            if ($vehicle->maintenance_start_at && $vehicle->maintenance_expected_end_at) {
+                $maintenanceStart = \Carbon\Carbon::parse($vehicle->maintenance_start_at);
+                $maintenanceEnd = \Carbon\Carbon::parse($vehicle->maintenance_expected_end_at);
+
+                // 檢查維修時間是否與預約時間有重疊
+                if ($startAt->lessThan($maintenanceEnd) && $endAt->greaterThan($maintenanceStart)) {
+                    return false;
+                }
+            }
+
             // 檢查是否有時間衝突的預約
             return !\App\Models\Reservation::hasTimeConflict($vehicle->id, $startAt, $endAt);
         });

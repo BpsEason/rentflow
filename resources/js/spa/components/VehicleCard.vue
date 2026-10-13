@@ -30,13 +30,22 @@
                     ⭐ 熱門推薦
                 </span>
                 <span
-                    v-if="vehicle.status === 'AVAILABLE'"
+                    v-if="
+                        vehicle.status === 'AVAILABLE' &&
+                        !vehicle.maintenance_start_at
+                    "
                     class="inline-flex items-center bg-emerald-500/90 backdrop-blur-md text-white text-xs px-4 py-1.5 rounded-full font-semibold shadow-lg"
                 >
                     <span
                         class="w-2 h-2 bg-white rounded-full mr-2 animate-pulse"
                     ></span>
                     可預約
+                </span>
+                <span
+                    v-else-if="vehicle.maintenance_start_at"
+                    class="inline-flex items-center bg-amber-500/90 backdrop-blur-md text-white text-xs px-4 py-1.5 rounded-full font-medium shadow-lg"
+                >
+                    維修中
                 </span>
                 <span
                     v-else
@@ -74,6 +83,73 @@
                         />
                     </svg>
                     {{ vehicle.seats }}人座
+                </span>
+                <span
+                    v-if="vehicle.manufacture_year"
+                    class="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-xl"
+                >
+                    <svg
+                        class="w-4 h-4 text-blue-500"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M8 7V3m0 0V7m0-3h8m-8 18v-4m0 4h8m-8 0h-3a2 2 0 01-2-2V9a2 2 0 012-2h3m8 16h3a2 2 0 002-2V9a2 2 0 00-2-2h-3m-8 18h8m-8-18h8a2 2 0 012 2v12a2 2 0 01-2 2H7a2 2 0 01-2-2V9a2 2 0 012-2z"
+                        />
+                    </svg>
+                    {{ vehicle.manufacture_year }}年
+                </span>
+                <span
+                    v-if="vehicle.fuel_type"
+                    class="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-xl"
+                >
+                    <svg
+                        class="w-4 h-4 text-green-500"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 0 01-2.343 5.657z"
+                        />
+                    </svg>
+                    {{
+                        vehicle.fuel_type === "PETROL"
+                            ? "汽油"
+                            : vehicle.fuel_type === "DIESEL"
+                              ? "柴油"
+                              : vehicle.fuel_type === "ELECTRIC"
+                                ? "電動"
+                                : vehicle.fuel_type === "HYBRID"
+                                  ? "油電混合"
+                                  : vehicle.fuel_type
+                    }}
+                </span>
+                <span
+                    v-if="vehicle.mileage"
+                    class="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-xl"
+                >
+                    <svg
+                        class="w-4 h-4 text-blue-500"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
+                        />
+                    </svg>
+                    {{ (vehicle.mileage / 10000).toFixed(1) }}萬公里
                 </span>
                 <span
                     v-if="vehicle.transmission"
@@ -178,6 +254,7 @@ interface VehiclePricing {
     weekday_price: number;
     weekend_price: number;
     holiday_price: number;
+    daily_rate?: number;
 }
 
 interface Vehicle {
@@ -187,9 +264,20 @@ interface Vehicle {
     status: string;
     seats: number;
     transmission?: string;
+    manufacture_year?: number;
+    mileage?: number;
+    fuel_type?: string;
     description?: string;
     image_url?: string;
+    images?: string[];
     pricing?: VehiclePricing;
+    maintenance_start_at?: string | null;
+    maintenance_expected_end_at?: string | null;
+    is_featured?: boolean;
+    brand?: string;
+    model?: string;
+    luggage?: number;
+    features?: string[];
 }
 
 defineProps<{

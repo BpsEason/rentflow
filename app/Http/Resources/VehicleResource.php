@@ -62,6 +62,11 @@ class VehicleResource extends JsonResource
             ];
         }
 
+        // 檢查是否是管理員/授權用戶，只有授權用戶才能看到維修備註
+        // 使用請求路徑判斷是否是公開API，避免依賴路由命名
+        $isPublicApi = str_contains(request()->path(), '/public/');
+        $isAuthorized = auth()->check() && !$isPublicApi;
+
         return [
             'id' => $this->id,
             'tenant_id' => $this->tenant_id,
@@ -70,6 +75,13 @@ class VehicleResource extends JsonResource
             'status' => $this->status,
             'seats' => $this->seats,
             'description' => $this->description,
+            'manufacture_year' => $this->manufacture_year,
+            'mileage' => $this->mileage,
+            'fuel_type' => $this->fuel_type,
+            'transmission' => $this->transmission,
+            'maintenance_start_at' => $this->maintenance_start_at?->toISOString(),
+            'maintenance_expected_end_at' => $this->maintenance_expected_end_at?->toISOString(),
+            'maintenance_notes' => $isAuthorized ? $this->maintenance_notes : null,
             'image_url' => $coverImage, // 回傳處理過的封面圖
             'images' => array_values($images), // 重新索引陣列
             'pricing' => $pricing,

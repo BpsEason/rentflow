@@ -10,6 +10,16 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Vehicle extends Model
 {
+    // Fuel type constants
+    public const FUEL_PETROL = 'PETROL';
+    public const FUEL_DIESEL = 'DIESEL';
+    public const FUEL_ELECTRIC = 'ELECTRIC';
+    public const FUEL_HYBRID = 'HYBRID';
+
+    // Transmission type constants
+    public const TRANSMISSION_AUTOMATIC = 'AUTOMATIC';
+    public const TRANSMISSION_MANUAL = 'MANUAL';
+
     protected $fillable = [
         'tenant_id',
         'name',
@@ -17,12 +27,24 @@ class Vehicle extends Model
         'status',
         'seats',
         'description',
+        'image',
+        'manufacture_year',
+        'mileage',
+        'fuel_type',
+        'transmission',
+        'maintenance_start_at',
+        'maintenance_expected_end_at',
+        'maintenance_notes',
     ];
 
     protected function casts(): array
     {
         return [
             'status' => VehicleStatus::class,
+            'manufacture_year' => 'integer',
+            'mileage' => 'integer',
+            'maintenance_start_at' => 'datetime',
+            'maintenance_expected_end_at' => 'datetime',
         ];
     }
 

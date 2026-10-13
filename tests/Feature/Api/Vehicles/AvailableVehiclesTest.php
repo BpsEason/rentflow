@@ -3,12 +3,14 @@
 namespace Tests\Feature\Api\Vehicles;
 
 use App\Models\Tenant;
+use App\Models\User;
 use App\Models\Vehicle;
 use App\Models\Reservation;
 use App\Models\VehiclePricing;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 
 class AvailableVehiclesTest extends TestCase
 {
@@ -69,6 +71,68 @@ class AvailableVehiclesTest extends TestCase
         $response->assertStatus(200)
             ->assertJsonPath('message', '取得可用車輛列表成功')
             ->assertJsonCount(2, 'data'); // 應該返回兩輛車
+    }
+
+    public function test_public_api_hides_maintenance_notes_and_returns_all_operational_fields()
+    {
+        // 創建一輛包含所有營運欄位的維修中車輛
+        $maintenanceVehicle = Vehicle::create([
+            'tenant_id' => $this->tenant->id,
+            'name' => '維修中的車輛',
+            'plate_number' => 'MAIN-1234',
+            'status' => 'MAINTENANCE',
+            'seats' => 5,
+            'manufacture_year' => 2022,
+            'mileage' => 50000,
+            'fuel_type' => 'HYBRID',
+            'transmission' => 'AUTOMATIC',
+            'maintenance_start_at' => now(),
+            'maintenance_expected_end_at' => now()->addDays(3),
+            'maintenance_notes' => '內部維修備註，不應該在公開API顯示',
+        ]);
+
+        // 創建一輛可用的車輛，同樣包含所有營運欄位
+        $availableVehicle = Vehicle::create([
+            'tenant_id' => $this->tenant->id,
+            'name' => '可用的車輛',
+            'plate_number' => 'AVAIL-5678',
+            'status' => 'AVAILABLE',
+            'seats' => 5,
+            'manufacture_year' => 2023,
+            'mileage' => 30000,
+            'fuel_type' => 'PETROL',
+            'transmission' => 'AUTOMATIC',
+        ]);
+
+        // 為可用車輛創建定價
+        VehiclePricing::factory()->create([
+            'tenant_id' => $this->tenant->id,
+            'vehicle_id' => $availableVehicle->id,
+            'weekday_price' => 1000,
+        ]);
+
+        // 查詢可用車輛
+        $startAt = Carbon::now()->addDay()->setHour(10);
+        $endAt = Carbon::now()->addDays(3)->setHour(18);
+
+        $response = $this->getJson("/api/v1/public/{$this->tenant->slug}/vehicles/available?start_at={$startAt->toDateTimeString()}&end_at={$endAt->toDateTimeString()}");
+
+        $response->assertStatus(200);
+
+        // 驗證公開API只返回可用車輛
+        $response->assertJsonCount(1, 'data');
+
+        // 獲取返回的車輛數據
+        $vehicleData = $response->json('data.0');
+
+        // 驗證所有公開欄位都正確返回
+        $this->assertEquals(2023, $vehicleData['manufacture_year']);
+        $this->assertEquals(30000, $vehicleData['mileage']);
+        $this->assertEquals('PETROL', $vehicleData['fuel_type']);
+        $this->assertEquals('AUTOMATIC', $vehicleData['transmission']);
+
+        // 驗證維修備註在公開API中被隱藏
+        $this->assertNull($vehicleData['maintenance_notes']);
     }
 
     public function test_rejects_rental_period_less_than_four_hours()
@@ -192,6 +256,76 @@ class AvailableVehiclesTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJsonCount(0, 'data'); // 車輛不可用，因為PENDING預約也會佔用
+    }
+
+    public function test_authorized_api_shows_maintenance_notes_to_authenticated_users()
+    {
+        // 創建一個包含維修備註的車輛
+        $vehicle = Vehicle::create([
+            'tenant_id' => $this->tenant->id,
+            'name' => '測試車輛',
+            'plate_number' => 'TEST-1234',
+            'status' => 'MAINTENANCE',
+            'seats' => 5,
+            'manufacture_year' => 2022,
+            'mileage' => 50000,
+            'fuel_type' => 'HYBRID',
+            'transmission' => 'AUTOMATIC',
+            'maintenance_start_at' => now(),
+            'maintenance_expected_end_at' => now()->addDays(3),
+            'maintenance_notes' => '這是內部維修備註，只有授權用戶可以看到',
+        ]);
+
+        // 創建一個授權用戶並登入，符合auth.php配置的api guard使用User模型
+        $user = User::factory()->create();
+        $this->actingAs($user, 'api');
+
+        // 我們需要模擬租戶上下文，這裡直接測試資源轉換邏輯來驗證maintenance_notes的可見性
+        $resource = new \App\Http\Resources\VehicleResource($vehicle);
+        $request = Request::create("/api/v1/vehicles/{$vehicle->id}", 'GET');
+        $array = $resource->toArray($request);
+
+        // 已登入的授權用戶應該能看到maintenance_notes
+        $this->assertEquals('這是內部維修備註，只有授權用戶可以看到', $array['maintenance_notes']);
+    }
+
+    public function test_public_api_never_shows_maintenance_notes_even_if_authenticated()
+    {
+        // 創建一個包含維修備註的車輛
+        $vehicle = Vehicle::create([
+            'tenant_id' => $this->tenant->id,
+            'name' => '測試車輛',
+            'plate_number' => 'TEST-5678',
+            'status' => 'AVAILABLE',
+            'seats' => 5,
+            'manufacture_year' => 2023,
+            'mileage' => 30000,
+            'fuel_type' => 'PETROL',
+            'transmission' => 'AUTOMATIC',
+            'maintenance_notes' => '這是機密備註，即使登入也不應該在公開API看到',
+        ]);
+
+        // 為可用車輛創建定價
+        VehiclePricing::factory()->create([
+            'tenant_id' => $this->tenant->id,
+            'vehicle_id' => $vehicle->id,
+            'weekday_price' => 1000,
+        ]);
+
+        // 即使已登入，訪問公開API端點也不應該看到maintenance_notes
+        $user = User::factory()->create();
+        $this->actingAs($user, 'api');
+
+        $startAt = Carbon::now()->addDay()->setHour(10);
+        $endAt = Carbon::now()->addDays(3)->setHour(18);
+
+        $response = $this->getJson("/api/v1/public/{$this->tenant->slug}/vehicles/available?start_at={$startAt->toDateTimeString()}&end_at={$endAt->toDateTimeString()}");
+
+        $response->assertStatus(200);
+        $vehicleData = $response->json('data.0');
+
+        // 即使已登入，公開API仍然應該隱藏maintenance_notes
+        $this->assertNull($vehicleData['maintenance_notes']);
     }
 
     public function test_vehicles_from_other_tenants_are_not_included()

@@ -19,6 +19,13 @@ class StoreVehicleRequest extends FormRequest
             'status' => ['nullable', 'string', 'in:AVAILABLE,MAINTENANCE,INACTIVE'],
             'seats' => ['nullable', 'integer', 'min:1'],
             'description' => ['nullable', 'string'],
+            'manufacture_year' => ['nullable', 'integer', 'min:2000', 'max:' . date('Y')],
+            'mileage' => ['nullable', 'integer', 'min:0'],
+            'fuel_type' => ['nullable', 'string', 'in:PETROL,DIESEL,ELECTRIC,HYBRID'],
+            'transmission' => ['nullable', 'string', 'in:AUTOMATIC,MANUAL'],
+            'maintenance_start_at' => ['nullable', 'date'],
+            'maintenance_expected_end_at' => ['nullable', 'date', 'after:maintenance_start_at'],
+            'maintenance_notes' => ['nullable', 'string'],
         ];
     }
 }

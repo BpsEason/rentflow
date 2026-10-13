@@ -18,6 +18,18 @@ class VehicleFactory extends Factory
             Vehicle::STATUS_INACTIVE,
         ];
 
+        $fuelTypes = [
+            Vehicle::FUEL_PETROL,
+            Vehicle::FUEL_DIESEL,
+            Vehicle::FUEL_ELECTRIC,
+            Vehicle::FUEL_HYBRID,
+        ];
+
+        $transmissions = [
+            Vehicle::TRANSMISSION_AUTOMATIC,
+            Vehicle::TRANSMISSION_MANUAL,
+        ];
+
         return [
             'tenant_id' => $tenant->id,
             'name' => fake()->words(2, true),
@@ -25,6 +37,13 @@ class VehicleFactory extends Factory
             'status' => fake()->randomElement($statuses),
             'seats' => fake()->randomElement([5, 7, 8]),
             'description' => fake()->sentence(),
+            'manufacture_year' => fake()->randomElement([2019, 2020, 2021, 2022, 2023, 2024]),
+            'mileage' => fake()->randomNumber(5, false), // 0-99999 公里
+            'fuel_type' => fake()->randomElement($fuelTypes),
+            'transmission' => fake()->randomElement($transmissions),
+            'maintenance_start_at' => null,
+            'maintenance_expected_end_at' => null,
+            'maintenance_notes' => null,
         ];
     }
 
