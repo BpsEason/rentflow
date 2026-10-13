@@ -33,5 +33,6 @@ class AppServiceProvider extends ServiceProvider
         // Manually register policies
         Gate::policy(Role::class, RolePolicy::class);
         Gate::policy(User::class, UserPolicy::class);
+        Gate::policy(\App\Domain\Rental\Models\Customer::class, \App\Policies\CustomerPolicy::class);
     }
 }

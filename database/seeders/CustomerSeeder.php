@@ -4,7 +4,9 @@ namespace Database\Seeders;
 
 use App\Models\Tenant;
 use App\Domain\Rental\Models\Customer;
+use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class CustomerSeeder extends Seeder
 {
@@ -13,6 +15,9 @@ class CustomerSeeder extends Seeder
      */
     public function run(): void
     {
+        if (! app()->environment(['local', 'testing'])) {
+            return;
+        }
         $customersTemplate = [
             // ========== 活躍客戶 ==========
             [
@@ -310,6 +315,15 @@ class CustomerSeeder extends Seeder
 
                 $uniqueEmail = $customerData['email'] . '.t' . $tenant->id . '@example.com';
 
+                $member = User::firstOrCreate(
+                    ['email' => $uniqueEmail],
+                    [
+                        'name' => $customerData['name'],
+                        'password' => Hash::make('password'),
+                    ],
+                );
+                $member->tenants()->syncWithoutDetaching([$tenant->id => ['role' => 'member']]);
+
                 // 為身分證字號、駕照號碼加入租戶唯一識別，避免跨租戶重複
                 $uniqueIdNumber = isset($customerData['id_number']) ? $customerData['id_number'] . $tenant->id : null;
                 $uniqueLicenseNumber = isset($customerData['license_number']) ? $customerData['license_number'] . $tenant->id : null;
@@ -323,6 +337,7 @@ class CustomerSeeder extends Seeder
                         'phone'     => $uniquePhone,
                     ],
                     [
+                        'user_id'   => $member->id,
                         'name'      => $customerData['name'],
                         'email'     => $uniqueEmail,
                         'is_active' => $customerData['is_active'],

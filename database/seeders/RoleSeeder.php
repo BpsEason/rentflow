@@ -34,6 +34,7 @@ class RoleSeeder extends Seeder
 
         // 先建立所有需要的權限，確保它們存在
         $allRequiredPermissions = [
+            'view_any_customer', 'view_customer', 'create_customer', 'update_customer', 'delete_customer',
             // Tenant 相關權限
             'ViewAny:Tenant',
             'View:Tenant',
@@ -80,6 +81,7 @@ class RoleSeeder extends Seeder
 
         // Tenant Admin 權限：可以管理 Tenant 內的使用者
         $tenantAdminPermissions = [
+            'view_any_customer', 'view_customer', 'create_customer', 'update_customer', 'delete_customer',
             // User 相關權限 - 可以管理租戶下的使用者
             'ViewAny:User',
             'View:User',
@@ -102,6 +104,7 @@ class RoleSeeder extends Seeder
 
         // Tenant Staff 權限：只有基本檢視權限
         $tenantStaffPermissions = [
+            'view_any_customer', 'view_customer',
             // User 相關權限 - 只能檢視
             'ViewAny:User',
             'View:User',

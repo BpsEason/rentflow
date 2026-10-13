@@ -189,7 +189,7 @@ const handleLogin = async () => {
     error.value = null;
 
     try {
-        const response = await api.post(`/${tenantSlug}/customer/auth/login`, {
+        const response = await api.post("/customer/auth/login", {
             email: form.value.email,
             password: form.value.password,
         });

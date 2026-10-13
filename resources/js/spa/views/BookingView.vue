@@ -688,7 +688,7 @@ const validateForm = () => {
 };
 
 const submitBooking = async () => {
-    if (!validateForm()) return;
+    if (!validateForm() || submitting.value) return;
 
     submitting.value = true;
     try {
@@ -699,17 +699,26 @@ const submitBooking = async () => {
         if (isLoggedIn) {
             // 已登入會員，使用會員專用預約端點
             const bookingData = {
-                vehicle_id: vehicleId,
+                vehicle_id: parseInt(vehicleId),
                 pickup_date: pickupDate,
                 pickup_time: pickupTime,
                 return_date: returnDate,
                 return_time: returnTime,
-                notes: form.value.additional_services.child_seat
-                    ? "需要兒童座椅"
-                    : "",
+                notes: Object.entries(form.value.additional_services)
+                    .filter(([_, enabled]) => enabled)
+                    .map(([service]) => {
+                        const serviceNames: Record<string, string> = {
+                            gps: "需要GPS導航",
+                            child_seat: "需要兒童座椅",
+                            additional_driver: "需要額外駕駛人",
+                        };
+                        return serviceNames[service] || service;
+                    })
+                    .join(", "),
                 // 客戶資料 - 如果用戶在當前租戶還沒有客戶資料，系統會自動建立
                 customer_name: form.value.name,
                 customer_phone: form.value.phone,
+                customer_email: form.value.email,
                 customer_id_number: form.value.id_number,
                 license_number: form.value.license_number,
                 license_expiry: form.value.license_expiry,
@@ -719,7 +728,7 @@ const submitBooking = async () => {
         } else {
             // 訪客，使用公開預約端點
             const bookingData = {
-                vehicle_id: vehicleId,
+                vehicle_id: parseInt(vehicleId),
                 pickup_date: pickupDate,
                 pickup_time: pickupTime,
                 return_date: returnDate,
@@ -731,8 +740,17 @@ const submitBooking = async () => {
                 license_number: form.value.license_number,
                 license_expiry: form.value.license_expiry,
                 address: form.value.address,
-                additional_services: form.value.additional_services,
-                total_amount: finalTotal.value,
+                notes: Object.entries(form.value.additional_services)
+                    .filter(([_, enabled]) => enabled)
+                    .map(([service]) => {
+                        const serviceNames: Record<string, string> = {
+                            gps: "需要GPS導航",
+                            child_seat: "需要兒童座椅",
+                            additional_driver: "需要額外駕駛人",
+                        };
+                        return serviceNames[service] || service;
+                    })
+                    .join(", "),
             };
             response = await api.post("/public/reservations", bookingData);
         }
@@ -743,7 +761,17 @@ const submitBooking = async () => {
         );
     } catch (e: any) {
         console.error("Booking submission failed:", e);
-        if (e.response?.data?.message) {
+        formErrors.value = [];
+
+        // 處理422驗證錯誤
+        if (e.response?.status === 422 && e.response?.data?.errors) {
+            const errors = e.response.data.errors;
+            Object.values(errors).forEach((errorMessages: any) => {
+                errorMessages.forEach((msg: string) => {
+                    formErrors.value.push(msg);
+                });
+            });
+        } else if (e.response?.data?.message) {
             formErrors.value.push(e.response.data.message);
         } else {
             formErrors.value.push("預約提交失敗，請稍後再試");

@@ -87,7 +87,7 @@ class User extends Authenticatable implements FilamentUser, HasTenants, JWTSubje
 
     public function customers()
     {
-        return $this->hasMany(Customer::class);
+        return $this->hasMany(\App\Domain\Rental\Models\Customer::class);
     }
 
     /**

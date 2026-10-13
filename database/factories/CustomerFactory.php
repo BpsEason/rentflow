@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use App\Domain\Rental\Models\Customer;
 use App\Models\Tenant;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class CustomerFactory extends Factory
@@ -14,6 +15,7 @@ class CustomerFactory extends Factory
     {
         return [
             'tenant_id' => Tenant::factory(),
+            'user_id' => null,
             'name' => $this->faker->name(),
             'email' => $this->faker->unique()->safeEmail(),
             'phone' => $this->faker->unique()->phoneNumber(),

@@ -9,6 +9,8 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\Select;
+use App\Models\User;
 
 class CustomerForm
 {
@@ -18,6 +20,28 @@ class CustomerForm
     {
         return static::applyDefaultLayout($schema)
             ->components([
+                Section::make('會員帳號')
+                    ->description('可關聯同一租戶的既有會員。密碼由會員透過密碼重設流程設定。')
+                    ->schema([
+                        Select::make('user_id')
+                            ->label('會員帳號')
+                            ->relationship(
+                                name: 'user',
+                                titleAttribute: 'email',
+                                modifyQueryUsing: function ($query) {
+                                    $tenant = filament()->getTenant();
+                                    if (! $tenant) {
+                                        return $query->whereRaw('1 = 0');
+                                    }
+                                    return $query->whereHas('tenants', fn ($tenantQuery) => $tenantQuery->whereKey($tenant->id));
+                                },
+                            )
+                            ->getOptionLabelFromRecordUsing(fn (User $record) => "{$record->name} ({$record->email})")
+                            ->searchable(['name', 'email'])
+                            ->preload()
+                            ->nullable()
+                            ->helperText('留空代表尚未關聯會員帳號。'),
+                    ]),
                 Section::make('客戶基本資料')
                     ->description('管理客戶的基本聯絡資訊')
                     ->icon('heroicon-o-user')

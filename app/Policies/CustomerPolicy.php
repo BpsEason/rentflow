@@ -21,7 +21,7 @@ class CustomerPolicy
      */
     public function view(User $user, Customer $customer): bool
     {
-        return $user->can('view_customer');
+        return $user->can('view_customer') && $this->belongsToAccessibleTenant($user, $customer);
     }
 
     /**
@@ -37,7 +37,7 @@ class CustomerPolicy
      */
     public function update(User $user, Customer $customer): bool
     {
-        return $user->can('update_customer');
+        return $user->can('update_customer') && $this->belongsToAccessibleTenant($user, $customer);
     }
 
     /**
@@ -45,7 +45,12 @@ class CustomerPolicy
      */
     public function delete(User $user, Customer $customer): bool
     {
-        return $user->can('delete_customer');
+        return $user->can('delete_customer') && $this->belongsToAccessibleTenant($user, $customer);
+    }
+
+    private function belongsToAccessibleTenant(User $user, Customer $customer): bool
+    {
+        return $user->hasRole('Super Admin') || $user->tenants()->whereKey($customer->tenant_id)->exists();
     }
 
     /**

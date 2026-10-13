@@ -371,7 +371,9 @@ const confirmCancel = async () => {
 
     cancelling.value = true;
     try {
-        await api.post(`/reservations/${cancelBooking.value.id}/cancel`);
+        await api.post(
+            `/customer/reservations/${cancelBooking.value.id}/cancel`,
+        );
         showCancelModal.value = false;
         cancelBooking.value = null;
         fetchBookings(); // Refresh list
@@ -391,7 +393,7 @@ const fetchBookings = async () => {
     loading.value = true;
     error.value = null;
     try {
-        const response = await api.get(`/${tenantSlug}/customer/reservations`);
+        const response = await api.get("/customer/reservations");
         bookings.value = response.data.data.data || response.data.data || [];
 
         // 如果API回應說用戶尚未在此租戶建立客戶資料

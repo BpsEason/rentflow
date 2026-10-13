@@ -14,6 +14,11 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
+        // Shared development credentials must never be provisioned in production.
+        if (! app()->environment(['local', 'testing'])) {
+            return;
+        }
+
         // Create Super Admin
         $superAdmin = User::updateOrCreate(
             ['email' => 'superadmin@rentflow.test'],

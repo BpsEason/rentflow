@@ -7,18 +7,21 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\DeleteAction;
+use Filament\Actions\Action;
+use Filament\Notifications\Notification;
+use Filament\Forms\Components\TextInput;
+use App\Services\CustomerMemberPasswordService;
+use Illuminate\Support\Facades\Gate;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
 
 class CustomersTable
 {
     public static function configure(Table $table): Table
     {
         return $table
-            ->query(Customer::query())
             ->columns([
                 TextColumn::make('name')
                     ->label('客戶姓名')
@@ -35,6 +38,17 @@ class CustomersTable
                     ->label('聯絡電話')
                     ->searchable()
                     ->sortable(),
+
+                TextColumn::make('tenant.name')
+                    ->label('所屬租戶')
+                    ->sortable(),
+
+                TextColumn::make('user.email')
+                    ->label('會員帳號')
+                    ->placeholder('未關聯')
+                    ->badge()
+                    ->color(fn (?string $state): string => $state ? 'success' : 'gray')
+                    ->toggleable(),
 
                 TextColumn::make('id_number')
                     ->label('身分證字號')
@@ -88,6 +102,42 @@ class CustomersTable
             ])
             ->recordActions([
                 EditAction::make(),
+                Action::make('setMemberPassword')
+                    ->label('設定會員新密碼')
+                    ->icon('heroicon-o-key')
+                    ->schema([
+                        TextInput::make('manager_password')
+                            ->label('管理者目前密碼')
+                            ->password()
+                            ->required(),
+                        TextInput::make('new_password')
+                            ->label('會員新密碼')
+                            ->password()
+                            ->required()
+                            ->minLength(8)
+                            ->confirmed(),
+                        TextInput::make('new_password_confirmation')
+                            ->label('再次輸入會員新密碼')
+                            ->password()
+                            ->required(),
+                    ])
+                    ->modalHeading('設定會員新密碼')
+                    ->modalDescription('請重新驗證管理者密碼，並輸入至少 8 個字元的新密碼。')
+                    ->visible(fn (Customer $record): bool => $record->user !== null)
+                    ->authorize(fn (Customer $record): bool => Gate::allows('update', $record))
+                    ->action(function (Customer $record, array $data): void {
+                        app(CustomerMemberPasswordService::class)->set(
+                            auth()->user(),
+                            $record,
+                            $data['manager_password'],
+                            $data['new_password'],
+                        );
+
+                        Notification::make()
+                            ->title('會員密碼已更新')
+                            ->success()
+                            ->send();
+                    }),
                 DeleteAction::make(),
             ])
             ->toolbarActions([

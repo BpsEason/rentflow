@@ -1,31 +1,39 @@
 <template>
     <PublicLayout>
-        <section class="py-12 bg-gray-50 min-h-screen">
+        <section
+            class="py-16 bg-gradient-to-b from-gray-50 to-gray-100 min-h-screen"
+        >
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <!-- Page Header -->
-                <div class="mb-8">
-                    <h1 class="text-3xl font-bold text-gray-900">
+                <!-- Page Header - 增加更開闊的留白與層次 -->
+                <div class="mb-12 text-center md:text-left">
+                    <h1
+                        class="text-4xl md:text-5xl font-bold text-gray-900 tracking-tight"
+                    >
                         瀏覽所有車輛
                     </h1>
-                    <p class="mt-2 text-lg text-gray-600">
-                        找到最適合您的理想車款
+                    <p class="mt-4 text-xl text-gray-600 max-w-2xl">
+                        找到最適合您的理想車款，開啟每一段精彩旅程
                     </p>
                 </div>
 
-                <!-- Search and Filter Section -->
-                <div class="bg-white rounded-xl shadow-md p-6 mb-8">
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <!-- Search and Filter Section - 進一步升級的現代工具列風格 -->
+                <div
+                    class="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl shadow-gray-200/70 p-8 md:p-10 mb-16 ring-1 ring-white/60"
+                >
+                    <div
+                        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8"
+                    >
                         <!-- Search Keyword -->
                         <div>
                             <label
-                                class="block text-sm font-medium text-gray-700 mb-2"
+                                class="block text-sm font-semibold text-gray-800 mb-3"
                                 >搜尋車款</label
                             >
                             <input
                                 v-model="filters.search"
                                 type="text"
                                 placeholder="輸入車名或型號"
-                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                                class="w-full px-5 py-4 border-2 border-gray-100 rounded-2xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all duration-300 bg-gray-50/80 focus:bg-white placeholder:text-gray-400"
                                 @input="applyFilters"
                             />
                         </div>
@@ -33,28 +41,28 @@
                         <!-- Pickup Date -->
                         <div>
                             <label
-                                class="block text-sm font-medium text-gray-700 mb-2"
+                                class="block text-sm font-semibold text-gray-800 mb-3"
                                 >取車日期</label
                             >
                             <input
                                 v-model="filters.pickupDate"
                                 type="date"
                                 :min="today"
-                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                                class="w-full px-5 py-4 border-2 border-gray-100 rounded-2xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all duration-300 bg-gray-50/80 focus:bg-white cursor-pointer"
                             />
                         </div>
 
                         <!-- Return Date -->
                         <div>
                             <label
-                                class="block text-sm font-medium text-gray-700 mb-2"
+                                class="block text-sm font-semibold text-gray-800 mb-3"
                                 >還車日期</label
                             >
                             <input
                                 v-model="filters.returnDate"
                                 type="date"
                                 :min="filters.pickupDate || today"
-                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                                class="w-full px-5 py-4 border-2 border-gray-100 rounded-2xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all duration-300 bg-gray-50/80 focus:bg-white cursor-pointer"
                             />
                         </div>
 
@@ -62,7 +70,7 @@
                         <div class="flex items-end">
                             <button
                                 @click="applyFilters"
-                                class="w-full bg-blue-900 hover:bg-blue-800 text-white px-6 py-2 rounded-lg font-medium transition"
+                                class="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white px-8 py-4 rounded-2xl font-bold transition-all duration-300 shadow-xl shadow-orange-500/30 hover:shadow-2xl hover:shadow-orange-500/40 hover:-translate-y-1 active:scale-[0.98] focus:ring-4 focus:ring-orange-500/30 outline-none"
                             >
                                 套用篩選
                             </button>
@@ -115,38 +123,40 @@
                     <p class="mt-2 text-gray-500">請嘗試調整您的搜尋條件</p>
                 </div>
 
-                <!-- Vehicle Grid -->
+                <!-- Vehicle Grid - 優化間距與節奏 -->
                 <div
                     v-else
-                    class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+                    class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10"
                 >
                     <VehicleCard
-                        v-for="vehicle in filteredVehicles"
+                        v-for="(vehicle, index) in filteredVehicles"
                         :key="vehicle.id"
-                        :vehicle="vehicle"
+                        :vehicle="{ ...vehicle, is_featured: index === 0 }"
                     />
                 </div>
 
-                <!-- Pagination -->
+                <!-- Pagination - 升級分頁設計 -->
                 <div
                     v-if="pagination.total > pagination.perPage"
-                    class="mt-12 flex justify-center"
+                    class="mt-20 flex justify-center"
                 >
-                    <nav class="flex items-center space-x-2">
+                    <nav
+                        class="bg-white rounded-2xl shadow-xl shadow-gray-200/60 p-3 ring-1 ring-gray-100 inline-flex items-center space-x-3"
+                    >
                         <button
                             @click="changePage(currentPage - 1)"
                             :disabled="currentPage === 1"
-                            class="px-4 py-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition"
+                            class="px-6 py-3 border-0 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed bg-gray-50 hover:bg-blue-50 hover:text-blue-600 text-gray-700 font-medium transition-all duration-300"
                         >
                             上一頁
                         </button>
-                        <span class="px-4 py-2 text-gray-600">
+                        <span class="px-6 py-3 text-gray-600 font-medium">
                             第 {{ currentPage }} / {{ totalPages }} 頁
                         </span>
                         <button
                             @click="changePage(currentPage + 1)"
                             :disabled="currentPage === totalPages"
-                            class="px-4 py-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition"
+                            class="px-6 py-3 border-0 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed bg-gray-50 hover:bg-blue-50 hover:text-blue-600 text-gray-700 font-medium transition-all duration-300"
                         >
                             下一頁
                         </button>
@@ -171,6 +181,8 @@ const today = ref(new Date().toISOString().split("T")[0]);
 const queryLocation = route.query.location as string;
 const queryPickup = route.query.pickup as string;
 const queryReturn = route.query.return as string;
+const queryStartTime = route.query.start_at as string;
+const queryEndTime = route.query.end_at as string;
 
 const loading = ref(false);
 const error = ref<string | null>(null);
@@ -187,6 +199,8 @@ const filters = ref({
     search: queryLocation || "",
     pickupDate: queryPickup || "",
     returnDate: queryReturn || "",
+    startAt: queryStartTime || "",
+    endAt: queryEndTime || "",
 });
 
 const filteredVehicles = computed(() => {
@@ -210,7 +224,48 @@ const fetchVehicles = async () => {
     loading.value = true;
     error.value = null;
     try {
-        const response = await api.get("/public/vehicles");
+        let response;
+        // 檢查是否有輸入有效的租期（優先使用從首頁傳遞的完整時間參數）
+        const hasValidPeriod =
+            (filters.value.startAt && filters.value.endAt) ||
+            (filters.value.pickupDate && filters.value.returnDate);
+
+        if (hasValidPeriod) {
+            let startAt, endAt;
+
+            if (filters.value.startAt && filters.value.endAt) {
+                // 使用從首頁傳遞的完整時間
+                startAt = filters.value.startAt;
+                endAt = filters.value.endAt;
+            } else {
+                // 自行組裝預設時間
+                const start = new Date(filters.value.pickupDate);
+                const end = new Date(filters.value.returnDate);
+                if (end < start) {
+                    // 日期無效，使用一般車輛列表
+                    response = await api.get("/public/vehicles");
+                    allVehicles.value = response.data.data || [];
+                    pagination.value.total =
+                        response.data.total || allVehicles.value.length;
+                    pagination.value.lastPage = response.data.last_page || 1;
+                    return;
+                }
+                startAt = `${filters.value.pickupDate} 09:00:00`;
+                endAt = `${filters.value.returnDate} 17:00:00`;
+            }
+
+            // 有有效租期，呼叫可用車輛 API
+            response = await api.get("/public/vehicles/available", {
+                params: {
+                    start_at: startAt,
+                    end_at: endAt,
+                },
+            });
+        } else {
+            // 沒有選擇租期，使用一般車輛列表
+            response = await api.get("/public/vehicles");
+        }
+
         allVehicles.value = response.data.data || [];
         pagination.value.total =
             response.data.total || allVehicles.value.length;
@@ -225,6 +280,8 @@ const fetchVehicles = async () => {
 
 const applyFilters = () => {
     currentPage.value = 1;
+    // 當套用篩選時重新獲取車輛資料
+    fetchVehicles();
 };
 
 const changePage = (page: number) => {

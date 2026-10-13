@@ -547,7 +547,7 @@ const confirmCancel = async () => {
 
     cancelling.value = true;
     try {
-        await api.post(`/reservations/${reservation.value.id}/cancel`);
+        await api.post(`/customer/reservations/${reservation.value.id}/cancel`);
         showCancelModal.value = false;
         fetchReservation(); // Refresh data
     } catch (e: any) {
@@ -567,7 +567,7 @@ const fetchReservation = async () => {
     error.value = null;
     try {
         const response = await api.get(
-            `/${tenantSlug}/customer/reservations/${reservationId}`,
+            `/customer/reservations/${reservationId}`,
         );
         reservation.value = response.data.data;
     } catch (e: any) {

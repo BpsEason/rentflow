@@ -1,40 +1,67 @@
 <template>
     <div
-        class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300"
+        :class="[
+            'group bg-white rounded-3xl shadow-xl shadow-gray-200/60 overflow-hidden transition-all duration-500 ease-out hover:-translate-y-3 cursor-pointer ring-1 ring-gray-100/60',
+            vehicle.is_featured
+                ? 'lg:col-span-2 shadow-2xl shadow-blue-100/80 ring-2 ring-blue-200/60'
+                : 'hover:shadow-2xl hover:shadow-gray-300/70',
+        ]"
     >
-        <!-- Vehicle Image -->
-        <div class="relative h-48 bg-gray-200">
+        <!-- Vehicle Image - 優化圖片區質感 -->
+        <div class="relative h-56 md:h-64 bg-gray-200 overflow-hidden">
+            <div
+                class="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent z-10"
+            ></div>
             <img
                 :src="
                     vehicle.image_url ||
-                    'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=600'
+                    'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=800'
                 "
                 :alt="vehicle.name"
-                class="w-full h-full object-cover"
+                class="w-full h-full object-cover transition-all duration-700 ease-out group-hover:scale-105 group-hover:brightness-105"
+                loading="lazy"
             />
-            <span
-                v-if="vehicle.status === 'AVAILABLE'"
-                class="absolute top-3 left-3 bg-green-500 text-white text-xs px-2 py-1 rounded-full"
-            >
-                可預約
-            </span>
-            <span
-                v-else
-                class="absolute top-3 left-3 bg-gray-500 text-white text-xs px-2 py-1 rounded-full"
-            >
-                已出租
-            </span>
+            <!-- 狀態標籤 - 更精緻的現代設計 -->
+            <div class="absolute top-4 left-4 z-20 flex flex-col gap-2">
+                <span
+                    v-if="vehicle.is_featured"
+                    class="inline-flex items-center bg-gradient-to-r from-amber-400 to-orange-500 text-white text-xs px-4 py-1.5 rounded-full font-semibold shadow-lg backdrop-blur-sm"
+                >
+                    ⭐ 熱門推薦
+                </span>
+                <span
+                    v-if="vehicle.status === 'AVAILABLE'"
+                    class="inline-flex items-center bg-emerald-500/90 backdrop-blur-md text-white text-xs px-4 py-1.5 rounded-full font-semibold shadow-lg"
+                >
+                    <span
+                        class="w-2 h-2 bg-white rounded-full mr-2 animate-pulse"
+                    ></span>
+                    可預約
+                </span>
+                <span
+                    v-else
+                    class="inline-flex items-center bg-gray-600/90 backdrop-blur-md text-white text-xs px-4 py-1.5 rounded-full font-medium shadow-lg"
+                >
+                    已出租
+                </span>
+            </div>
         </div>
 
-        <!-- Vehicle Info -->
-        <div class="p-5">
-            <h3 class="text-xl font-bold text-gray-900">{{ vehicle.name }}</h3>
+        <!-- Vehicle Info - 優化內部層級與留白 -->
+        <div class="p-7">
+            <h3
+                class="text-2xl font-bold text-gray-900 leading-tight group-hover:text-blue-600 transition-colors duration-300"
+            >
+                {{ vehicle.name }}
+            </h3>
 
-            <!-- Specs -->
-            <div class="mt-3 flex flex-wrap gap-3 text-sm text-gray-600">
-                <span class="flex items-center gap-1">
+            <!-- Specs - 更精緻的規格展示 -->
+            <div class="mt-5 flex flex-wrap gap-5 text-sm text-gray-600">
+                <span
+                    class="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-xl"
+                >
                     <svg
-                        class="w-4 h-4"
+                        class="w-4 h-4 text-blue-500"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -43,17 +70,17 @@
                             stroke-linecap="round"
                             stroke-linejoin="round"
                             stroke-width="2"
-                            d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                            d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 20v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
                         />
                     </svg>
                     {{ vehicle.seats }}人座
                 </span>
                 <span
                     v-if="vehicle.transmission"
-                    class="flex items-center gap-1"
+                    class="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-xl"
                 >
                     <svg
-                        class="w-4 h-4"
+                        class="w-4 h-4 text-blue-500"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -62,7 +89,7 @@
                             stroke-linecap="round"
                             stroke-linejoin="round"
                             stroke-width="2"
-                            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 3.35 0a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.723 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.723 0 001.065 2.572c1.756.426 1.756 2.924 3.35 0a1.723 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.723 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.723 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.723 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.723 0 001.066-2.573c-.94-1.543.826-3.31-2.37-2.37.996.608 2.296.07 2.572-1.065z"
                         />
                         <path
                             stroke-linecap="round"
@@ -73,23 +100,68 @@
                     </svg>
                     {{ vehicle.transmission === "automatic" ? "自排" : "手排" }}
                 </span>
+                <span
+                    v-if="vehicle.luggage"
+                    class="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-xl"
+                >
+                    <svg
+                        class="w-4 h-4 text-blue-500"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+                        />
+                    </svg>
+                    {{ vehicle.luggage }}件行李
+                </span>
             </div>
 
-            <!-- Price and Actions -->
+            <!-- Price and Actions - 強化價格與CTA的視覺權重 -->
             <div
-                class="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between"
+                class="mt-7 pt-6 border-t border-gray-100 flex items-center justify-between"
             >
                 <div>
-                    <span class="text-2xl font-bold text-blue-900">
-                        ${{ vehicle.pricing?.daily_rate || 0 }}
+                    <span
+                        v-if="vehicle.pricing?.weekday_price"
+                        class="text-4xl font-extrabold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent"
+                    >
+                        ${{ vehicle.pricing.weekday_price }}
                     </span>
-                    <span class="text-gray-500 text-sm">/天</span>
+                    <span v-else class="text-2xl font-bold text-gray-600">
+                        詢問價格
+                    </span>
+                    <span
+                        v-if="vehicle.pricing?.weekday_price"
+                        class="text-gray-400 text-base ml-2 font-medium"
+                        >/天</span
+                    >
                 </div>
                 <router-link
                     :to="`/${tenantSlug}/vehicles/${vehicle.id}`"
-                    class="bg-blue-900 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition text-sm font-medium"
+                    :class="[
+                        'inline-flex items-center px-7 py-3.5 rounded-2xl transition-all duration-300 text-sm font-bold',
+                        'bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white shadow-xl shadow-orange-500/30 hover:shadow-2xl hover:shadow-orange-500/40 hover:-translate-y-0.5 active:scale-[0.97]',
+                    ]"
                 >
-                    查看詳情
+                    立即租車
+                    <svg
+                        class="w-4 h-4 ml-2 transition-transform duration-300 group-hover:translate-x-1"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M9 5l7 7-7 7"
+                        />
+                    </svg>
                 </router-link>
             </div>
         </div>
@@ -103,7 +175,9 @@ const route = useRoute();
 const tenantSlug = route.params.tenantSlug as string;
 
 interface VehiclePricing {
-    daily_rate: number;
+    weekday_price: number;
+    weekend_price: number;
+    holiday_price: number;
 }
 
 interface Vehicle {

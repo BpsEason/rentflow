@@ -1,201 +1,268 @@
 <template>
     <PublicLayout>
-        <!-- Hero Section - 精確版面規格：完整首屏高度，專業布局 -->
+        <!-- Hero Section - 新版設計：左右雙欄布局 -->
         <section
             class="bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 min-h-[calc(100vh-4rem)] flex items-center relative overflow-hidden"
         >
-            <!-- 背景裝飾 - 精確定位 -->
-            <div
-                class="absolute top-0 right-0 w-1/2 h-full bg-blue-900/5 -skew-x-12 transform origin-top-right hidden lg:block"
-            ></div>
-
             <div
                 class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-12 lg:py-0 relative z-10"
             >
                 <div
                     class="grid grid-cols-1 lg:grid-cols-10 gap-8 lg:gap-12 items-center"
                 >
-                    <!-- 左側：文字與搜尋表單 - 佔用45% (約5/10空間) -->
-                    <div class="lg:col-span-5">
-                        <!-- 小Badge -->
+                    <!-- 左側：品牌訊息 - 佔用42% (約4/10空間) -->
+                    <div class="lg:col-span-4">
+                        <!-- Badge -->
                         <span
-                            class="inline-block px-4 py-1.5 bg-amber-100 text-amber-800 text-sm font-medium rounded-full mb-6"
+                            class="inline-block px-4 py-1.5 bg-blue-100 text-blue-800 text-sm font-medium rounded-full mb-6"
                         >
-                            台灣最透明的自駕租車
+                            透明計價 · 輕鬆預約
                         </span>
 
                         <h1
-                            class="text-5xl lg:text-6xl font-bold leading-[1.1] text-slate-900 max-w-2xl"
+                            class="text-4xl lg:text-5xl font-bold leading-[1.15] text-slate-900 max-w-xl"
                         >
-                            租車，就該這麼簡單
+                            租車，不該再有隱藏費用
                         </h1>
                         <p
-                            class="mt-6 text-xl text-gray-600 max-w-xl leading-relaxed"
+                            class="mt-6 text-lg text-gray-600 max-w-lg leading-relaxed"
                         >
-                            透明價格、即時庫存、全程保險。從市區通勤到長途旅行，3
-                            分鐘完成預約。
+                            租期、價格與車輛資訊清楚呈現，讓你在預約前掌握每一筆費用。
                         </p>
 
-                        <!-- 信任數據列 -->
-                        <div class="mt-8 flex flex-wrap gap-12">
+                        <!-- 信任數據區塊 - 建立視覺層級 -->
+                        <div class="mt-12 grid grid-cols-3 gap-6">
                             <div>
-                                <p class="text-3xl font-bold text-slate-900">
+                                <p class="text-3xl font-bold text-blue-600">
                                     12,800+
                                 </p>
-                                <p class="text-sm text-gray-600 mt-1">
-                                    完成行程
+                                <p
+                                    class="text-xs text-gray-500 mt-1 font-medium"
+                                >
+                                    累計服務人次
                                 </p>
                             </div>
                             <div>
-                                <p class="text-3xl font-bold text-slate-900">
+                                <p class="text-3xl font-bold text-blue-600">
                                     4.9
                                 </p>
-                                <p class="text-sm text-gray-600 mt-1">
-                                    用戶評分
+                                <p
+                                    class="text-xs text-gray-500 mt-1 font-medium"
+                                >
+                                    顧客滿意度
                                 </p>
                             </div>
                             <div>
-                                <p class="text-3xl font-bold text-slate-900">
+                                <p class="text-3xl font-bold text-green-500">
                                     0
                                 </p>
-                                <p class="text-sm text-gray-600 mt-1">
+                                <p
+                                    class="text-xs text-gray-500 mt-1 font-medium"
+                                >
                                     隱藏費用
                                 </p>
                             </div>
                         </div>
+                        <!-- 信任資訊 - 使用可驗證的功能特點 -->
+                        <div class="mt-8 flex flex-wrap gap-8">
+                            <div>
+                                <p
+                                    class="text-base font-medium text-slate-700 flex items-center gap-2"
+                                >
+                                    <svg
+                                        class="w-5 h-5 text-green-500"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            stroke-width="2"
+                                            d="M5 13l4 4L19 7"
+                                        />
+                                    </svg>
+                                    價格由系統試算
+                                </p>
+                            </div>
+                            <div>
+                                <p
+                                    class="text-base font-medium text-slate-700 flex items-center gap-2"
+                                >
+                                    <svg
+                                        class="w-5 h-5 text-green-500"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            stroke-width="2"
+                                            d="M5 13l4 4L19 7"
+                                        />
+                                    </svg>
+                                    依租期查詢車輛
+                                </p>
+                            </div>
+                        </div>
+                    </div>
 
-                        <!-- 搜尋表單 - 核心元件 -->
+                    <!-- 右側：搜尋卡片 + 主視覺 - 佔用58% (約6/10空間) -->
+                    <div class="lg:col-span-6">
+                        <!-- 搜尋卡片 - 主要操作入口 - 提升視覺層級 -->
                         <div
-                            class="mt-12 bg-white rounded-2xl shadow-2xl p-6 md:p-8 max-w-2xl relative z-20"
+                            class="bg-white rounded-3xl shadow-2xl shadow-blue-900/20 p-8 md:p-10 relative z-20 mb-8 lg:mb-0 ring-1 ring-gray-100"
                         >
-                            <h2 class="text-xl font-bold text-gray-900 mb-6">
-                                預約您的車輛
+                            <h2 class="text-2xl font-bold text-gray-900 mb-8">
+                                搜尋可用車輛
                             </h2>
                             <form
                                 @submit.prevent="handleSearch"
-                                class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end"
+                                class="grid grid-cols-1 md:grid-cols-2 gap-6"
                             >
                                 <!-- 取車地點 -->
-                                <div class="md:col-span-1">
+                                <div class="md:col-span-2">
                                     <label
-                                        class="block text-sm font-medium text-gray-700 mb-2"
+                                        class="block text-sm font-semibold text-gray-800 mb-3"
                                         >取車地點</label
                                     >
                                     <input
                                         v-model="searchForm.pickupLocation"
                                         type="text"
                                         placeholder="輸入城市、機場或車站"
-                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                                        class="w-full px-5 py-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all duration-300 bg-gray-50 focus:bg-white placeholder:text-gray-400"
                                     />
                                 </div>
 
-                                <!-- 取車日期 -->
+                                <!-- 取車日期與時間 -->
                                 <div>
                                     <label
-                                        class="block text-sm font-medium text-gray-700 mb-2"
+                                        class="block text-sm font-semibold text-gray-800 mb-3"
                                         >取車日期</label
                                     >
                                     <input
                                         v-model="searchForm.pickupDate"
                                         type="date"
                                         :min="today"
-                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                                        class="w-full px-5 py-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all duration-300 bg-gray-50 focus:bg-white"
                                     />
                                 </div>
-
-                                <!-- 還車日期 -->
                                 <div>
                                     <label
-                                        class="block text-sm font-medium text-gray-700 mb-2"
+                                        class="block text-sm font-semibold text-gray-800 mb-3"
+                                        >取車時間</label
+                                    >
+                                    <select
+                                        v-model="searchForm.pickupTime"
+                                        class="w-full px-5 py-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all duration-300 bg-gray-50 focus:bg-white cursor-pointer"
+                                    >
+                                        <option value="09:00">09:00</option>
+                                        <option value="10:00">10:00</option>
+                                        <option value="11:00">11:00</option>
+                                        <option value="14:00">14:00</option>
+                                        <option value="15:00">15:00</option>
+                                        <option value="16:00">16:00</option>
+                                    </select>
+                                </div>
+
+                                <!-- 還車日期與時間 -->
+                                <div>
+                                    <label
+                                        class="block text-sm font-semibold text-gray-800 mb-3"
                                         >還車日期</label
                                     >
                                     <input
                                         v-model="searchForm.returnDate"
                                         type="date"
                                         :min="searchForm.pickupDate || today"
-                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                                        class="w-full px-5 py-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all duration-300 bg-gray-50 focus:bg-white"
                                     />
                                 </div>
+                                <div>
+                                    <label
+                                        class="block text-sm font-semibold text-gray-800 mb-3"
+                                        >還車時間</label
+                                    >
+                                    <select
+                                        v-model="searchForm.returnTime"
+                                        class="w-full px-5 py-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all duration-300 bg-gray-50 focus:bg-white cursor-pointer"
+                                    >
+                                        <option value="09:00">09:00</option>
+                                        <option value="10:00">10:00</option>
+                                        <option value="11:00">11:00</option>
+                                        <option value="14:00">14:00</option>
+                                        <option value="15:00">15:00</option>
+                                        <option value="17:00" selected>
+                                            17:00
+                                        </option>
+                                    </select>
+                                </div>
+
+                                <!-- 錯誤訊息 -->
+                                <p
+                                    v-if="dateError"
+                                    class="md:col-span-2 text-red-500 text-sm font-medium"
+                                >
+                                    {{ dateError }}
+                                </p>
 
                                 <!-- Search Button -->
-                                <div>
+                                <div class="md:col-span-2">
                                     <button
                                         type="submit"
-                                        :disabled="!isSearchValid"
-                                        class="w-full bg-amber-500 hover:bg-amber-600 disabled:bg-gray-400 text-white px-6 py-3.5 rounded-lg font-semibold transition whitespace-nowrap"
+                                        :disabled="
+                                            !isSearchValid || isSubmitting
+                                        "
+                                        class="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-gray-400 disabled:to-gray-400 text-white px-8 py-5 rounded-xl font-bold transition-all duration-300 text-lg shadow-lg shadow-blue-600/30 hover:shadow-xl hover:shadow-blue-600/40 active:scale-[0.98] focus:ring-4 focus:ring-blue-500/30 outline-none"
                                     >
-                                        搜尋車輛
+                                        {{
+                                            isSubmitting
+                                                ? "處理中..."
+                                                : "搜尋可用車輛"
+                                        }}
                                     </button>
                                 </div>
                             </form>
-                            <p class="mt-4 text-xs text-gray-500">
-                                支援機場、車站、市區超過 120 個據點
+                            <p class="mt-5 text-xs text-gray-400 font-medium">
+                                支援機場、車站、市區多個據點
                             </p>
                         </div>
-
-                        <div class="mt-6">
-                            <router-link
-                                :to="`/${tenantSlug}/vehicles`"
-                                class="inline-flex items-center gap-2 text-blue-900 hover:text-blue-700 font-medium transition text-lg"
-                            >
-                                瀏覽所有車輛
-                                <svg
-                                    class="w-5 h-5"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M9 5l7 7-7 7"
-                                    />
-                                </svg>
-                            </router-link>
-                        </div>
                     </div>
+                </div>
 
-                    <!-- 右側：主車輛圖片 - 佔用55% (約5/10空間)，精確比例裁切 -->
-                    <div class="relative hidden lg:block lg:col-span-5">
+                <!-- 車輛主視覺 - 桌面版 -->
+                <div class="hidden lg:block mt-12">
+                    <div
+                        class="relative rounded-3xl overflow-hidden shadow-2xl"
+                    >
+                        <img
+                            :src="heroVehicleImage"
+                            alt="精選車輛展示"
+                            class="w-full h-[400px] object-cover object-center"
+                            loading="eager"
+                        />
                         <div
-                            class="relative rounded-3xl overflow-hidden shadow-2xl"
-                        >
-                            <img
-                                :src="heroVehicleImage"
-                                alt="精選車輛展示"
-                                class="w-full h-[500px] object-cover object-center"
-                                loading="eager"
-                            />
-                            <div
-                                class="absolute inset-0 bg-gradient-to-t from-blue-900/30 via-transparent to-transparent"
-                            ></div>
-                        </div>
-                        <!-- 裝飾性元素 - 精確定位 -->
-                        <div
-                            class="absolute -bottom-8 -left-8 w-80 h-80 bg-blue-200 rounded-full -z-10 blur-3xl opacity-50"
-                        ></div>
-                        <div
-                            class="absolute -top-8 -right-8 w-64 h-64 bg-amber-200 rounded-full -z-10 blur-3xl opacity-50"
+                            class="absolute inset-0 bg-gradient-to-t from-blue-900/40 via-transparent to-transparent"
                         ></div>
                     </div>
+                </div>
 
-                    <!-- Mobile 版車輛圖片 -->
-                    <div class="lg:hidden">
-                        <div class="rounded-2xl overflow-hidden shadow-xl">
-                            <img
-                                :src="heroVehicleImage"
-                                alt="精選車輛展示"
-                                class="w-full h-64 object-cover object-center"
-                                loading="eager"
-                            />
-                        </div>
+                <!-- Mobile 版車輛圖片 -->
+                <div class="lg:hidden mt-8">
+                    <div class="rounded-2xl overflow-hidden shadow-xl">
+                        <img
+                            :src="heroVehicleImage"
+                            alt="精選車輛展示"
+                            class="w-full h-64 object-cover object-center"
+                            loading="eager"
+                        />
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- Featured Vehicles -->
+        <!-- 熱門車款區塊 -->
         <section class="py-20 bg-gray-50">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="text-center mb-12">
@@ -211,7 +278,7 @@
                     class="flex justify-center items-center py-20"
                 >
                     <div
-                        class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-900"
+                        class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"
                     ></div>
                 </div>
 
@@ -220,10 +287,34 @@
                     <p class="text-red-500">{{ error }}</p>
                     <button
                         @click="fetchVehicles"
-                        class="mt-4 text-blue-900 underline"
+                        class="mt-4 text-blue-600 underline"
                     >
                         重新載入
                     </button>
+                </div>
+
+                <!-- Empty State -->
+                <div
+                    v-else-if="featuredVehicles.length === 0"
+                    class="text-center py-20"
+                >
+                    <svg
+                        class="mx-auto h-12 w-12 text-gray-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                    </svg>
+                    <h3 class="mt-4 text-lg font-medium text-gray-900">
+                        目前沒有可用車輛
+                    </h3>
+                    <p class="mt-2 text-gray-500">請稍後再來查看</p>
                 </div>
 
                 <!-- Vehicle Grid -->
@@ -232,16 +323,16 @@
                     class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
                 >
                     <VehicleCard
-                        v-for="vehicle in featuredVehicles"
+                        v-for="(vehicle, index) in featuredVehicles"
                         :key="vehicle.id"
-                        :vehicle="vehicle"
+                        :vehicle="{ ...vehicle, is_featured: index === 0 }"
                     />
                 </div>
 
                 <div class="text-center mt-12">
                     <router-link
                         :to="`/${tenantSlug}/vehicles`"
-                        class="inline-block border-2 border-blue-900 text-blue-900 hover:bg-blue-900 hover:text-white px-8 py-3 rounded-lg font-semibold transition"
+                        class="inline-block border-2 border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white px-10 py-4 rounded-xl font-bold transition-all duration-300 hover:shadow-lg hover:shadow-blue-600/30 active:scale-[0.98]"
                     >
                         瀏覽所有車輛
                     </router-link>
@@ -344,12 +435,16 @@ const today = ref(new Date().toISOString().split("T")[0]);
 const searchForm = ref({
     pickupLocation: "",
     pickupDate: "",
+    pickupTime: "09:00",
     returnDate: "",
+    returnTime: "17:00",
 });
 
 const loading = ref(false);
 const error = ref<string | null>(null);
 const vehicles = ref<any[]>([]);
+const isSubmitting = ref(false);
+const dateError = ref<string | null>(null);
 
 const featuredVehicles = computed(() => {
     return vehicles.value.slice(0, 6);
@@ -374,6 +469,24 @@ const isSearchValid = computed(() => {
     );
 });
 
+const validateDates = (): boolean => {
+    dateError.value = null;
+
+    const pickupDateTime = new Date(
+        `${searchForm.value.pickupDate}T${searchForm.value.pickupTime}`,
+    );
+    const returnDateTime = new Date(
+        `${searchForm.value.returnDate}T${searchForm.value.returnTime}`,
+    );
+
+    if (returnDateTime <= pickupDateTime) {
+        dateError.value = "還車時間必須晚於取車時間";
+        return false;
+    }
+
+    return true;
+};
+
 const fetchVehicles = async () => {
     loading.value = true;
     error.value = null;
@@ -388,18 +501,36 @@ const fetchVehicles = async () => {
     }
 };
 
-const handleSearch = () => {
+const handleSearch = async () => {
     if (!isSearchValid.value) return;
 
-    // Navigate to vehicles page with search params
-    router.push({
-        path: `/${tenantSlug}/vehicles`,
-        query: {
-            location: searchForm.value.pickupLocation,
-            pickup: searchForm.value.pickupDate,
-            return: searchForm.value.returnDate,
-        },
-    });
+    // 驗證日期時間
+    if (!validateDates()) return;
+
+    isSubmitting.value = true;
+
+    try {
+        // 導向車輛列表頁，傳遞完整的租期參數
+        const pickupAt = `${searchForm.value.pickupDate} ${searchForm.value.pickupTime}:00`;
+        const returnAt = `${searchForm.value.returnDate} ${searchForm.value.returnTime}:00`;
+
+        router.push({
+            path: `/${tenantSlug}/vehicles`,
+            query: {
+                location: searchForm.value.pickupLocation,
+                pickup: searchForm.value.pickupDate,
+                return: searchForm.value.returnDate,
+                pickup_time: searchForm.value.pickupTime,
+                return_time: searchForm.value.returnTime,
+                start_at: pickupAt,
+                end_at: returnAt,
+            },
+        });
+    } catch (e) {
+        console.error("Search error:", e);
+    } finally {
+        isSubmitting.value = false;
+    }
 };
 
 const apiLoading = ref(false);
