@@ -62,7 +62,7 @@
 
                         <!-- Booking Form -->
                         <template v-else>
-                            <!-- Customer Information -->
+                            <!-- Customer Information - 無論是否登入都顯示，但如果已登入且有現有客戶資料可以預填 -->
                             <div class="bg-white rounded-xl shadow-md p-6">
                                 <h2
                                     class="text-xl font-semibold text-gray-900 mb-6 flex items-center"
@@ -140,7 +140,7 @@
                                 </div>
                             </div>
 
-                            <!-- Driver Information -->
+                            <!-- Driver Information - 無論是否登入都顯示 -->
                             <div class="bg-white rounded-xl shadow-md p-6">
                                 <h2
                                     class="text-xl font-semibold text-gray-900 mb-6 flex items-center"
@@ -566,6 +566,10 @@ const router = useRouter();
 const tenantSlug = route.params.tenantSlug as string;
 const vehicleId = route.params.vehicleId as string;
 
+// 檢查用戶是否登入
+const token = localStorage.getItem("token");
+const isLoggedIn = ref(!!token);
+
 // Get query params from previous page
 const pickupDate = route.query.pickupDate as string;
 const pickupTime = route.query.pickupTime as string;
@@ -655,6 +659,7 @@ const fetchVehicle = async () => {
 const validateForm = () => {
     formErrors.value = [];
 
+    // 所有用戶都需要填寫個人資料欄位，已登入用戶如果在當前租戶沒有客戶資料也需要填寫
     if (!form.value.name.trim()) formErrors.value.push("請填寫姓名");
     if (!form.value.phone.trim()) formErrors.value.push("請填寫手機號碼");
     if (!form.value.email.trim()) formErrors.value.push("請填寫電子郵件");
@@ -662,8 +667,6 @@ const validateForm = () => {
     if (!form.value.license_number.trim())
         formErrors.value.push("請填寫駕照號碼");
     if (!form.value.license_expiry) formErrors.value.push("請填寫駕照有效日期");
-    if (!form.value.agreed_to_terms)
-        formErrors.value.push("請閱讀並同意服務條款");
 
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -677,6 +680,10 @@ const validateForm = () => {
         formErrors.value.push("請輸入有效的手機號碼格式");
     }
 
+    // 所有用戶都需要同意服務條款
+    if (!form.value.agreed_to_terms)
+        formErrors.value.push("請閱讀並同意服務條款");
+
     return formErrors.value.length === 0;
 };
 
@@ -685,25 +692,50 @@ const submitBooking = async () => {
 
     submitting.value = true;
     try {
-        const bookingData = {
-            vehicle_id: vehicleId,
-            pickup_date: pickupDate,
-            pickup_time: pickupTime,
-            return_date: returnDate,
-            return_time: returnTime,
-            customer_name: form.value.name,
-            customer_phone: form.value.phone,
-            customer_email: form.value.email,
-            customer_id_number: form.value.id_number,
-            license_number: form.value.license_number,
-            license_expiry: form.value.license_expiry,
-            address: form.value.address,
-            additional_services: form.value.additional_services,
-            total_amount: finalTotal.value,
-        };
+        const token = localStorage.getItem("token");
+        const isLoggedIn = !!token;
 
-        // Submit to API
-        const response = await api.post("/public/reservations", bookingData);
+        let response;
+        if (isLoggedIn) {
+            // 已登入會員，使用會員專用預約端點
+            const bookingData = {
+                vehicle_id: vehicleId,
+                pickup_date: pickupDate,
+                pickup_time: pickupTime,
+                return_date: returnDate,
+                return_time: returnTime,
+                notes: form.value.additional_services.child_seat
+                    ? "需要兒童座椅"
+                    : "",
+                // 客戶資料 - 如果用戶在當前租戶還沒有客戶資料，系統會自動建立
+                customer_name: form.value.name,
+                customer_phone: form.value.phone,
+                customer_id_number: form.value.id_number,
+                license_number: form.value.license_number,
+                license_expiry: form.value.license_expiry,
+                address: form.value.address,
+            };
+            response = await api.post("/customer/reservations", bookingData);
+        } else {
+            // 訪客，使用公開預約端點
+            const bookingData = {
+                vehicle_id: vehicleId,
+                pickup_date: pickupDate,
+                pickup_time: pickupTime,
+                return_date: returnDate,
+                return_time: returnTime,
+                customer_name: form.value.name,
+                customer_phone: form.value.phone,
+                customer_email: form.value.email,
+                customer_id_number: form.value.id_number,
+                license_number: form.value.license_number,
+                license_expiry: form.value.license_expiry,
+                address: form.value.address,
+                additional_services: form.value.additional_services,
+                total_amount: finalTotal.value,
+            };
+            response = await api.post("/public/reservations", bookingData);
+        }
 
         // Redirect to confirmation page
         router.push(

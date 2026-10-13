@@ -566,7 +566,9 @@ const fetchReservation = async () => {
     loading.value = true;
     error.value = null;
     try {
-        const response = await api.get(`/reservations/${reservationId}`);
+        const response = await api.get(
+            `/${tenantSlug}/customer/reservations/${reservationId}`,
+        );
         reservation.value = response.data.data;
     } catch (e: any) {
         console.error("Failed to fetch reservation:", e);

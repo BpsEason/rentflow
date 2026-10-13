@@ -6,14 +6,82 @@
         "version": "1.0.0"
     },
     "paths": {
-        "/api/v1/auth/login": {
+        "/api/v1/customer/auth/register": {
             "post": {
                 "tags": [
-                    "Authentication"
+                    "Customer Authentication"
                 ],
-                "summary": "使用者登入",
-                "description": "使用email和password取得JWT認證token",
-                "operationId": "fb66b153966d9fac2e999136ef0ade67",
+                "summary": "客戶註冊",
+                "description": "前台客戶註冊平台會員帳號",
+                "operationId": "1b909dd04aa9860a11c1441002b7c553",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "email",
+                                    "password",
+                                    "phone"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "張三"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "customer@example.com"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "password123"
+                                    },
+                                    "phone": {
+                                        "type": "string",
+                                        "example": "0912345678"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "註冊成功",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "驗證錯誤",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/customer/auth/login": {
+            "post": {
+                "tags": [
+                    "Customer Authentication"
+                ],
+                "summary": "客戶登入",
+                "description": "前台客戶使用email和password取得JWT認證token",
+                "operationId": "3c90e2d633836c5238a9233ee7b9c7cd",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -27,12 +95,12 @@
                                     "email": {
                                         "type": "string",
                                         "format": "email",
-                                        "example": "admin@example.com"
+                                        "example": "customer@example.com"
                                     },
                                     "password": {
                                         "type": "string",
                                         "format": "password",
-                                        "example": "password"
+                                        "example": "password123"
                                     }
                                 },
                                 "type": "object"
@@ -74,17 +142,17 @@
                 }
             }
         },
-        "/api/v1/auth/me": {
+        "/api/v1/customer/auth/me": {
             "get": {
                 "tags": [
-                    "Authentication"
+                    "Customer Authentication"
                 ],
-                "summary": "取得當前使用者資訊",
-                "description": "取得目前登入使用者的詳細資訊",
-                "operationId": "5389aaa95512ef0b6ec88f262ecee7f0",
+                "summary": "取得當前客戶資訊",
+                "description": "取得目前登入客戶的詳細資訊及其在當前租戶的Customer資料",
+                "operationId": "15431c9535b3a15dcd95cab5585e900c",
                 "responses": {
                     "200": {
-                        "description": "成功取得使用者資訊",
+                        "description": "成功取得客戶資訊",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -111,14 +179,14 @@
                 ]
             }
         },
-        "/api/v1/auth/logout": {
+        "/api/v1/customer/auth/logout": {
             "post": {
                 "tags": [
-                    "Authentication"
+                    "Customer Authentication"
                 ],
-                "summary": "使用者登出",
+                "summary": "客戶登出",
                 "description": "使當前JWT token失效",
-                "operationId": "307ed0512855922b2280792376bb2095",
+                "operationId": "66a4a5ccbe5cd8644288718bf4d8ff96",
                 "responses": {
                     "200": {
                         "description": "登出成功",
@@ -139,16 +207,6 @@
                                 }
                             }
                         }
-                    },
-                    "500": {
-                        "description": "伺服器錯誤",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ApiErrorResponse"
-                                }
-                            }
-                        }
                     }
                 },
                 "security": [
@@ -158,14 +216,14 @@
                 ]
             }
         },
-        "/api/v1/auth/refresh": {
+        "/api/v1/customer/auth/refresh": {
             "post": {
                 "tags": [
-                    "Authentication"
+                    "Customer Authentication"
                 ],
                 "summary": "刷新JWT token",
-                "description": "取得新的存取token",
-                "operationId": "40586da4366a27fa3381f9299144b55f",
+                "description": "刷新當前的JWT認證token",
+                "operationId": "88f41ee661d7548ed75194fe2aaeb844",
                 "responses": {
                     "200": {
                         "description": "刷新成功",
@@ -195,66 +253,27 @@
                 ]
             }
         },
-        "/api/v1/customers": {
-            "get": {
-                "tags": [
-                    "Customers"
-                ],
-                "summary": "取得客戶列表",
-                "description": "取得目前租戶的所有客戶列表",
-                "operationId": "fddf8e3800951c00bc5fbd50026d7e6a",
-                "responses": {
-                    "200": {
-                        "description": "成功取得客戶列表",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ApiSuccessResponse"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
+        "/api/v1/customer/auth/forgot-password": {
             "post": {
                 "tags": [
-                    "Customers"
+                    "Customer Authentication"
                 ],
-                "summary": "建立客戶",
-                "description": "建立新客戶",
-                "operationId": "59d57e1ee7b485895d41c89b775a8779",
+                "summary": "忘記密碼",
+                "description": "發送密碼重設連結到客戶的email",
+                "operationId": "7e38d87533243222f91121a9797a9f1e",
                 "requestBody": {
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "name",
-                                    "email",
-                                    "phone"
+                                    "email"
                                 ],
                                 "properties": {
-                                    "name": {
-                                        "type": "string",
-                                        "example": "王小明"
-                                    },
                                     "email": {
                                         "type": "string",
                                         "format": "email",
-                                        "example": "ming@example.com"
-                                    },
-                                    "phone": {
-                                        "type": "string",
-                                        "example": "0912345678"
-                                    },
-                                    "is_active": {
-                                        "type": "boolean",
-                                        "example": true
+                                        "example": "customer@example.com"
                                     }
                                 },
                                 "type": "object"
@@ -263,8 +282,8 @@
                     }
                 },
                 "responses": {
-                    "201": {
-                        "description": "客戶建立成功",
+                    "200": {
+                        "description": "重設連結已發送",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -272,36 +291,68 @@
                                 }
                             }
                         }
+                    },
+                    "422": {
+                        "description": "驗證錯誤",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationErrorResponse"
+                                }
+                            }
+                        }
                     }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
+                }
             }
         },
-        "/api/v1/customers/{customer}": {
-            "get": {
+        "/api/v1/customer/auth/reset-password": {
+            "post": {
                 "tags": [
-                    "Customers"
+                    "Customer Authentication"
                 ],
-                "summary": "取得單一客戶詳情",
-                "description": "取得指定客戶詳情",
-                "operationId": "587ea0335388642630306babd000e904",
-                "parameters": [
-                    {
-                        "name": "customer",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
+                "summary": "重設密碼",
+                "description": "使用重設token更新密碼",
+                "operationId": "fa4c8c7ba0fbd6cd11ac1d2ef35fffe0",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "token",
+                                    "email",
+                                    "password",
+                                    "password_confirmation"
+                                ],
+                                "properties": {
+                                    "token": {
+                                        "type": "string",
+                                        "example": "reset-token-here"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "customer@example.com"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "newpassword123"
+                                    },
+                                    "password_confirmation": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "newpassword123"
+                                    }
+                                },
+                                "type": "object"
+                            }
                         }
                     }
-                ],
+                },
                 "responses": {
                     "200": {
-                        "description": "成功取得客戶詳情",
+                        "description": "密碼重設成功",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -310,135 +361,83 @@
                             }
                         }
                     },
-                    "404": {
-                        "description": "客戶不存在"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
-            "put": {
-                "tags": [
-                    "Customers"
-                ],
-                "summary": "更新客戶資訊",
-                "description": "更新指定客戶資訊",
-                "operationId": "126e2c91a3915a8ff8cd7e2f54746a79",
-                "parameters": [
-                    {
-                        "name": "customer",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "更新客戶成功",
+                    "422": {
+                        "description": "驗證錯誤或重設token無效",
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                    "$ref": "#/components/schemas/ValidationErrorResponse"
                                 }
                             }
                         }
-                    },
-                    "404": {
-                        "description": "客戶不存在"
                     }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
-            "delete": {
-                "tags": [
-                    "Customers"
-                ],
-                "summary": "刪除客戶",
-                "description": "刪除指定客戶",
-                "operationId": "5d24426c090343993cec2b0f8372a6f0",
-                "parameters": [
-                    {
-                        "name": "customer",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "刪除客戶成功"
-                    },
-                    "404": {
-                        "description": "客戶不存在"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
-            "patch": {
-                "tags": [
-                    "Customers"
-                ],
-                "summary": "部分更新客戶資訊",
-                "description": "部分更新指定客戶資訊",
-                "operationId": "7a5f4e07f79a78319a3e51062475b3af",
-                "parameters": [
-                    {
-                        "name": "customer",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "更新客戶成功",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ApiSuccessResponse"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "客戶不存在"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
+                }
             }
         },
-        "/api/v1/orders": {
-            "get": {
+        "/api/v1/customer/profile": {
+            "post": {
                 "tags": [
-                    "Orders"
+                    "Customer Profile"
                 ],
-                "summary": "取得訂單列表",
-                "description": "取得目前租戶的所有訂單列表",
-                "operationId": "6390e58970c6b576bd8c1ec198cb5fbb",
+                "summary": "建立或更新當前租戶的客戶資料",
+                "description": "為登入的會員在當前租戶建立或更新Customer資料",
+                "operationId": "31ffe993761224abf4863e41af3af58a",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "phone",
+                                    "id_number",
+                                    "license_number",
+                                    "license_expiry",
+                                    "address"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "張三"
+                                    },
+                                    "phone": {
+                                        "type": "string",
+                                        "example": "0912345678"
+                                    },
+                                    "id_number": {
+                                        "type": "string",
+                                        "example": "A123456789"
+                                    },
+                                    "license_number": {
+                                        "type": "string",
+                                        "example": "XYZ123456"
+                                    },
+                                    "license_expiry": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2030-01-01"
+                                    },
+                                    "address": {
+                                        "type": "string",
+                                        "example": "台北市信義區信義路五段7號"
+                                    },
+                                    "emergency_contact_name": {
+                                        "type": "string",
+                                        "example": "李四"
+                                    },
+                                    "emergency_contact_phone": {
+                                        "type": "string",
+                                        "example": "0987654321"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
-                        "description": "成功取得訂單列表",
+                        "description": "資料更新成功",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -456,6 +455,63 @@
                                 }
                             }
                         }
+                    },
+                    "422": {
+                        "description": "驗證錯誤",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/customer/reservations": {
+            "get": {
+                "tags": [
+                    "Customer Reservations"
+                ],
+                "summary": "取得當前客戶的預約列表",
+                "description": "獲取登入會員在當前租戶下的所有預約記錄",
+                "operationId": "1134e18be6efdd4cfd7180f517abeac3",
+                "responses": {
+                    "200": {
+                        "description": "成功取得預約列表",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "未授權",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "未找到客戶資料",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -466,23 +522,81 @@
             },
             "post": {
                 "tags": [
-                    "Orders"
+                    "Customer Reservations"
                 ],
-                "summary": "建立訂單",
-                "description": "從現有已確認或已取車之預約建立訂單",
-                "operationId": "8cb746eb001b58ac915930ba43cfdf0d",
+                "summary": "會員建立預約",
+                "description": "登入的會員使用已有的Customer資料建立車輛預約",
+                "operationId": "a2390248fdccf2c6b88e53b2279ac858",
                 "requestBody": {
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "reservation_id"
+                                    "vehicle_id",
+                                    "pickup_date",
+                                    "pickup_time",
+                                    "return_date",
+                                    "return_time"
                                 ],
                                 "properties": {
-                                    "reservation_id": {
+                                    "vehicle_id": {
                                         "type": "integer",
                                         "example": 1
+                                    },
+                                    "pickup_date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-10-15"
+                                    },
+                                    "pickup_time": {
+                                        "type": "string",
+                                        "example": "10:00"
+                                    },
+                                    "return_date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-10-18"
+                                    },
+                                    "return_time": {
+                                        "type": "string",
+                                        "example": "18:00"
+                                    },
+                                    "notes": {
+                                        "type": "string",
+                                        "example": "需要兒童座椅",
+                                        "nullable": true
+                                    },
+                                    "customer_name": {
+                                        "type": "string",
+                                        "example": "張三",
+                                        "nullable": true
+                                    },
+                                    "customer_phone": {
+                                        "type": "string",
+                                        "example": "0912345678",
+                                        "nullable": true
+                                    },
+                                    "customer_id_number": {
+                                        "type": "string",
+                                        "example": "A123456789",
+                                        "nullable": true
+                                    },
+                                    "license_number": {
+                                        "type": "string",
+                                        "example": "12345678",
+                                        "nullable": true
+                                    },
+                                    "license_expiry": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2030-01-01",
+                                        "nullable": true
+                                    },
+                                    "address": {
+                                        "type": "string",
+                                        "example": "台北市中山區",
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -492,11 +606,99 @@
                 },
                 "responses": {
                     "201": {
-                        "description": "建立訂單成功",
+                        "description": "預約建立成功",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "未授權",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "未找到客戶資料或車輛不存在",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "參數錯誤或車輛不可用",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/customer/reservations/{id}": {
+            "get": {
+                "tags": [
+                    "Customer Reservations"
+                ],
+                "summary": "取得單一預約詳情",
+                "description": "獲取登入會員在當前租戶下的特定預約的詳細資訊",
+                "operationId": "6537d2a5b771e409d5d7d3c2e319ec33",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "預約ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功取得預約詳情",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "未授權",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "無權存取此預約",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
                                 }
                             }
                         }
@@ -510,16 +712,6 @@
                                 }
                             }
                         }
-                    },
-                    "409": {
-                        "description": "預約狀態無效或訂單已存在",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ApiErrorResponse"
-                                }
-                            }
-                        }
                     }
                 },
                 "security": [
@@ -529,65 +721,19 @@
                 ]
             }
         },
-        "/api/v1/orders/{order}": {
-            "get": {
-                "tags": [
-                    "Orders"
-                ],
-                "summary": "取得單一訂單詳情",
-                "description": "取得指定訂單詳情",
-                "operationId": "29e4676537faf0c969a79eb39e944a39",
-                "parameters": [
-                    {
-                        "name": "order",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "成功取得訂單詳情",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ApiSuccessResponse"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "訂單不存在",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ApiErrorResponse"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/api/v1/orders/{order}/confirm": {
+        "/api/v1/customer/reservations/{id}/cancel": {
             "post": {
                 "tags": [
-                    "Orders"
+                    "Customer Reservations"
                 ],
-                "summary": "確認訂單",
-                "description": "將待處理狀態的訂單轉為已確認",
-                "operationId": "f6e7f093b23447e5780d68683daef9a6",
+                "summary": "會員取消預約",
+                "description": "登入的會員取消自己的預約，僅限PENDING或CONFIRMED狀態的預約",
+                "operationId": "4f9ad6a487903b5d86e352a68ccc1bea",
                 "parameters": [
                     {
-                        "name": "order",
+                        "name": "id",
                         "in": "path",
+                        "description": "預約ID",
                         "required": true,
                         "schema": {
                             "type": "integer"
@@ -596,7 +742,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "確認訂單成功",
+                        "description": "預約取消成功",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -605,8 +751,8 @@
                             }
                         }
                     },
-                    "404": {
-                        "description": "訂單不存在",
+                    "401": {
+                        "description": "未授權",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -615,122 +761,18 @@
                             }
                         }
                     },
-                    "409": {
-                        "description": "訂單狀態無法確認",
+                    "403": {
+                        "description": "無權存取此預約或無法取消",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ApiErrorResponse"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/api/v1/orders/{order}/complete": {
-            "post": {
-                "tags": [
-                    "Orders"
-                ],
-                "summary": "完成訂單",
-                "description": "將已確認狀態的訂單轉為完成",
-                "operationId": "4ef77bba2500af59336f68132740bdf3",
-                "parameters": [
-                    {
-                        "name": "order",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "完成訂單成功",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ApiSuccessResponse"
                                 }
                             }
                         }
                     },
                     "404": {
-                        "description": "訂單不存在",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ApiErrorResponse"
-                                }
-                            }
-                        }
-                    },
-                    "409": {
-                        "description": "訂單狀態無法完成",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ApiErrorResponse"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/api/v1/orders/{order}/cancel": {
-            "post": {
-                "tags": [
-                    "Orders"
-                ],
-                "summary": "取消訂單",
-                "description": "將訂單轉為已取消",
-                "operationId": "65b310314f60aa35656c74ebbf2abf8a",
-                "parameters": [
-                    {
-                        "name": "order",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "取消訂單成功",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ApiSuccessResponse"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "訂單不存在",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ApiErrorResponse"
-                                }
-                            }
-                        }
-                    },
-                    "409": {
-                        "description": "訂單狀態無法取消",
+                        "description": "預約不存在",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -1142,6 +1184,161 @@
                 ]
             }
         },
+        "/api/v1/public/reservations": {
+            "post": {
+                "tags": [
+                    "Reservations"
+                ],
+                "summary": "訪客創建預約",
+                "description": "未登入的訪客可以創建車輛預約，系統會自動創建或匹配客戶資料",
+                "operationId": "90ef480b76d3bf75768fb311a804edea",
+                "parameters": [
+                    {
+                        "name": "X-Tenant-Slug",
+                        "in": "header",
+                        "description": "租戶唯一識別碼",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "vehicle_id",
+                                    "pickup_date",
+                                    "pickup_time",
+                                    "return_date",
+                                    "return_time",
+                                    "customer_name",
+                                    "customer_phone",
+                                    "customer_email",
+                                    "customer_id_number",
+                                    "license_number",
+                                    "license_expiry"
+                                ],
+                                "properties": {
+                                    "vehicle_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "pickup_date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-10-15"
+                                    },
+                                    "pickup_time": {
+                                        "type": "string",
+                                        "example": "10:00"
+                                    },
+                                    "return_date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-10-18"
+                                    },
+                                    "return_time": {
+                                        "type": "string",
+                                        "example": "18:00"
+                                    },
+                                    "customer_name": {
+                                        "type": "string",
+                                        "example": "陳志明"
+                                    },
+                                    "customer_phone": {
+                                        "type": "string",
+                                        "example": "0912345678"
+                                    },
+                                    "customer_email": {
+                                        "type": "string",
+                                        "example": "chen@example.com"
+                                    },
+                                    "customer_id_number": {
+                                        "type": "string",
+                                        "example": "A123456789"
+                                    },
+                                    "license_number": {
+                                        "type": "string",
+                                        "example": "1234567890"
+                                    },
+                                    "license_expiry": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2031-10-10"
+                                    },
+                                    "address": {
+                                        "type": "string",
+                                        "example": "台北市大安區...",
+                                        "nullable": true
+                                    },
+                                    "emergency_contact_name": {
+                                        "type": "string",
+                                        "example": "王小美",
+                                        "nullable": true
+                                    },
+                                    "emergency_contact_phone": {
+                                        "type": "string",
+                                        "example": "0987654321",
+                                        "nullable": true
+                                    },
+                                    "notes": {
+                                        "type": "string",
+                                        "example": "需要兒童座椅",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "預約建立成功",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "無法解析租戶資訊",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "參數錯誤或車輛不可用",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "車輛不存在",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/vehicles": {
             "get": {
                 "tags": [
@@ -1412,17 +1609,28 @@
                 ]
             }
         },
-        "/api/v1/vehicle-pricings": {
+        "/api/v1/public/vehicles": {
             "get": {
                 "tags": [
-                    "Vehicle Pricings"
+                    "Vehicles"
                 ],
-                "summary": "取得車輛定價列表",
-                "description": "取得目前租戶的所有車輛定價列表",
-                "operationId": "466bade59e40f27fc4a64b7736927a79",
+                "summary": "公開取得車輛列表",
+                "description": "取得目前租戶的所有可租用車輛列表，供前台公開存取",
+                "operationId": "79c99ac30a2b7dda1c491e81fe6bc22a",
+                "parameters": [
+                    {
+                        "name": "X-Tenant-Slug",
+                        "in": "header",
+                        "description": "租戶唯一識別碼",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "成功取得車輛定價列表",
+                        "description": "成功取得車輛列表",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -1430,51 +1638,200 @@
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "description": "無法解析租戶資訊",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
                     }
-                },
-                "security": [
+                }
+            }
+        },
+        "/api/v1/public/vehicles/{id}": {
+            "get": {
+                "tags": [
+                    "Vehicles"
+                ],
+                "summary": "公開取得車輛詳情",
+                "description": "取得指定車輛詳情，供前台公開存取",
+                "operationId": "bb8b44fe3f7cdc0c84570a637680a33a",
+                "parameters": [
                     {
-                        "bearerAuth": []
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "X-Tenant-Slug",
+                        "in": "header",
+                        "description": "租戶唯一識別碼",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
                     }
-                ]
-            },
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功取得車輛詳情",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "無法解析租戶資訊",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "車輛不存在",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/public/vehicles/available": {
+            "get": {
+                "tags": [
+                    "Vehicles"
+                ],
+                "summary": "查詢指定租期內可用的車輛",
+                "description": "根據開始和結束時間查詢當前租戶內可以預約的車輛",
+                "operationId": "a83c8157438a0dcedbcf14c64b9138d4",
+                "parameters": [
+                    {
+                        "name": "X-Tenant-Slug",
+                        "in": "header",
+                        "description": "租戶唯一識別碼",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "start_at",
+                        "in": "query",
+                        "description": "開始時間",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "date-time"
+                        }
+                    },
+                    {
+                        "name": "end_at",
+                        "in": "query",
+                        "description": "結束時間",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "date-time"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功取得可用車輛列表",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "無法解析租戶資訊",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "參數驗證失敗",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/public/vehicles/{id}/calculate-price": {
             "post": {
                 "tags": [
-                    "Vehicle Pricings"
+                    "Vehicles"
                 ],
-                "summary": "建立車輛定價",
-                "description": "建立車輛定價設定",
-                "operationId": "239a55cf9f84387be0534f6370e94e9b",
+                "summary": "計算車輛租金",
+                "description": "試算指定車輛在指定租期內的租金總額，包含逐日計價明細",
+                "operationId": "08e6a701e48ef24b0c1963258f3091c5",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "X-Tenant-Slug",
+                        "in": "header",
+                        "description": "租戶唯一識別碼",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
                 "requestBody": {
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "vehicle_id",
-                                    "weekday_price",
-                                    "weekend_price",
-                                    "holiday_price"
+                                    "start_at",
+                                    "end_at"
                                 ],
                                 "properties": {
-                                    "vehicle_id": {
-                                        "type": "integer",
-                                        "example": 1
+                                    "start_at": {
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "example": "2026-10-15 10:00:00"
                                     },
-                                    "weekday_price": {
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 1500
-                                    },
-                                    "weekend_price": {
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 2000
-                                    },
-                                    "holiday_price": {
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 2500
+                                    "end_at": {
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "example": "2026-10-18 18:00:00"
                                     }
                                 },
                                 "type": "object"
@@ -1483,45 +1840,8 @@
                     }
                 },
                 "responses": {
-                    "201": {
-                        "description": "建立車輛定價成功",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ApiSuccessResponse"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/api/v1/vehicle-pricings/{vehicle_pricing}": {
-            "get": {
-                "tags": [
-                    "Vehicle Pricings"
-                ],
-                "summary": "取得單一車輛定價詳情",
-                "description": "取得指定車輛定價詳情",
-                "operationId": "8ca41b81684a93a917c13870c24919ca",
-                "parameters": [
-                    {
-                        "name": "vehicle_pricing",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
                     "200": {
-                        "description": "成功取得車輛定價詳情",
+                        "description": "成功計算租金",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -1530,98 +1850,28 @@
                             }
                         }
                     },
-                    "404": {
-                        "description": "車輛定價不存在",
+                    "403": {
+                        "description": "無法解析租戶資訊",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ApiErrorResponse"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
-            "put": {
-                "tags": [
-                    "Vehicle Pricings"
-                ],
-                "summary": "更新車輛定價資訊",
-                "description": "更新指定車輛定價資訊",
-                "operationId": "99ba41ead9ef6cea8dedefc07f480dc4",
-                "parameters": [
-                    {
-                        "name": "vehicle_pricing",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "更新車輛定價成功",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ApiSuccessResponse"
                                 }
                             }
                         }
                     },
                     "404": {
-                        "description": "車輛定價不存在",
+                        "description": "車輛不存在",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ApiErrorResponse"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
-            "delete": {
-                "tags": [
-                    "Vehicle Pricings"
-                ],
-                "summary": "刪除車輛定價",
-                "description": "刪除指定車輛定價",
-                "operationId": "10332b6fbe20e72b13d2ea984b4e31ff",
-                "parameters": [
-                    {
-                        "name": "vehicle_pricing",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "刪除車輛定價成功",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ApiSuccessResponse"
                                 }
                             }
                         }
                     },
-                    "404": {
-                        "description": "車輛定價不存在",
+                    "422": {
+                        "description": "參數驗證失敗或租期不合法",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -1630,57 +1880,7 @@
                             }
                         }
                     }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
-            "patch": {
-                "tags": [
-                    "Vehicle Pricings"
-                ],
-                "summary": "部分更新車輛定價資訊",
-                "description": "部分更新指定車輛定價資訊",
-                "operationId": "42f4ad6ff4947635c561173c594f8ec4",
-                "parameters": [
-                    {
-                        "name": "vehicle_pricing",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "更新車輛定價成功",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ApiSuccessResponse"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "車輛定價不存在",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ApiErrorResponse"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
+                }
             }
         }
     },
@@ -1807,14 +2007,6 @@
     },
     "tags": [
         {
-            "name": "Customers",
-            "description": "客戶管理相關API"
-        },
-        {
-            "name": "Orders",
-            "description": "訂單管理與 Lifecycle 相關API"
-        },
-        {
             "name": "Reservations",
             "description": "預約管理相關API"
         },
@@ -1823,12 +2015,16 @@
             "description": "車輛管理相關API"
         },
         {
-            "name": "Vehicle Pricings",
-            "description": "車輛定價管理相關API"
+            "name": "Customer Authentication",
+            "description": "Customer Authentication"
         },
         {
-            "name": "Authentication",
-            "description": "Authentication"
+            "name": "Customer Profile",
+            "description": "Customer Profile"
+        },
+        {
+            "name": "Customer Reservations",
+            "description": "Customer Reservations"
         }
     ]
 }

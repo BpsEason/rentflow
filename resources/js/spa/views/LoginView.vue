@@ -145,7 +145,17 @@
                 </form>
             </div>
 
-            <p class="text-center text-sm text-gray-500 mt-6">
+            <p class="text-center text-sm text-gray-600 mt-6">
+                還沒有帳號？
+                <router-link
+                    :to="`/${tenantSlug}/register`"
+                    class="text-primary-600 hover:text-primary-500 font-medium"
+                >
+                    立即註冊
+                </router-link>
+            </p>
+
+            <p class="text-center text-sm text-gray-500 mt-4">
                 © 2026 RentFlow. 版權所有
             </p>
         </div>
@@ -179,7 +189,7 @@ const handleLogin = async () => {
     error.value = null;
 
     try {
-        const response = await api.post("/auth/login", {
+        const response = await api.post(`/${tenantSlug}/customer/auth/login`, {
             email: form.value.email,
             password: form.value.password,
         });

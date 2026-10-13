@@ -10,152 +10,249 @@ use App\Models\Reservation;
 use App\Models\VehiclePricing;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
+use Carbon\Carbon;
 
 class CancelReservationTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_can_cancel_pending_reservation(): void
-    {
-        $tenant = Tenant::factory()->create();
-        $user = User::factory()->create();
-        $user->tenants()->attach($tenant);
+    private Tenant $tenant;
+    private User $user;
+    private Customer $customer;
+    private Vehicle $vehicle;
+    private Reservation $reservation;
 
-        $vehicle = Vehicle::factory()->create([
-            'tenant_id' => $tenant->id,
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // 創建測試租戶
+        $this->tenant = Tenant::factory()->create([
+            'is_public' => true,
+            'slug' => 'test-tenant',
+        ]);
+
+        // 創建會員用戶
+        $this->user = User::factory()->create([
+            'email' => 'member@example.com',
+            'password' => bcrypt('password123'),
+        ]);
+
+        // 創建客戶資料
+        $this->customer = Customer::create([
+            'tenant_id' => $this->tenant->id,
+            'user_id' => $this->user->id,
+            'name' => '測試會員',
+            'phone' => '0912345678',
+            'email' => $this->user->email,
+            'id_number' => 'A123456789',
+            'license_number' => '12345678',
+            'license_expiry' => '2030-01-01',
+            'address' => '台北市中山區',
+            'is_active' => true,
+        ]);
+
+        // 創建可用的車輛
+        $this->vehicle = Vehicle::factory()->create([
+            'tenant_id' => $this->tenant->id,
             'status' => 'AVAILABLE',
         ]);
-        $vehiclePricing = VehiclePricing::factory()->create([
-            'tenant_id' => $tenant->id,
-            'vehicle_id' => $vehicle->id,
-        ]);
-        $customer = Customer::factory()->create(['tenant_id' => $tenant->id]);
 
-        // 創建一個待確認的預約
-        $reservation = Reservation::create([
-            'tenant_id' => $tenant->id,
-            'customer_id' => $customer->id,
-            'vehicle_id' => $vehicle->id,
-            'start_at' => now()->addDay(),
-            'end_at' => now()->addDays(3),
+        // 創建車輛定價
+        VehiclePricing::factory()->create([
+            'tenant_id' => $this->tenant->id,
+            'vehicle_id' => $this->vehicle->id,
+            'weekday_price' => 1000,
+            'weekend_price' => 1500,
+            'holiday_price' => 2000,
+        ]);
+
+        // 創建一個PENDING狀態的預約供測試使用
+        $this->reservation = Reservation::create([
+            'tenant_id' => $this->tenant->id,
+            'customer_id' => $this->customer->id,
+            'vehicle_id' => $this->vehicle->id,
+            'start_at' => Carbon::now()->addDay()->setHour(10)->setMinute(0),
+            'end_at' => Carbon::now()->addDays(3)->setHour(18)->setMinute(0),
             'status' => Reservation::STATUS_PENDING,
-            'amount' => 2000,
-            'rental_days' => 2,
+            'amount' => 3000,
+            'rental_days' => 3,
         ]);
+    }
 
-        // 呼叫取消 API
-        $response = $this->actingAs($user, 'api')
-            ->postJson("/api/v1/reservations/{$reservation->id}/cancel", [
-                'reason' => '客戶取消行程',
-            ]);
+    public function test_owner_can_cancel_pending_reservation()
+    {
+        $response = $this->actingAs($this->user, 'api')
+            ->postJson("/api/v1/{$this->tenant->slug}/customer/reservations/{$this->reservation->id}/cancel");
+
+        // 輸出響應內容以調試
+        echo $response->getContent() . PHP_EOL;
+
+        $response->assertStatus(200)
+            ->assertJsonPath('message', '預約取消成功');
+
+        // 驗證資料庫狀態已更新
+        $this->assertDatabaseHas('reservations', [
+            'id' => $this->reservation->id,
+            'status' => Reservation::STATUS_CANCELLED,
+        ]);
+    }
+
+    public function test_owner_can_cancel_confirmed_reservation()
+    {
+        // 將預約狀態改為CONFIRMED
+        $this->reservation->update(['status' => Reservation::STATUS_CONFIRMED]);
+
+        $response = $this->actingAs($this->user, 'api')
+            ->postJson("/api/v1/{$this->tenant->slug}/customer/reservations/{$this->reservation->id}/cancel");
 
         $response->assertStatus(200);
         $this->assertDatabaseHas('reservations', [
-            'id' => $reservation->id,
+            'id' => $this->reservation->id,
             'status' => Reservation::STATUS_CANCELLED,
         ]);
     }
 
-    public function test_cannot_cancel_already_cancelled_reservation(): void
+    public function test_guest_cannot_cancel_reservation()
     {
-        $tenant = Tenant::factory()->create();
-        $user = User::factory()->create();
-        $user->tenants()->attach($tenant);
+        // 未登入狀態嘗試取消預約
+        $response = $this->postJson("/api/v1/{$this->tenant->slug}/customer/reservations/{$this->reservation->id}/cancel");
 
-        $vehicle = Vehicle::factory()->create([
-            'tenant_id' => $tenant->id,
-            'status' => 'AVAILABLE',
+        $response->assertStatus(401); // 未授權
+        $this->assertDatabaseHas('reservations', [
+            'id' => $this->reservation->id,
+            'status' => Reservation::STATUS_PENDING, // 狀態未改變
         ]);
-        $vehiclePricing = VehiclePricing::factory()->create([
-            'tenant_id' => $tenant->id,
-            'vehicle_id' => $vehicle->id,
-        ]);
-        $customer = Customer::factory()->create(['tenant_id' => $tenant->id]);
-
-        // 創建一個已取消的預約
-        $reservation = Reservation::create([
-            'tenant_id' => $tenant->id,
-            'customer_id' => $customer->id,
-            'vehicle_id' => $vehicle->id,
-            'start_at' => now()->addDay(),
-            'end_at' => now()->addDays(3),
-            'status' => Reservation::STATUS_CANCELLED,
-            'amount' => 2000,
-            'rental_days' => 2,
-        ]);
-
-        // 再次嘗試取消
-        $response = $this->actingAs($user, 'api')
-            ->postJson("/api/v1/reservations/{$reservation->id}/cancel");
-
-        $response->assertStatus(409);
     }
 
-    public function test_cannot_cancel_already_picked_up_reservation(): void
+    public function test_other_member_cannot_cancel_others_reservation()
     {
-        $tenant = Tenant::factory()->create();
-        $user = User::factory()->create();
-        $user->tenants()->attach($tenant);
+        // 創建另一個用戶
+        $otherUser = User::factory()->create([
+            'email' => 'other@example.com',
+        ]);
 
-        $vehicle = Vehicle::factory()->create([
-            'tenant_id' => $tenant->id,
+        // 創建另一個用戶的客戶資料
+        Customer::create([
+            'tenant_id' => $this->tenant->id,
+            'user_id' => $otherUser->id,
+            'name' => '其他用戶',
+            'phone' => '0987654321',
+            'email' => $otherUser->email,
+            'id_number' => 'A987654321',
+            'license_number' => '87654321',
+            'license_expiry' => '2031-01-01',
+            'address' => '新北市板橋區',
+            'is_active' => true,
+        ]);
+
+        // 以另一個用戶身份嘗試取消預約
+        $response = $this->actingAs($otherUser, 'api')
+            ->postJson("/api/v1/{$this->tenant->slug}/customer/reservations/{$this->reservation->id}/cancel");
+
+        $response->assertStatus(404); // 找不到預約（因權限檢查）
+        $this->assertDatabaseHas('reservations', [
+            'id' => $this->reservation->id,
+            'status' => Reservation::STATUS_PENDING,
+        ]);
+    }
+
+    public function test_cannot_cancel_reservation_from_another_tenant()
+    {
+        // 創建另一個租戶
+        $anotherTenant = Tenant::factory()->create([
+            'is_public' => true,
+            'slug' => 'another-tenant',
+        ]);
+
+        // 創建另一個租戶的車輛和客戶
+        $anotherCustomer = Customer::create([
+            'tenant_id' => $anotherTenant->id,
+            'user_id' => $this->user->id,
+            'name' => '跨租戶用戶',
+            'phone' => '0911111111',
+            'email' => $this->user->email,
+            'id_number' => 'A111111111',
+            'license_number' => '11111111',
+            'license_expiry' => '2032-01-01',
+            'address' => '台中市',
+            'is_active' => true,
+        ]);
+
+        $anotherVehicle = Vehicle::factory()->create([
+            'tenant_id' => $anotherTenant->id,
             'status' => 'AVAILABLE',
         ]);
-        $vehiclePricing = VehiclePricing::factory()->create([
-            'tenant_id' => $tenant->id,
-            'vehicle_id' => $vehicle->id,
-        ]);
-        $customer = Customer::factory()->create(['tenant_id' => $tenant->id]);
 
-        // 創建一個已取車的預約
-        $reservation = Reservation::create([
-            'tenant_id' => $tenant->id,
-            'customer_id' => $customer->id,
-            'vehicle_id' => $vehicle->id,
-            'start_at' => now()->subDay(),
-            'end_at' => now()->addDays(2),
-            'status' => Reservation::STATUS_PICKED_UP,
-            'amount' => 2000,
+        VehiclePricing::factory()->create([
+            'tenant_id' => $anotherTenant->id,
+            'vehicle_id' => $anotherVehicle->id,
+        ]);
+
+        // 在另一個租戶創建預約
+        $anotherReservation = Reservation::create([
+            'tenant_id' => $anotherTenant->id,
+            'customer_id' => $anotherCustomer->id,
+            'vehicle_id' => $anotherVehicle->id,
+            'start_at' => Carbon::now()->addDay()->setHour(10),
+            'end_at' => Carbon::now()->addDays(3)->setHour(18),
+            'status' => Reservation::STATUS_PENDING,
+            'amount' => 3000,
             'rental_days' => 3,
         ]);
 
-        // 嘗試取消已取車的預約
-        $response = $this->actingAs($user, 'api')
-            ->postJson("/api/v1/reservations/{$reservation->id}/cancel");
-
-        $response->assertStatus(409);
-    }
-
-    public function test_cannot_cancel_reservation_from_other_tenant(): void
-    {
-        $tenantA = Tenant::factory()->create();
-        $tenantB = Tenant::factory()->create();
-        $user = User::factory()->create();
-        $user->tenants()->attach($tenantA);
-
-        $vehicle = Vehicle::factory()->create(['tenant_id' => $tenantB->id]);
-        $customer = Customer::factory()->create(['tenant_id' => $tenantB->id]);
-        $reservation = Reservation::create([
-            'tenant_id' => $tenantB->id,
-            'customer_id' => $customer->id,
-            'vehicle_id' => $vehicle->id,
-            'start_at' => now()->addDay(),
-            'end_at' => now()->addDays(3),
-            'status' => Reservation::STATUS_PENDING,
-            'amount' => 2000,
-            'rental_days' => 2,
-        ]);
-
-        $response = $this->actingAs($user, 'api')
-            ->postJson("/api/v1/reservations/{$reservation->id}/cancel");
+        // 嘗試用原租戶的路徑取消另一個租戶的預約
+        $response = $this->actingAs($this->user, 'api')
+            ->postJson("/api/v1/{$this->tenant->slug}/customer/reservations/{$anotherReservation->id}/cancel");
 
         $response->assertStatus(404);
+        $this->assertDatabaseHas('reservations', [
+            'id' => $anotherReservation->id,
+            'status' => Reservation::STATUS_PENDING,
+        ]);
     }
 
-    public function test_unauthenticated_user_cannot_cancel_reservation(): void
+    public function test_cannot_cancel_picked_up_reservation()
     {
-        $response = $this->postJson('/api/v1/reservations/1/cancel');
+        // 將預約狀態改為PICKED_UP
+        $this->reservation->update(['status' => Reservation::STATUS_PICKED_UP]);
 
-        $response->assertStatus(401);
+        $response = $this->actingAs($this->user, 'api')
+            ->postJson("/api/v1/{$this->tenant->slug}/customer/reservations/{$this->reservation->id}/cancel");
+
+        $response->assertStatus(400)
+            ->assertJsonPath('message', '只有待確認或已確認狀態的預約可以被取消');
+        $this->assertDatabaseHas('reservations', [
+            'id' => $this->reservation->id,
+            'status' => Reservation::STATUS_PICKED_UP, // 狀態未改變
+        ]);
+    }
+
+    public function test_cannot_cancel_returned_reservation()
+    {
+        // 將預約狀態改為RETURNED
+        $this->reservation->update(['status' => Reservation::STATUS_RETURNED]);
+
+        $response = $this->actingAs($this->user, 'api')
+            ->postJson("/api/v1/{$this->tenant->slug}/customer/reservations/{$this->reservation->id}/cancel");
+
+        $response->assertStatus(400);
+        $this->assertDatabaseHas('reservations', [
+            'id' => $this->reservation->id,
+            'status' => Reservation::STATUS_RETURNED,
+        ]);
+    }
+
+    public function test_cannot_double_cancel_reservation()
+    {
+        // 第一次取消成功
+        $this->reservation->cancel();
+
+        // 再次嘗試取消
+        $response = $this->actingAs($this->user, 'api')
+            ->postJson("/api/v1/{$this->tenant->slug}/customer/reservations/{$this->reservation->id}/cancel");
+
+        $response->assertStatus(400)
+            ->assertJsonPath('message', '只有待確認或已確認狀態的預約可以被取消');
     }
 }

@@ -22,14 +22,26 @@ api.interceptors.request.use(
             config.headers.Authorization = `Bearer ${token}`;
         }
 
-        // 處理公開API請求，將tenantSlug加入URL路徑
+        // 處理API請求，將tenantSlug加入URL路徑 - 避免重複拼接
         const tenantSlug = getCurrentTenantSlug();
-        if (tenantSlug && config.url?.includes("/public/")) {
-            // 替換URL中的 /public/ 為 /public/{tenantSlug}/
-            config.url = config.url.replace(
-                "/public/",
-                `/public/${tenantSlug}/`,
-            );
+        if (tenantSlug && config.url) {
+            // 檢查URL是否已經包含tenantSlug，避免重複拼接
+            const urlHasTenant = config.url.includes(`/${tenantSlug}/`);
+            if (!urlHasTenant) {
+                if (config.url.includes("/public/")) {
+                    // 替換URL中的 /public/ 為 /public/{tenantSlug}/
+                    config.url = config.url.replace(
+                        "/public/",
+                        `/public/${tenantSlug}/`,
+                    );
+                } else if (config.url.includes("/customer/")) {
+                    // 替換URL中的 /customer/ 為 /{tenantSlug}/customer/
+                    config.url = config.url.replace(
+                        "/customer/",
+                        `/${tenantSlug}/customer/`,
+                    );
+                }
+            }
         }
 
         return config;

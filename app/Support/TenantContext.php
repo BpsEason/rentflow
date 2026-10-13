@@ -41,7 +41,12 @@ class TenantContext
      */
     public function getCurrentTenant(): ?Tenant
     {
-        if (!$this->currentTenant && Auth::check()) {
+        // 如果已經設置了currentTenant（比如公開API的中間件設置的），直接返回
+        if ($this->currentTenant) {
+            return $this->currentTenant;
+        }
+
+        if (Auth::check()) {
             $user = Auth::user();
             $requestedTenantId = request()?->header('X-Tenant-ID');
 

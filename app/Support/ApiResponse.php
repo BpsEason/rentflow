@@ -44,16 +44,25 @@ class ApiResponse
     public static function paginate(mixed $data, string $message = '取得資料成功'): JsonResponse
     {
         $meta = [];
+        $paginator = null;
 
-        // 如果是Laravel的分頁器，提取分頁資訊
-        if (method_exists($data, 'currentPage')) {
+        // 處理ResourceCollection包裹的分頁器
+        if ($data instanceof \Illuminate\Http\Resources\Json\AnonymousResourceCollection && $data->resource instanceof \Illuminate\Pagination\LengthAwarePaginator) {
+            $paginator = $data->resource;
+        }
+        // 直接傳入LengthAwarePaginator的情況
+        elseif ($data instanceof \Illuminate\Pagination\LengthAwarePaginator) {
+            $paginator = $data;
+        }
+
+        if ($paginator) {
             $meta = [
-                'current_page' => $data->currentPage(),
-                'per_page' => $data->perPage(),
-                'total' => $data->total(),
-                'last_page' => $data->lastPage(),
+                'current_page' => $paginator->currentPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+                'last_page' => $paginator->lastPage(),
             ];
-            $data = $data->items();
+            $data = $paginator->items();
         }
 
         return static::success($data, $message, $meta);

@@ -9,6 +9,7 @@ const BookingConfirmationView = () =>
     import("../views/BookingConfirmationView.vue");
 const MyBookingsView = () => import("../views/MyBookingsView.vue");
 const MyBookingDetailView = () => import("../views/MyBookingDetailView.vue");
+const RegisterView = () => import("../views/RegisterView.vue");
 
 const routes = [
     // Frontend public routes with tenant slug as path parameter
@@ -47,6 +48,12 @@ const routes = [
         path: "/:tenantSlug/login",
         name: "login",
         component: LoginView,
+        props: true,
+    },
+    {
+        path: "/:tenantSlug/register",
+        name: "register",
+        component: RegisterView,
         props: true,
     },
     {

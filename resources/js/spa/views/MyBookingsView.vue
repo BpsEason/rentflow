@@ -391,8 +391,13 @@ const fetchBookings = async () => {
     loading.value = true;
     error.value = null;
     try {
-        const response = await api.get("/reservations");
+        const response = await api.get(`/${tenantSlug}/customer/reservations`);
         bookings.value = response.data.data.data || response.data.data || [];
+
+        // 如果API回應說用戶尚未在此租戶建立客戶資料
+        if (response.data.message?.includes("尚未在此租戶建立客戶資料")) {
+            error.value = "您尚未在此租車公司建立客戶資料，請先完成第一次預約";
+        }
     } catch (e: any) {
         console.error("Failed to fetch bookings:", e);
         if (e.response?.status === 401) {

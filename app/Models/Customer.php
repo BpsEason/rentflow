@@ -12,6 +12,7 @@ class Customer extends Model
 
     protected $fillable = [
         'tenant_id',
+        'user_id',
         'name',
         'email',
         'phone',
@@ -31,6 +32,11 @@ class Customer extends Model
     public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
 
     public function reservations()

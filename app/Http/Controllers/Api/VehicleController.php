@@ -20,10 +20,10 @@ class VehicleController extends Controller
         private readonly TenantContext $tenantContext
     ) {
         // 只有需要認證的方法才套用auth中介層
-        $this->middleware('auth:api')->except(['publicIndex', 'publicShow']);
+        $this->middleware('auth:api')->except(['publicIndex', 'publicShow', 'available', 'calculatePrice']);
         $this->middleware(function ($request, $next) {
             // 公開端點不需要檢查租戶上下文，它們會自己處理租戶邏輯
-            if (in_array($request->route()->getActionMethod(), ['publicIndex', 'publicShow'])) {
+            if (in_array($request->route()->getActionMethod(), ['publicIndex', 'publicShow', 'available', 'calculatePrice'])) {
                 return $next($request);
             }
 
@@ -286,5 +286,194 @@ class VehicleController extends Controller
             new VehicleResource($vehicle),
             '取得車輛詳情成功'
         );
+    }
+
+    /**
+     * 查詢指定租期內可用的車輛
+     */
+    #[OA\Get(
+        path: "/api/v1/public/vehicles/available",
+        summary: "查詢指定租期內可用的車輛",
+        description: "根據開始和結束時間查詢當前租戶內可以預約的車輛",
+        tags: ["Vehicles"],
+        parameters: [
+            new OA\Parameter(name: "X-Tenant-Slug", in: "header", required: true, schema: new OA\Schema(type: "string"), description: "租戶唯一識別碼"),
+            new OA\Parameter(name: "start_at", in: "query", required: true, schema: new OA\Schema(type: "string", format: "date-time"), description: "開始時間"),
+            new OA\Parameter(name: "end_at", in: "query", required: true, schema: new OA\Schema(type: "string", format: "date-time"), description: "結束時間")
+        ],
+        responses: [
+            new OA\Response(response: 200, description: "成功取得可用車輛列表", content: new OA\JsonContent(ref: "#/components/schemas/ApiSuccessResponse")),
+            new OA\Response(response: 403, description: "無法解析租戶資訊", content: new OA\JsonContent(ref: "#/components/schemas/ApiErrorResponse")),
+            new OA\Response(response: 422, description: "參數驗證失敗", content: new OA\JsonContent(ref: "#/components/schemas/ApiErrorResponse"))
+        ]
+    )]
+    public function available($tenantSlug, \Illuminate\Http\Request $request): JsonResponse
+    {
+        $tenant = $this->tenantContext->getCurrentTenant();
+
+        if (!$tenant) {
+            return ApiResponse::error('無法解析租戶資訊，請確認租戶 slug 正確且租戶已開啟公開服務', null, [], 403);
+        }
+
+        // 驗證請求參數
+        $validated = $request->validate([
+            'start_at' => 'required|date',
+            'end_at' => 'required|date|after:start_at',
+        ]);
+
+        $startAt = \Carbon\Carbon::parse($validated['start_at']);
+        $endAt = \Carbon\Carbon::parse($validated['end_at']);
+
+        // 驗證最短租期
+        if (!\App\Models\Reservation::validateMinimumRentalTime($startAt, $endAt)) {
+            return ApiResponse::error('最少租用時間為4小時', null, [], 422);
+        }
+
+        // 獲取所有狀態為AVAILABLE的車輛
+        $availableVehicles = \App\Models\Vehicle::where('tenant_id', $tenant->id)
+            ->where('status', 'AVAILABLE')
+            ->with('pricing')
+            ->get();
+
+        // 過濾掉在指定時間區間內有衝突的車輛
+        $filteredVehicles = $availableVehicles->filter(function ($vehicle) use ($startAt, $endAt) {
+            // 檢查是否有時間衝突的預約
+            return !\App\Models\Reservation::hasTimeConflict($vehicle->id, $startAt, $endAt);
+        });
+
+        // 手動分頁
+        $perPage = 15;
+        $currentPage = $request->input('page', 1);
+        $items = $filteredVehicles->slice(($currentPage - 1) * $perPage, $perPage);
+        $paginator = new \Illuminate\Pagination\LengthAwarePaginator(
+            $items,
+            $filteredVehicles->count(),
+            $perPage,
+            $currentPage
+        );
+
+        return ApiResponse::paginate(
+            \App\Http\Resources\VehicleResource::collection($paginator),
+            '取得可用車輛列表成功'
+        );
+    }
+
+    /**
+     * 計算指定車輛在指定租期內的租金
+     */
+    #[OA\Post(
+        path: "/api/v1/public/vehicles/{id}/calculate-price",
+        summary: "計算車輛租金",
+        description: "試算指定車輛在指定租期內的租金總額，包含逐日計價明細",
+        tags: ["Vehicles"],
+        parameters: [
+            new OA\Parameter(name: "id", in: "path", required: true, schema: new OA\Schema(type: "integer")),
+            new OA\Parameter(name: "X-Tenant-Slug", in: "header", required: true, schema: new OA\Schema(type: "string"), description: "租戶唯一識別碼")
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ["start_at", "end_at"],
+                properties: [
+                    new OA\Property(property: "start_at", type: "string", format: "date-time", example: "2026-10-15 10:00:00"),
+                    new OA\Property(property: "end_at", type: "string", format: "date-time", example: "2026-10-18 18:00:00")
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: "成功計算租金", content: new OA\JsonContent(ref: "#/components/schemas/ApiSuccessResponse")),
+            new OA\Response(response: 403, description: "無法解析租戶資訊", content: new OA\JsonContent(ref: "#/components/schemas/ApiErrorResponse")),
+            new OA\Response(response: 404, description: "車輛不存在", content: new OA\JsonContent(ref: "#/components/schemas/ApiErrorResponse")),
+            new OA\Response(response: 422, description: "參數驗證失敗或租期不合法", content: new OA\JsonContent(ref: "#/components/schemas/ApiErrorResponse"))
+        ]
+    )]
+    public function calculatePrice($tenantSlug, $id, \Illuminate\Http\Request $request): JsonResponse
+    {
+        $tenant = $this->tenantContext->getCurrentTenant();
+
+        if (!$tenant) {
+            return ApiResponse::error('無法解析租戶資訊，請確認租戶 slug 正確且租戶已開啟公開服務', null, [], 403);
+        }
+
+        // 驗證請求參數
+        $validated = $request->validate([
+            'start_at' => 'required|date',
+            'end_at' => 'required|date|after:start_at',
+        ]);
+
+        // 查找車輛
+        $vehicle = \App\Models\Vehicle::where('tenant_id', $tenant->id)
+            ->with('pricing')
+            ->where('id', $id)
+            ->first();
+
+        if (!$vehicle) {
+            return ApiResponse::error('車輛不存在', null, [], 404);
+        }
+
+        $startAt = \Carbon\Carbon::parse($validated['start_at']);
+        $endAt = \Carbon\Carbon::parse($validated['end_at']);
+
+        // 驗證最短租期
+        if (!\App\Models\Reservation::validateMinimumRentalTime($startAt, $endAt)) {
+            return ApiResponse::error('最少租用時間為4小時', null, [], 422);
+        }
+
+        // 使用現有的定價服務計算租金
+        try {
+            $pricingService = app(\App\Services\PricingService::class);
+            $rentalDays = $pricingService->calculateRentalDays($startAt, $endAt);
+
+            // 生成逐日計價明細
+            $holidays = \App\Models\Holiday::where('tenant_id', $tenant->id)
+                ->get()
+                ->pluck('date')
+                ->map(fn($date) => \Carbon\Carbon::parse($date))
+                ->toArray();
+
+            $breakdown = [];
+            $current = $startAt->copy();
+            $pricing = $vehicle->pricing;
+
+            for ($i = 0; $i < $rentalDays; $i++) {
+                $isHoliday = collect($holidays)->contains(fn($holiday) => $holiday->isSameDay($current));
+                $isWeekend = in_array($current->dayOfWeek, [0, 6]);
+
+                if ($isHoliday) {
+                    $price = $pricing->holiday_price;
+                    $type = 'holiday';
+                } elseif ($isWeekend) {
+                    $price = $pricing->weekend_price;
+                    $type = 'weekend';
+                } else {
+                    $price = $pricing->weekday_price;
+                    $type = 'weekday';
+                }
+
+                $breakdown[] = [
+                    'date' => $current->toDateString(),
+                    'type' => $type,
+                    'price' => (float)$price,
+                ];
+
+                $current->addDay();
+            }
+
+            $pricingData = \App\Models\Reservation::calculateAmount($vehicle, $startAt, $endAt);
+
+            return ApiResponse::success([
+                'vehicle' => new \App\Http\Resources\VehicleResource($vehicle),
+                'period' => [
+                    'start_at' => $startAt->toDateTimeString(),
+                    'end_at' => $endAt->toDateTimeString(),
+                    'duration_hours' => $startAt->diffInHours($endAt),
+                ],
+                'rental_days' => $rentalDays,
+                'breakdown' => $breakdown,
+                'total_amount' => (float)$pricingData['amount'],
+            ], '租金試算成功');
+        } catch (\Exception $e) {
+            return ApiResponse::error($e->getMessage(), null, [], 400);
+        }
     }
 }

@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Http\Resources\MissingValue;
 
 /**
  * @OA\Schema(
@@ -47,6 +48,20 @@ class VehicleResource extends JsonResource
             array_unshift($images, $coverImage);
         }
 
+        $pricing = $this->whenLoaded('pricing');
+        if (!$pricing instanceof MissingValue && $pricing && !is_null($pricing)) {
+            $pricing = [
+                'id' => $pricing->id,
+                'tenant_id' => $pricing->tenant_id,
+                'vehicle_id' => $pricing->vehicle_id,
+                'weekday_price' => (float) $pricing->weekday_price,
+                'weekend_price' => (float) $pricing->weekend_price,
+                'holiday_price' => (float) $pricing->holiday_price,
+                'created_at' => $pricing->created_at?->toISOString(),
+                'updated_at' => $pricing->updated_at?->toISOString(),
+            ];
+        }
+
         return [
             'id' => $this->id,
             'tenant_id' => $this->tenant_id,
@@ -57,7 +72,7 @@ class VehicleResource extends JsonResource
             'description' => $this->description,
             'image_url' => $coverImage, // 回傳處理過的封面圖
             'images' => array_values($images), // 重新索引陣列
-            'pricing' => new VehiclePricingResource($this->whenLoaded('pricing')),
+            'pricing' => $pricing,
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
         ];

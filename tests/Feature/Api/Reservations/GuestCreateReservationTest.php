@@ -210,8 +210,9 @@ class GuestCreateReservationTest extends TestCase
 
     public function test_guest_cannot_access_protected_reservation_endpoints()
     {
-        // 訪客嘗試訪問需要認證的預約列表端點
-        $response = $this->getJson('/api/v1/reservations');
+        // 訪客嘗試訪問需要認證的會員預約列表端點
+        $tenant = Tenant::factory()->create(['slug' => 'test-tenant', 'is_public' => true]);
+        $response = $this->getJson("/api/v1/{$tenant->slug}/customer/reservations");
         $response->assertStatus(401); // 未授權
     }
 }

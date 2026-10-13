@@ -85,6 +85,11 @@ class User extends Authenticatable implements FilamentUser, HasTenants, JWTSubje
         return true;
     }
 
+    public function customers()
+    {
+        return $this->hasMany(Customer::class);
+    }
+
     /**
      * Get the identifier that will be stored in the subject claim of the JWT.
      *
