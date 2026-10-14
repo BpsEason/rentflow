@@ -272,4 +272,116 @@ class ReservationTest extends TestCase
         $this->assertEquals(1, $pricingData['rental_days']);
         $this->assertEquals(1000, $pricingData['amount']);
     }
+
+    /** @test */
+    public function it_allows_different_vehicles_to_be_reserved_in_same_time_period()
+    {
+        // 建立第一台車的預約
+        $startAt = Carbon::now()->setTime(10, 0, 0);
+        $endAt = (clone $startAt)->addHours(4);
+        $reservation1 = Reservation::createReservation([
+            'tenant_id' => $this->tenant->id,
+            'customer_id' => $this->customer->id,
+            'vehicle_id' => $this->vehicle->id,
+            'start_at' => $startAt,
+            'end_at' => $endAt,
+            'pickup_branch_id' => $this->pickupBranch->id,
+            'return_branch_id' => $this->returnBranch->id,
+        ]);
+
+        // 建立第二台車
+        $vehicle2 = Vehicle::factory()->create([
+            'tenant_id' => $this->tenant->id,
+            'status' => 'AVAILABLE',
+            'current_branch_id' => $this->pickupBranch->id,
+        ]);
+
+        // 在相同時間為第二台車建立預約 - 應該成功
+        $reservation2 = Reservation::createReservation([
+            'tenant_id' => $this->tenant->id,
+            'customer_id' => $this->customer->id,
+            'vehicle_id' => $vehicle2->id,
+            'start_at' => $startAt,
+            'end_at' => $endAt,
+            'pickup_branch_id' => $this->pickupBranch->id,
+            'return_branch_id' => $this->returnBranch->id,
+        ]);
+
+        $this->assertCount(2, Reservation::all());
+        $this->assertNotEquals($reservation1->vehicle_id, $reservation2->vehicle_id);
+    }
+
+    /** @test */
+    public function cancelled_reservations_do_not_block_new_reservations()
+    {
+        // 建立一個已取消的預約
+        $startAt = Carbon::now()->setTime(10, 0, 0);
+        $endAt = (clone $startAt)->addHours(4);
+        Reservation::createReservation([
+            'tenant_id' => $this->tenant->id,
+            'customer_id' => $this->customer->id,
+            'vehicle_id' => $this->vehicle->id,
+            'start_at' => $startAt,
+            'end_at' => $endAt,
+            'status' => Reservation::STATUS_CANCELLED,
+            'pickup_branch_id' => $this->pickupBranch->id,
+            'return_branch_id' => $this->returnBranch->id,
+        ]);
+
+        // 在相同時間建立新預約 - 應該成功
+        $newStart = Carbon::now()->setTime(10, 0, 0);
+        $newEnd = (clone $newStart)->addHours(4);
+        $newReservation = Reservation::createReservation([
+            'tenant_id' => $this->tenant->id,
+            'customer_id' => $this->customer->id,
+            'vehicle_id' => $this->vehicle->id,
+            'start_at' => $newStart,
+            'end_at' => $newEnd,
+            'pickup_branch_id' => $this->pickupBranch->id,
+            'return_branch_id' => $this->returnBranch->id,
+        ]);
+
+        $this->assertInstanceOf(Reservation::class, $newReservation);
+        $this->assertCount(2, Reservation::all());
+    }
+
+    /** @test */
+    public function it_rolls_back_transaction_when_reservation_creation_fails()
+    {
+        $initialCount = Reservation::count();
+
+        // 先建立一個有效預約佔用時間
+        $startAt = Carbon::now()->setTime(10, 0, 0);
+        $endAt = (clone $startAt)->addHours(4);
+        Reservation::createReservation([
+            'tenant_id' => $this->tenant->id,
+            'customer_id' => $this->customer->id,
+            'vehicle_id' => $this->vehicle->id,
+            'start_at' => $startAt,
+            'end_at' => $endAt,
+            'pickup_branch_id' => $this->pickupBranch->id,
+            'return_branch_id' => $this->returnBranch->id,
+        ]);
+
+        // 嘗試建立重疊的預約，應該失敗
+        try {
+            $conflictingStart = (clone $startAt)->addHours(3);
+            $conflictingEnd = (clone $conflictingStart)->addHours(4);
+            Reservation::createReservation([
+                'tenant_id' => $this->tenant->id,
+                'customer_id' => $this->customer->id,
+                'vehicle_id' => $this->vehicle->id,
+                'start_at' => $conflictingStart,
+                'end_at' => $conflictingEnd,
+                'pickup_branch_id' => $this->pickupBranch->id,
+                'return_branch_id' => $this->returnBranch->id,
+            ]);
+        } catch (\Exception $e) {
+            // 預期會抛出異常
+        }
+
+        // 驗證資料庫中不會留下部分提交的資料，只有第一個預約存在
+        $this->assertCount(1, Reservation::all());
+        $this->assertEquals($initialCount + 1, Reservation::count());
+    }
 }
