@@ -24,6 +24,10 @@ class StoreGuestReservationRequest extends FormRequest
             // 車輛資訊
             'vehicle_id' => 'required|integer|exists:vehicles,id',
 
+            // 據點資訊
+            'pickup_branch_id' => 'required|integer|exists:branches,id',
+            'return_branch_id' => 'required|integer|exists:branches,id',
+
             // 時間資訊
             'pickup_date' => 'required|date|after_or_equal:today',
             'pickup_time' => 'required|string',

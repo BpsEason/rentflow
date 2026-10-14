@@ -213,7 +213,7 @@
                                 </h2>
 
                                 <div
-                                    class="grid grid-cols-1 md:grid-cols-2 gap-4"
+                                    class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4"
                                 >
                                     <div>
                                         <label
@@ -257,6 +257,96 @@
                                             class="px-4 py-2 bg-gray-100 rounded-lg text-gray-700"
                                         >
                                             {{ returnTime }}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <!-- 據點選擇 -->
+                                <div class="border-t pt-6">
+                                    <div class="mb-4">
+                                        <label class="flex items-center">
+                                            <input
+                                                v-model="form.same_branch"
+                                                type="checkbox"
+                                                class="w-4 h-4 text-blue-900 rounded focus:ring-blue-500"
+                                            />
+                                            <span
+                                                class="ml-2 text-sm font-medium text-gray-700"
+                                            >
+                                                取車與還車為同一據點
+                                            </span>
+                                        </label>
+                                    </div>
+
+                                    <div
+                                        class="grid grid-cols-1 md:grid-cols-2 gap-4"
+                                    >
+                                        <div>
+                                            <label
+                                                class="block text-sm font-medium text-gray-700 mb-2"
+                                                >取車據點
+                                                <span class="text-red-500"
+                                                    >*</span
+                                                >
+                                            </label>
+                                            <select
+                                                v-model="form.pickup_branch_id"
+                                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                                                :disabled="loadingBranches"
+                                            >
+                                                <option value="">
+                                                    請選擇取車據點
+                                                </option>
+                                                <option
+                                                    v-for="branch in branches"
+                                                    :key="branch.id"
+                                                    :value="branch.id"
+                                                >
+                                                    {{ branch.name }} -
+                                                    {{ branch.address }}
+                                                </option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label
+                                                class="block text-sm font-medium text-gray-700 mb-2"
+                                                >還車據點
+                                                <span class="text-red-500"
+                                                    >*</span
+                                                >
+                                            </label>
+                                            <select
+                                                v-model="form.return_branch_id"
+                                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                                                :disabled="
+                                                    loadingBranches ||
+                                                    form.same_branch
+                                                "
+                                            >
+                                                <option value="">
+                                                    請選擇還車據點
+                                                </option>
+                                                <option
+                                                    v-for="branch in branches"
+                                                    :key="branch.id"
+                                                    :value="branch.id"
+                                                >
+                                                    {{ branch.name }} -
+                                                    {{ branch.address }}
+                                                </option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <!-- 當選擇同一據點時，自動同步還車據點 -->
+                                    <div
+                                        v-if="
+                                            form.same_branch &&
+                                            form.pickup_branch_id
+                                        "
+                                    >
+                                        <p class="mt-2 text-sm text-gray-500">
+                                            還車據點將自動使用與取車相同的據點
                                         </p>
                                     </div>
                                 </div>
@@ -556,7 +646,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import PublicLayout from "../components/Layout/PublicLayout.vue";
 import api from "../services/api";
@@ -592,6 +682,9 @@ const form = ref({
     license_number: "",
     license_expiry: "",
     address: "",
+    pickup_branch_id: null,
+    return_branch_id: null,
+    same_branch: true,
     additional_services: {
         gps: false,
         child_seat: false,
@@ -599,6 +692,36 @@ const form = ref({
     },
     agreed_to_terms: false,
 });
+
+const branches = ref<any[]>([]);
+const loadingBranches = ref(false);
+
+// 監聽同一據點勾選狀態，自動同步還車據點
+watch(
+    [() => form.value.same_branch, () => form.value.pickup_branch_id],
+    ([newSameBranch, newPickupBranchId]) => {
+        if (newSameBranch && newPickupBranchId) {
+            form.value.return_branch_id = newPickupBranchId;
+        }
+    },
+);
+
+const fetchBranches = async () => {
+    loadingBranches.value = true;
+    try {
+        const response = await api.get(`/public/branches`);
+        branches.value = response.data.data;
+        // 預設選擇第一個據點
+        if (branches.value.length > 0) {
+            form.value.pickup_branch_id = branches.value[0].id;
+            form.value.return_branch_id = branches.value[0].id;
+        }
+    } catch (e) {
+        console.error("Failed to fetch branches:", e);
+    } finally {
+        loadingBranches.value = false;
+    }
+};
 
 const formErrors = ref<string[]>([]);
 
@@ -680,6 +803,10 @@ const validateForm = () => {
         formErrors.value.push("請輸入有效的手機號碼格式");
     }
 
+    // 驗證據點選擇
+    if (!form.value.pickup_branch_id) formErrors.value.push("請選擇取車據點");
+    if (!form.value.return_branch_id) formErrors.value.push("請選擇還車據點");
+
     // 所有用戶都需要同意服務條款
     if (!form.value.agreed_to_terms)
         formErrors.value.push("請閱讀並同意服務條款");
@@ -704,6 +831,8 @@ const submitBooking = async () => {
                 pickup_time: pickupTime,
                 return_date: returnDate,
                 return_time: returnTime,
+                pickup_branch_id: form.value.pickup_branch_id,
+                return_branch_id: form.value.return_branch_id,
                 notes: Object.entries(form.value.additional_services)
                     .filter(([_, enabled]) => enabled)
                     .map(([service]) => {
@@ -733,6 +862,8 @@ const submitBooking = async () => {
                 pickup_time: pickupTime,
                 return_date: returnDate,
                 return_time: returnTime,
+                pickup_branch_id: form.value.pickup_branch_id,
+                return_branch_id: form.value.return_branch_id,
                 customer_name: form.value.name,
                 customer_phone: form.value.phone,
                 customer_email: form.value.email,
@@ -783,5 +914,6 @@ const submitBooking = async () => {
 
 onMounted(() => {
     fetchVehicle();
+    fetchBranches();
 });
 </script>

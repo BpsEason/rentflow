@@ -31,6 +31,8 @@ Route::prefix('v1')->group(function () {
             // 租金試算
             Route::post('/vehicles/{id}/calculate-price', [VehicleController::class, 'calculatePrice']);
             Route::get('/vehicles/{id}', [VehicleController::class, 'publicShow']);
+            // 據點列表API - 取得當前租戶的所有可用據點
+            Route::get('/branches', [\App\Http\Controllers\Api\BranchController::class, 'index']);
             // 訪客預約端點
             Route::post('/reservations', [ReservationsController::class, 'guestStore']);
         });

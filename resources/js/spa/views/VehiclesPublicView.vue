@@ -21,8 +21,30 @@
                     class="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl shadow-gray-200/70 p-8 md:p-10 mb-16 ring-1 ring-white/60"
                 >
                     <div
-                        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8"
+                        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8"
                     >
+                        <!-- Pickup Branch -->
+                        <div>
+                            <label
+                                class="block text-sm font-semibold text-gray-800 mb-3"
+                                >取車據點</label
+                            >
+                            <select
+                                v-model="filters.pickup_branch_id"
+                                class="w-full px-5 py-4 border-2 border-gray-100 rounded-2xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all duration-300 bg-gray-50/80 focus:bg-white cursor-pointer"
+                                :disabled="loadingBranches"
+                            >
+                                <option value="">請選擇取車據點</option>
+                                <option
+                                    v-for="branch in branches"
+                                    :key="branch.id"
+                                    :value="branch.id"
+                                >
+                                    {{ branch.name }}
+                                </option>
+                            </select>
+                        </div>
+
                         <!-- Search Keyword -->
                         <div>
                             <label
@@ -185,8 +207,10 @@ const queryStartTime = route.query.start_at as string;
 const queryEndTime = route.query.end_at as string;
 
 const loading = ref(false);
+const loadingBranches = ref(false);
 const error = ref<string | null>(null);
 const allVehicles = ref<any[]>([]);
+const branches = ref<any[]>([]);
 const currentPage = ref(1);
 const pagination = ref({
     total: 0,
@@ -196,6 +220,7 @@ const pagination = ref({
 });
 
 const filters = ref({
+    pickup_branch_id: "",
     search: queryLocation || "",
     pickupDate: queryPickup || "",
     returnDate: queryReturn || "",
@@ -226,17 +251,34 @@ const totalPages = computed(() => {
     return Math.ceil(filteredVehicles.value.length / pagination.value.perPage);
 });
 
+const fetchBranches = async () => {
+    loadingBranches.value = true;
+    try {
+        const response = await api.get("/public/branches");
+        branches.value = response.data.data;
+        // 預設選擇第一個據點
+        if (branches.value.length > 0 && !filters.value.pickup_branch_id) {
+            filters.value.pickup_branch_id = branches.value[0].id;
+        }
+    } catch (e) {
+        console.error("Failed to fetch branches:", e);
+    } finally {
+        loadingBranches.value = false;
+    }
+};
+
 const fetchVehicles = async () => {
     loading.value = true;
     error.value = null;
     try {
         let response;
-        // 檢查是否有輸入有效的租期（優先使用從首頁傳遞的完整時間參數）
+        // 檢查是否有輸入有效的租期和取車據點
         const hasValidPeriod =
             (filters.value.startAt && filters.value.endAt) ||
             (filters.value.pickupDate && filters.value.returnDate);
+        const hasValidBranch = filters.value.pickup_branch_id;
 
-        if (hasValidPeriod) {
+        if (hasValidPeriod && hasValidBranch) {
             let startAt, endAt;
 
             if (filters.value.startAt && filters.value.endAt) {
@@ -260,15 +302,21 @@ const fetchVehicles = async () => {
                 endAt = `${filters.value.returnDate} 17:00:00`;
             }
 
-            // 有有效租期，呼叫可用車輛 API
-            response = await api.get("/public/vehicles/available", {
-                params: {
-                    start_at: startAt,
-                    end_at: endAt,
-                },
-            });
+            // 有有效租期且選擇了取車據點，呼叫可用車輛 API
+            if (filters.value.pickup_branch_id) {
+                response = await api.get("/public/vehicles/available", {
+                    params: {
+                        pickup_branch_id: filters.value.pickup_branch_id,
+                        start_at: startAt,
+                        end_at: endAt,
+                    },
+                });
+            } else {
+                // 未選擇取車據點，使用一般車輛列表
+                response = await api.get("/public/vehicles");
+            }
         } else {
-            // 沒有選擇租期，使用一般車輛列表
+            // 沒有選擇租期或取車據點，使用一般車輛列表
             response = await api.get("/public/vehicles");
         }
 
@@ -296,7 +344,8 @@ const changePage = (page: number) => {
     window.scrollTo({ top: 0, behavior: "smooth" });
 };
 
-onMounted(() => {
+onMounted(async () => {
+    await fetchBranches();
     fetchVehicles();
 });
 </script>

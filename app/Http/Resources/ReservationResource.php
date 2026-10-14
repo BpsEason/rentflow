@@ -14,11 +14,15 @@ use Illuminate\Http\Resources\Json\JsonResource;
  *     @OA\Property(property="tenant_id", type="integer", example=1),
  *     @OA\Property(property="vehicle_id", type="integer", example=5),
  *     @OA\Property(property="customer_id", type="integer", example=12),
+ *     @OA\Property(property="pickup_branch_id", type="integer", example=2),
+ *     @OA\Property(property="return_branch_id", type="integer", example=3),
  *     @OA\Property(property="start_date", type="string", format="date-time", example="2024-01-01T10:00:00Z"),
  *     @OA\Property(property="end_date", type="string", format="date-time", example="2024-01-05T10:00:00Z"),
  *     @OA\Property(property="status", type="string", example="pending"),
  *     @OA\Property(property="notes", type="string", nullable=true),
  *     @OA\Property(property="order_number", type="string", nullable=true, example="ORD-001-000001"),
+ *     @OA\Property(property="pickup_branch", type="object", ref="#/components/schemas/Branch", nullable=true),
+ *     @OA\Property(property="return_branch", type="object", ref="#/components/schemas/Branch", nullable=true),
  *     @OA\Property(property="created_at", type="string", format="date-time")
  * )
  */
@@ -37,6 +41,10 @@ class ReservationResource extends JsonResource
             'tenant_id' => $this->tenant_id,
             'vehicle_id' => $this->vehicle_id,
             'customer_id' => $this->customer_id,
+            'pickup_branch_id' => $this->pickup_branch_id,
+            'return_branch_id' => $this->return_branch_id,
+            'pickup_branch' => new BranchResource($this->whenLoaded('pickupBranch')),
+            'return_branch' => new BranchResource($this->whenLoaded('returnBranch')),
             'start_at' => $this->start_at?->toISOString() ?? $this->start_date?->toISOString(),
             'end_at' => $this->end_at?->toISOString() ?? $this->end_date?->toISOString(),
             'start_date' => $this->start_at?->toISOString() ?? $this->start_date?->toISOString(),

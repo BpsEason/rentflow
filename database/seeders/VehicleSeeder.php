@@ -237,6 +237,33 @@ class VehicleSeeder extends Seeder
             $prefixes = $platePrefixes[$tenant->id] ?? ['XYZ'];
             $vehicleCount = $tenantVehicleCounts[$tenant->id] ?? 5;
 
+            // 取得此租戶的所有活躍據點，用於分配車輛
+            $tenantBranches = \App\Models\Branch::where('tenant_id', $tenant->id)
+                ->where('is_active', true)
+                ->get();
+
+            // 如果沒有據點，先建立預設據點
+            if ($tenantBranches->isEmpty()) {
+                $defaultBranch = \App\Models\Branch::updateOrCreate(
+                    ['tenant_id' => $tenant->id, 'name' => '預設分店'],
+                    [
+                        'address' => '預設地址',
+                        'phone' => '02-12345678',
+                        'is_active' => true,
+                        'business_hours' => json_encode([
+                            'monday' => ['09:00', '21:00'],
+                            'tuesday' => ['09:00', '21:00'],
+                            'wednesday' => ['09:00', '21:00'],
+                            'thursday' => ['09:00', '21:00'],
+                            'friday' => ['09:00', '22:00'],
+                            'saturday' => ['08:00', '22:00'],
+                            'sunday' => ['08:00', '21:00'],
+                        ])
+                    ]
+                );
+                $tenantBranches->push($defaultBranch);
+            }
+
             // 從模板中取前N台車，確保不同租戶有不同數量的車輛
             $tenantVehicles = array_slice($vehiclesTemplate, 0, $vehicleCount);
 
@@ -257,10 +284,15 @@ class VehicleSeeder extends Seeder
                     'base_mileage' => 100000,
                 ];
 
+                // 輪流分配車輛到各個據點
+                $branchIndex = $index % $tenantBranches->count();
+                $assignedBranch = $tenantBranches[$branchIndex];
+
                 // 為同一型號的第二台以上車輛增加里程數
                 $mileageOffset = $index * 5000;
 
                 $vehicleAttributes = [
+                    'current_branch_id' => $assignedBranch->id,
                     'name'        => $vehicleData['name'],
                     'status'      => $vehicleData['status'],
                     'seats'       => $vehicleData['seats'],

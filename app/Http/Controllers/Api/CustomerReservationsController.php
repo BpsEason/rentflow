@@ -208,6 +208,21 @@ class CustomerReservationsController extends Controller
                 return ApiResponse::error('車輛不存在', null, [], 404);
             }
 
+            // 驗證取車和還車據點都屬於當前租戶且已啟用
+            if (!\App\Models\Branch::where('tenant_id', $tenant->id)
+                ->where('is_active', true)
+                ->whereKey($request->pickup_branch_id)
+                ->exists()) {
+                return ApiResponse::error('取車據點不存在或已停用', null, [], 404);
+            }
+
+            if (!\App\Models\Branch::where('tenant_id', $tenant->id)
+                ->where('is_active', true)
+                ->whereKey($request->return_branch_id)
+                ->exists()) {
+                return ApiResponse::error('還車據點不存在或已停用', null, [], 404);
+            }
+
             // 獲取用戶在當前租戶的Customer資料 - 使用鎖防止併發創建多個Customer
             $customer = Customer::where('tenant_id', $tenant->id)
                 ->where('user_id', $user->id)
@@ -279,13 +294,15 @@ class CustomerReservationsController extends Controller
             $createData = \App\Domain\Reservations\DTO\CreateReservationData::fromArray([
                 'vehicle_id' => $request->vehicle_id,
                 'customer_id' => $customer->id,
+                'pickup_branch_id' => $request->pickup_branch_id,
+                'return_branch_id' => $request->return_branch_id,
                 'start_at' => $startAt,
                 'end_at' => $endAt,
                 'notes' => $request->notes,
             ]);
 
             $reservation = $useCase->execute($createData);
-            $reservation->load(['customer', 'vehicle']);
+            $reservation->load(['customer', 'vehicle', 'pickupBranch', 'returnBranch']);
 
             return ApiResponse::success(
                 new \App\Http\Resources\ReservationResource($reservation),

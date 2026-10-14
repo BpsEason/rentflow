@@ -23,6 +23,9 @@ class StoreCustomerReservationRequest extends FormRequest
     {
         return [
             'vehicle_id' => 'required|integer|exists:vehicles,id',
+            // 據點資訊
+            'pickup_branch_id' => 'required|integer|exists:branches,id',
+            'return_branch_id' => 'required|integer|exists:branches,id',
             'pickup_date' => 'required|date|after_or_equal:today',
             'pickup_time' => 'required|string',
             'return_date' => 'required|date|after:pickup_date',

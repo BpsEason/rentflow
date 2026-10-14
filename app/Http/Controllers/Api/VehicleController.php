@@ -298,6 +298,7 @@ class VehicleController extends Controller
         tags: ["Vehicles"],
         parameters: [
             new OA\Parameter(name: "X-Tenant-Slug", in: "header", required: true, schema: new OA\Schema(type: "string"), description: "租戶唯一識別碼"),
+            new OA\Parameter(name: "pickup_branch_id", in: "query", required: true, schema: new OA\Schema(type: "integer"), description: "取車據點ID"),
             new OA\Parameter(name: "start_at", in: "query", required: true, schema: new OA\Schema(type: "string", format: "date-time"), description: "開始時間"),
             new OA\Parameter(name: "end_at", in: "query", required: true, schema: new OA\Schema(type: "string", format: "date-time"), description: "結束時間")
         ],
@@ -317,12 +318,24 @@ class VehicleController extends Controller
 
         // 驗證請求參數
         $validated = $request->validate([
+            'pickup_branch_id' => 'required|integer|exists:branches,id',
             'start_at' => 'required|date',
             'end_at' => 'required|date|after:start_at',
         ]);
 
         $startAt = \Carbon\Carbon::parse($validated['start_at']);
         $endAt = \Carbon\Carbon::parse($validated['end_at']);
+        $pickupBranchId = (int)$validated['pickup_branch_id'];
+
+        // 驗證取車據點屬於當前租戶且已啟用
+        $validBranch = \App\Models\Branch::where('tenant_id', $tenant->id)
+            ->where('is_active', true)
+            ->where('id', $pickupBranchId)
+            ->exists();
+
+        if (!$validBranch) {
+            return ApiResponse::error('取車據點無效，請確認據點屬於您的租戶且已啟用', null, [], 400);
+        }
 
         // 驗證最短租期
         if (!\App\Models\Reservation::validateMinimumRentalTime($startAt, $endAt)) {
@@ -335,8 +348,8 @@ class VehicleController extends Controller
             ->with('pricing')
             ->get();
 
-        // 過濾掉在指定時間區間內有衝突的車輛，或是處於維修時段內的車輛
-        $filteredVehicles = $availableVehicles->filter(function ($vehicle) use ($startAt, $endAt) {
+        // 過濾掉在指定時間區間內有衝突的車輛，或是處於維修時段內的車輛，或是無法在取車時間到位於指定據點的車輛
+        $filteredVehicles = $availableVehicles->filter(function ($vehicle) use ($startAt, $endAt, $pickupBranchId) {
             // 檢查車輛是否處於維修時段內，如果維修時間與預約時間重疊，則不可租用
             if ($vehicle->maintenance_start_at && $vehicle->maintenance_expected_end_at) {
                 $maintenanceStart = \Carbon\Carbon::parse($vehicle->maintenance_start_at);
@@ -346,6 +359,11 @@ class VehicleController extends Controller
                 if ($startAt->lessThan($maintenanceEnd) && $endAt->greaterThan($maintenanceStart)) {
                     return false;
                 }
+            }
+
+            // 檢查車輛是否能在取車時間到位於指定的取車據點
+            if (!$vehicle->canBeAtBranchAt($pickupBranchId, $startAt)) {
+                return false;
             }
 
             // 檢查是否有時間衝突的預約

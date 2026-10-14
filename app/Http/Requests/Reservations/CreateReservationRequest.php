@@ -11,6 +11,8 @@ class CreateReservationRequest extends FormRequest
         return [
             'customer_id' => 'required|integer|exists:customers,id',
             'vehicle_id' => 'required|integer|exists:vehicles,id',
+            'pickup_branch_id' => 'required|integer|exists:branches,id',
+            'return_branch_id' => 'required|integer|exists:branches,id',
             'start_at' => 'required|date',
             'end_at' => 'required|date|after:start_at',
             'notes' => 'nullable|string',

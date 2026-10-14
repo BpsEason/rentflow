@@ -9,6 +9,8 @@ class CreateReservationData
     public function __construct(
         public readonly int $vehicleId,
         public readonly int $customerId,
+        public readonly int $pickupBranchId,
+        public readonly int $returnBranchId,
         public readonly Carbon $startDate,
         public readonly Carbon $endDate,
         public readonly ?string $notes = null
@@ -22,6 +24,8 @@ class CreateReservationData
         return new self(
             vehicleId: $data['vehicle_id'],
             customerId: $data['customer_id'],
+            pickupBranchId: $data['pickup_branch_id'],
+            returnBranchId: $data['return_branch_id'],
             startDate: Carbon::parse($data['start_at']),
             endDate: Carbon::parse($data['end_at']),
             notes: $data['notes'] ?? null

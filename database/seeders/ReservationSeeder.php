@@ -205,17 +205,21 @@ class ReservationSeeder extends Seeder
         $usedVehicles = collect();
         $branches = $branches->values(); // 重置索引以便隨機存取
 
-        // 將按分店分組的車輛轉換為單一集合以便處理
+        // 將按分店分組的車輛轉換為單一集合以便處理，保留所屬分店ID
         $allVehicles = collect();
         foreach ($vehiclesByBranch as $branchId => $branchVehicles) {
             foreach ($branchVehicles as $vehicle) {
-                $vehicle->pickup_branch_id = $branchId; // 記錄車輛所屬的取車分店
-                $allVehicles->push($vehicle);
+                // 將車輛與所屬分店ID一起存入集合
+                $allVehicles->push([
+                    'vehicle' => $vehicle,
+                    'branch_id' => $branchId
+                ]);
             }
         }
 
         // 過濾出不在維修期間的可用車輛
-        $availableVehiclesForToday = $allVehicles->filter(function ($vehicle) use ($today) {
+        $availableVehiclesForToday = $allVehicles->filter(function ($item) use ($today) {
+            $vehicle = $item['vehicle'];
             if ($vehicle->maintenance_start_at && $vehicle->maintenance_expected_end_at) {
                 $maintenanceStart = \Carbon\Carbon::parse($vehicle->maintenance_start_at);
                 $maintenanceEnd = \Carbon\Carbon::parse($vehicle->maintenance_expected_end_at);
@@ -236,13 +240,14 @@ class ReservationSeeder extends Seeder
         $todayPickupCount = min(3, $availableVehiclesForToday->count());
 
         for ($i = 0; $i < $todayPickupCount; $i++) {
-            $availableVehicles = $availableVehiclesForToday->whereNotIn('id', $usedVehicles);
+            $availableVehicles = $availableVehiclesForToday->whereNotIn('vehicle.id', $usedVehicles);
             if ($availableVehicles->isEmpty()) break;
 
-            $vehicle = $availableVehicles->random();
+            $item = $availableVehicles->random();
+            $vehicle = $item['vehicle'];
             $usedVehicles->push($vehicle->id);
 
-            $pickupBranchId = $vehicle->pickup_branch_id;
+            $pickupBranchId = $item['branch_id'];
             $pickupBranch = $branches->firstWhere('id', $pickupBranchId);
             if (!$pickupBranch) {
                 continue;
@@ -409,17 +414,21 @@ class ReservationSeeder extends Seeder
         $usedVehicles = collect();
         $branches = $branches->values(); // 重置索引以便隨機存取
 
-        // 將按分店分組的車輛轉換為單一集合以便處理
+        // 將按分店分組的車輛轉換為單一集合以便處理，保留所屬分店ID
         $allVehicles = collect();
         foreach ($vehiclesByBranch as $branchId => $branchVehicles) {
             foreach ($branchVehicles as $vehicle) {
-                $vehicle->pickup_branch_id = $branchId; // 記錄車輛所屬的取車分店
-                $allVehicles->push($vehicle);
+                // 將車輛與所屬分店ID一起存入集合
+                $allVehicles->push([
+                    'vehicle' => $vehicle,
+                    'branch_id' => $branchId
+                ]);
             }
         }
 
         // 過濾出不在維修期間的可用車輛
-        $availableVehicles = $allVehicles->filter(function ($vehicle) use ($today) {
+        $availableVehicles = $allVehicles->filter(function ($item) use ($today) {
+            $vehicle = $item['vehicle'];
             if ($vehicle->maintenance_start_at && $vehicle->maintenance_expected_end_at) {
                 $maintenanceStart = \Carbon\Carbon::parse($vehicle->maintenance_start_at);
                 $maintenanceEnd = \Carbon\Carbon::parse($vehicle->maintenance_expected_end_at);
@@ -430,7 +439,7 @@ class ReservationSeeder extends Seeder
                 }
             }
             return true;
-        })->keyBy('id');
+        })->keyBy('vehicle.id');
 
         if ($availableVehicles->isEmpty()) {
             return;
@@ -444,10 +453,11 @@ class ReservationSeeder extends Seeder
             // 隨機選擇車輛來達到目標出租率
             $shuffledVehicles = $availableVehicles->shuffle();
 
-            foreach ($shuffledVehicles as $vehicle) {
+            foreach ($shuffledVehicles as $item) {
+                $vehicle = $item['vehicle'];
                 if ($createdCount >= $neededReservations) break;
 
-                $pickupBranchId = $vehicle->pickup_branch_id;
+                $pickupBranchId = $item['branch_id'];
                 $pickupBranch = $branches->firstWhere('id', $pickupBranchId);
                 if (!$pickupBranch) {
                     continue;
@@ -514,17 +524,21 @@ class ReservationSeeder extends Seeder
         $customerPool = $customers->shuffle();
         $branches = $branches->values(); // 重置索引以便隨機存取
 
-        // 將按分店分組的車輛轉換為單一集合以便處理
+        // 將按分店分組的車輛轉換為單一集合以便處理，保留所屬分店ID
         $allVehicles = collect();
         foreach ($vehiclesByBranch as $branchId => $branchVehicles) {
             foreach ($branchVehicles as $vehicle) {
-                $vehicle->pickup_branch_id = $branchId; // 記錄車輛所屬的取車分店
-                $allVehicles->push($vehicle);
+                // 將車輛與所屬分店ID一起存入集合
+                $allVehicles->push([
+                    'vehicle' => $vehicle,
+                    'branch_id' => $branchId
+                ]);
             }
         }
 
         // 過濾出不在維修期間的可用車輛
-        $availableVehicles = $allVehicles->filter(function ($vehicle) use ($today) {
+        $availableVehicles = $allVehicles->filter(function ($item) use ($today) {
+            $vehicle = $item['vehicle'];
             if ($vehicle->maintenance_start_at && $vehicle->maintenance_expected_end_at) {
                 $maintenanceStart = \Carbon\Carbon::parse($vehicle->maintenance_start_at);
                 $maintenanceEnd = \Carbon\Carbon::parse($vehicle->maintenance_expected_end_at);
@@ -549,9 +563,10 @@ class ReservationSeeder extends Seeder
             $dailyReservations = rand(2, 6);
 
             for ($i = 0; $i < $dailyReservations; $i++) {
-                $vehicle = $availableVehicles->random();
+                $item = $availableVehicles->random();
+                $vehicle = $item['vehicle'];
 
-                $pickupBranchId = $vehicle->pickup_branch_id;
+                $pickupBranchId = $item['branch_id'];
                 $pickupBranch = $branches->firstWhere('id', $pickupBranchId);
                 if (!$pickupBranch) {
                     continue;

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Policies;
 
 use Illuminate\Foundation\Auth\User as AuthUser;
-use App\Domain\Rental\Models\Vehicle;
+use App\Models\Vehicle;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class VehiclePolicy
@@ -19,7 +19,7 @@ class VehiclePolicy
 
     public function view(AuthUser $authUser, Vehicle $vehicle): bool
     {
-        return $authUser->can('View:Vehicle');
+        return $authUser->can('View:Vehicle') && $this->belongsToAccessibleTenant($authUser, $vehicle);
     }
 
     public function create(AuthUser $authUser): bool
@@ -29,12 +29,12 @@ class VehiclePolicy
 
     public function update(AuthUser $authUser, Vehicle $vehicle): bool
     {
-        return $authUser->can('Update:Vehicle');
+        return $authUser->can('Update:Vehicle') && $this->belongsToAccessibleTenant($authUser, $vehicle);
     }
 
     public function delete(AuthUser $authUser, Vehicle $vehicle): bool
     {
-        return $authUser->can('Delete:Vehicle');
+        return $authUser->can('Delete:Vehicle') && $this->belongsToAccessibleTenant($authUser, $vehicle);
     }
 
     public function deleteAny(AuthUser $authUser): bool
@@ -44,12 +44,12 @@ class VehiclePolicy
 
     public function restore(AuthUser $authUser, Vehicle $vehicle): bool
     {
-        return $authUser->can('Restore:Vehicle');
+        return $authUser->can('Restore:Vehicle') && $this->belongsToAccessibleTenant($authUser, $vehicle);
     }
 
     public function forceDelete(AuthUser $authUser, Vehicle $vehicle): bool
     {
-        return $authUser->can('ForceDelete:Vehicle');
+        return $authUser->can('ForceDelete:Vehicle') && $this->belongsToAccessibleTenant($authUser, $vehicle);
     }
 
     public function forceDeleteAny(AuthUser $authUser): bool
@@ -64,11 +64,19 @@ class VehiclePolicy
 
     public function replicate(AuthUser $authUser, Vehicle $vehicle): bool
     {
-        return $authUser->can('Replicate:Vehicle');
+        return $authUser->can('Replicate:Vehicle') && $this->belongsToAccessibleTenant($authUser, $vehicle);
     }
 
     public function reorder(AuthUser $authUser): bool
     {
         return $authUser->can('Reorder:Vehicle');
+    }
+
+    /**
+     * Verify that the vehicle belongs to a tenant the user can access
+     */
+    private function belongsToAccessibleTenant(AuthUser $authUser, Vehicle $vehicle): bool
+    {
+        return $authUser->hasRole('Super Admin') || $authUser->tenants()->whereKey($vehicle->tenant_id)->exists();
     }
 }

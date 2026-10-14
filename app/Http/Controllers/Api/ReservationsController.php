@@ -102,12 +102,14 @@ class ReservationsController extends Controller
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(
-                required: ["vehicle_id", "customer_id", "start_date", "end_date"],
+                required: ["vehicle_id", "customer_id", "start_at", "end_at", "pickup_branch_id", "return_branch_id"],
                 properties: [
-                    new OA\Property(property: "vehicle_id", type: "integer", example: 1),
-                    new OA\Property(property: "customer_id", type: "integer", example: 1),
-                    new OA\Property(property: "start_date", type: "string", format: "date-time", example: "2024-01-01T10:00:00Z"),
-                    new OA\Property(property: "end_date", type: "string", format: "date-time", example: "2024-01-05T10:00:00Z"),
+                    new OA\Property(property: "vehicle_id", type: "integer", example: 1, description: "要預約的車輛ID"),
+                    new OA\Property(property: "customer_id", type: "integer", example: 1, description: "客戶ID"),
+                    new OA\Property(property: "start_at", type: "string", format: "date-time", example: "2024-01-01T10:00:00Z", description: "取車時間"),
+                    new OA\Property(property: "end_at", type: "string", format: "date-time", example: "2024-01-05T10:00:00Z", description: "還車時間"),
+                    new OA\Property(property: "pickup_branch_id", type: "integer", example: 1, description: "取車據點ID，必須屬於當前租戶且已啟用"),
+                    new OA\Property(property: "return_branch_id", type: "integer", example: 1, description: "還車據點ID，必須屬於當前租戶且已啟用，支援跨店還車"),
                     new OA\Property(property: "notes", type: "string", example: "需要兒童座椅")
                 ]
             )
@@ -272,7 +274,7 @@ class ReservationsController extends Controller
 
         try {
             $reservation->return();
-            $reservation->load(['customer', 'vehicle']);
+            $reservation->load(['customer', 'vehicle', 'pickupBranch', 'returnBranch']);
 
             return ApiResponse::success(
                 new ReservationResource($reservation),
@@ -339,6 +341,21 @@ class ReservationsController extends Controller
                 return ApiResponse::error('車輛不存在', null, [], 404);
             }
 
+            // 驗證取車和還車據點都屬於當前租戶且已啟用
+            if (!\App\Models\Branch::where('tenant_id', $tenant->id)
+                ->where('is_active', true)
+                ->whereKey($request->pickup_branch_id)
+                ->exists()) {
+                return ApiResponse::error('取車據點不存在或已停用', null, [], 404);
+            }
+
+            if (!\App\Models\Branch::where('tenant_id', $tenant->id)
+                ->where('is_active', true)
+                ->whereKey($request->return_branch_id)
+                ->exists()) {
+                return ApiResponse::error('還車據點不存在或已停用', null, [], 404);
+            }
+
             // 合併日期和時間
             $startAt = $request->pickup_date . ' ' . $request->pickup_time;
             $endAt = $request->return_date . ' ' . $request->return_time;
@@ -380,13 +397,15 @@ class ReservationsController extends Controller
             $createData = \App\Domain\Reservations\DTO\CreateReservationData::fromArray([
                 'vehicle_id' => $request->vehicle_id,
                 'customer_id' => $customer->id,
+                'pickup_branch_id' => $request->pickup_branch_id,
+                'return_branch_id' => $request->return_branch_id,
                 'start_at' => $startAt,
                 'end_at' => $endAt,
                 'notes' => $request->notes,
             ]);
 
             $reservation = $useCase->execute($createData);
-            $reservation->load(['customer', 'vehicle']);
+            $reservation->load(['customer', 'vehicle', 'pickupBranch', 'returnBranch']);
 
             return ApiResponse::success(
                 new \App\Http\Resources\ReservationResource($reservation),

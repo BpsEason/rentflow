@@ -125,14 +125,23 @@
                                 <div class="md:col-span-2">
                                     <label
                                         class="block text-sm font-semibold text-gray-800 mb-3"
-                                        >取車地點</label
+                                        >取車據點</label
                                     >
-                                    <input
+                                    <select
                                         v-model="searchForm.pickupLocation"
-                                        type="text"
-                                        placeholder="輸入城市、機場或車站"
-                                        class="w-full px-5 py-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all duration-300 bg-gray-50 focus:bg-white placeholder:text-gray-400"
-                                    />
+                                        class="w-full px-5 py-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all duration-300 bg-gray-50 focus:bg-white cursor-pointer"
+                                        :disabled="loadingBranches"
+                                    >
+                                        <option value="">請選擇取車據點</option>
+                                        <option
+                                            v-for="branch in branches"
+                                            :key="branch.id"
+                                            :value="branch.id"
+                                        >
+                                            {{ branch.name }} -
+                                            {{ branch.address }}
+                                        </option>
+                                    </select>
                                 </div>
 
                                 <!-- 取車日期與時間 -->
@@ -538,13 +547,32 @@ const heroVehicleImage = computed(() => {
     );
 });
 
+const loadingBranches = ref(false);
+const branches = ref<any[]>([]);
+
 const isSearchValid = computed(() => {
     return (
-        searchForm.value.pickupLocation.trim() &&
+        searchForm.value.pickupLocation &&
         searchForm.value.pickupDate &&
         searchForm.value.returnDate
     );
 });
+
+const fetchBranches = async () => {
+    loadingBranches.value = true;
+    try {
+        const response = await api.get("/public/branches");
+        branches.value = response.data.data;
+        // 預設選擇第一個據點
+        if (branches.value.length > 0) {
+            searchForm.value.pickupLocation = branches.value[0].id;
+        }
+    } catch (e) {
+        console.error("Failed to fetch branches:", e);
+    } finally {
+        loadingBranches.value = false;
+    }
+};
 
 const validateDates = (): boolean => {
     dateError.value = null;
@@ -636,6 +664,7 @@ const checkApiStatus = async () => {
 };
 
 onMounted(() => {
+    fetchBranches();
     fetchVehicles();
     checkApiStatus();
 });

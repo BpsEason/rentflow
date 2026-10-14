@@ -31,6 +31,8 @@ class CreateReservation
             'tenant_id' => $tenantId,
             'vehicle_id' => $data->vehicleId,
             'customer_id' => $data->customerId,
+            'pickup_branch_id' => $data->pickupBranchId,
+            'return_branch_id' => $data->returnBranchId,
             'start_at' => $data->startDate,
             'end_at' => $data->endDate,
             'notes' => $data->notes,
