@@ -300,10 +300,11 @@ class ReservationSeeder extends Seeder
         // 建立數筆今日還車的預約（昨天取車，今天還）
         $todayReturnCount = min(2, $availableVehiclesForToday->count() - $usedVehicles->count());
         for ($i = 0; $i < $todayReturnCount; $i++) {
-            $availableVehicles = $availableVehiclesForToday->whereNotIn('id', $usedVehicles);
+            $availableVehicles = $availableVehiclesForToday->whereNotIn('vehicle.id', $usedVehicles);
             if ($availableVehicles->isEmpty()) break;
 
-            $vehicle = $availableVehicles->random();
+            $item = $availableVehicles->random();
+            $vehicle = $item['vehicle'];
             $usedVehicles->push($vehicle->id);
 
             $pickupBranchId = $vehicle->pickup_branch_id;
@@ -354,10 +355,11 @@ class ReservationSeeder extends Seeder
         // 確保有一些PENDING的待確認預約
         $pendingCount = min(4, $availableVehiclesForToday->count() - $usedVehicles->count());
         for ($i = 0; $i < $pendingCount; $i++) {
-            $availableVehicles = $availableVehiclesForToday->whereNotIn('id', $usedVehicles);
+            $availableVehicles = $availableVehiclesForToday->whereNotIn('vehicle.id', $usedVehicles);
             if ($availableVehicles->isEmpty()) break;
 
-            $vehicle = $availableVehicles->random();
+            $item = $availableVehicles->random();
+            $vehicle = $item['vehicle'];
             $usedVehicles->push($vehicle->id);
 
             $pickupBranchId = $vehicle->pickup_branch_id;
