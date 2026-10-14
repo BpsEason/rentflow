@@ -19,9 +19,9 @@ class DatabaseSeeder extends Seeder
             VehiclePricingSeeder::class,
             HolidaySeeder::class,
             CustomerSeeder::class,
+            RentalDemoSeeder::class,
             ReservationSeeder::class,
             OrderSeeder::class,
-            RentalDemoSeeder::class,
         ]);
     }
 }

@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Branch;
 use App\Models\Tenant;
 use App\Models\Customer;
 use App\Models\Vehicle;
@@ -17,6 +18,16 @@ class ReservationSeeder extends Seeder
         $tenants = Tenant::all();
 
         foreach ($tenants as $tenant) {
+            // 取得租戶的所有活躍分店
+            $branches = Branch::where('tenant_id', $tenant->id)
+                ->where('is_active', true)
+                ->get();
+
+            if ($branches->isEmpty()) {
+                Log::info("租戶 {$tenant->name} (ID: {$tenant->id}) 沒有活躍分店，跳過建立預約");
+                continue;
+            }
+
             $customers = Customer::where('tenant_id', $tenant->id)
                 ->where('is_active', true)
                 ->get();
@@ -29,11 +40,14 @@ class ReservationSeeder extends Seeder
                 continue;
             }
 
-            $this->seedReservationsForTenant($tenant, $customers, $vehicles);
+            // 按分店分組車輛，確保車輛只能從其目前所在的分店取車
+            $vehiclesByBranch = $vehicles->groupBy('current_branch_id');
+
+            $this->seedReservationsForTenant($tenant, $branches, $customers, $vehicles, $vehiclesByBranch);
         }
     }
 
-    private function seedReservationsForTenant($tenant, $customers, $vehicles): void
+    private function seedReservationsForTenant($tenant, $branches, $customers, $vehicles, $vehiclesByBranch): void
     {
         $now = Carbon::now()->startOfDay();
         $today = Carbon::today();
@@ -53,16 +67,16 @@ class ReservationSeeder extends Seeder
         ];
 
         // 第一步：建立過去30天的預約 (40%)
-        $this->createPastReservations($tenant, $customers, $vehicles, $usageRates, $now);
+        $this->createPastReservations($tenant, $branches, $customers, $vehiclesByBranch, $usageRates, $now);
 
         // 第二步：建立今天的預約 (10%) - 包含今日取車和今日還車
-        $this->createTodayReservations($tenant, $customers, $vehicles, $today);
+        $this->createTodayReservations($tenant, $branches, $customers, $vehiclesByBranch, $today);
 
         // 第三步：建立未來7天的預約 (20%) - 按照不同的出租率目標
-        $this->createFutureWeekReservations($tenant, $customers, $vehicles, $today, $futureWeekOccupancyTarget);
+        $this->createFutureWeekReservations($tenant, $branches, $customers, $vehiclesByBranch, $today, $futureWeekOccupancyTarget);
 
         // 第四步：建立未來8-30天的預約 (30%)
-        $this->createFutureMonthReservations($tenant, $customers, $vehicles, $today);
+        $this->createFutureMonthReservations($tenant, $branches, $customers, $vehiclesByBranch, $today);
     }
 
     /**
@@ -91,73 +105,92 @@ class ReservationSeeder extends Seeder
     /**
      * 建立過去30天的預約
      */
-    private function createPastReservations($tenant, $customers, $vehicles, $usageRates, $now): void
+    private function createPastReservations($tenant, $branches, $customers, $vehiclesByBranch, $usageRates, $now): void
     {
         $customerPool = $customers->shuffle();
+        $branches = $branches->values(); // 重置索引以便隨機存取
 
         // 過去30天，每天隨機建立一些預約
         for ($dayOffset = 30; $dayOffset >= 1; $dayOffset--) {
             $date = $now->copy()->subDays($dayOffset);
 
-            foreach ($vehicles as $vIndex => $vehicle) {
-                // 根據使用率決定是否建立預約
-                if (mt_rand() / mt_getrandmax() > $usageRates[$vehicle->id]) {
+            // 遍歷每個分店的車輛
+            foreach ($vehiclesByBranch as $branchId => $branchVehicles) {
+                // 確認取車分店存在且活躍
+                $pickupBranch = $branches->firstWhere('id', $branchId);
+                if (!$pickupBranch) {
                     continue;
                 }
 
-                // 檢查車輛是否在維修期間，如果是就跳過
-                if ($vehicle->maintenance_start_at && $vehicle->maintenance_expected_end_at) {
-                    $maintenanceStart = \Carbon\Carbon::parse($vehicle->maintenance_start_at);
-                    $maintenanceEnd = \Carbon\Carbon::parse($vehicle->maintenance_expected_end_at);
-                    $potentialStart = $date->copy()->setTime(9, 0);
-                    $potentialEnd = $potentialStart->copy()->addDays(rand(1, 3))->setTime(18, 0);
-
-                    if ($potentialStart->lessThan($maintenanceEnd) && $potentialEnd->greaterThan($maintenanceStart)) {
+                foreach ($branchVehicles as $vehicle) {
+                    // 根據使用率決定是否建立預約
+                    if (mt_rand() / mt_getrandmax() > $usageRates[$vehicle->id]) {
                         continue;
                     }
-                }
 
-                // 隨機租用1-3天，確保最少4小時
-                $rentalDays = rand(1, 3);
-                $startAt = $date->copy()->setTime(9, 0);  // 早上9點取車
-                $endAt = $startAt->copy()->addDays($rentalDays)->setTime(18, 0);  // 晚上6點還車
+                    // 檢查車輛是否在維修期間，如果是就跳過
+                    if ($vehicle->maintenance_start_at && $vehicle->maintenance_expected_end_at) {
+                        $maintenanceStart = \Carbon\Carbon::parse($vehicle->maintenance_start_at);
+                        $maintenanceEnd = \Carbon\Carbon::parse($vehicle->maintenance_expected_end_at);
+                        $potentialStart = $date->copy()->setTime(9, 0);
+                        $potentialEnd = $potentialStart->copy()->addDays(rand(1, 3))->setTime(18, 0);
 
-                // 檢查時間衝突，如果有衝突就跳過
-                if (Reservation::hasTimeConflict($vehicle->id, $startAt, $endAt)) {
-                    continue;
-                }
+                        if ($potentialStart->lessThan($maintenanceEnd) && $potentialEnd->greaterThan($maintenanceStart)) {
+                            continue;
+                        }
+                    }
 
-                // 根據時間設定正確的狀態
-                if ($endAt->isPast()) {
-                    // 如果還車時間已經過去，應該是RETURNED
-                    $status = rand(0, 10) < 9 ? Reservation::STATUS_RETURNED : Reservation::STATUS_CANCELLED;
-                } else {
-                    // 如果還車時間還沒到，但取車時間已過，應該是PICKED_UP
-                    if ($startAt->isPast()) {
-                        $status = Reservation::STATUS_PICKED_UP;
+                    // 隨機租用1-3天，確保最少4小時
+                    $rentalDays = rand(1, 3);
+                    $startAt = $date->copy()->setTime(9, 0);  // 早上9點取車
+                    $endAt = $startAt->copy()->addDays($rentalDays)->setTime(18, 0);  // 晚上6點還車
+
+                    // 檢查時間衝突，如果有衝突就跳過
+                    if (Reservation::hasTimeConflict($vehicle->id, $startAt, $endAt)) {
+                        continue;
+                    }
+
+                    // 決定是否跨店還車（20%的機率）
+                    $isInterbranch = (mt_rand() / mt_getrandmax() < 0.2) && $branches->count() > 1;
+                    $pickupBranchId = $pickupBranch->id;
+                    $returnBranchId = $isInterbranch
+                        ? $branches->where('id', '!=', $pickupBranchId)->random()->id
+                        : $pickupBranchId;
+
+                    // 根據時間設定正確的狀態
+                    if ($endAt->isPast()) {
+                        // 如果還車時間已經過去，應該是RETURNED
+                        $status = rand(0, 10) < 9 ? Reservation::STATUS_RETURNED : Reservation::STATUS_CANCELLED;
                     } else {
-                        // 未來的預約
-                        $status = rand(0, 10) < 7 ? Reservation::STATUS_CONFIRMED : Reservation::STATUS_PENDING;
+                        // 如果還車時間還沒到，但取車時間已過，應該是PICKED_UP
+                        if ($startAt->isPast()) {
+                            $status = Reservation::STATUS_PICKED_UP;
+                        } else {
+                            // 未來的預約
+                            $status = rand(0, 10) < 7 ? Reservation::STATUS_CONFIRMED : Reservation::STATUS_PENDING;
+                        }
                     }
-                }
 
-                $customer = $customerPool->random();
+                    $customer = $customerPool->random();
 
-                try {
-                    Reservation::createReservation([
-                        'tenant_id' => $tenant->id,
-                        'customer_id' => $customer->id,
-                        'vehicle_id' => $vehicle->id,
-                        'start_at' => $startAt,
-                        'end_at' => $endAt,
-                        'status' => $status,
-                    ]);
-                } catch (\Exception $e) {
-                    // 只記錄非預期的錯誤，預期的衝突錯誤直接跳過
-                    if (!in_array($e->getCode(), [400, 409, 422])) {
-                        Log::warning('建立過去預約時發生非預期錯誤: ' . $e->getMessage());
+                    try {
+                        Reservation::createReservation([
+                            'tenant_id' => $tenant->id,
+                            'customer_id' => $customer->id,
+                            'vehicle_id' => $vehicle->id,
+                            'pickup_branch_id' => $pickupBranchId,
+                            'return_branch_id' => $returnBranchId,
+                            'start_at' => $startAt,
+                            'end_at' => $endAt,
+                            'status' => $status,
+                        ]);
+                    } catch (\Exception $e) {
+                        // 只記錄非預期的錯誤，預期的衝突錯誤直接跳過
+                        if (!in_array($e->getCode(), [400, 409, 422])) {
+                            Log::warning('建立過去預約時發生非預期錯誤: ' . $e->getMessage());
+                        }
+                        continue;
                     }
-                    continue;
                 }
             }
         }
@@ -166,13 +199,23 @@ class ReservationSeeder extends Seeder
     /**
      * 建立今天的預約 - 確保Dashboard有今日取車、今日還車的資料
      */
-    private function createTodayReservations($tenant, $customers, $vehicles, $today): void
+    private function createTodayReservations($tenant, $branches, $customers, $vehiclesByBranch, $today): void
     {
         $customerPool = $customers->shuffle();
         $usedVehicles = collect();
+        $branches = $branches->values(); // 重置索引以便隨機存取
+
+        // 將按分店分組的車輛轉換為單一集合以便處理
+        $allVehicles = collect();
+        foreach ($vehiclesByBranch as $branchId => $branchVehicles) {
+            foreach ($branchVehicles as $vehicle) {
+                $vehicle->pickup_branch_id = $branchId; // 記錄車輛所屬的取車分店
+                $allVehicles->push($vehicle);
+            }
+        }
 
         // 過濾出不在維修期間的可用車輛
-        $availableVehiclesForToday = $vehicles->filter(function ($vehicle) {
+        $availableVehiclesForToday = $allVehicles->filter(function ($vehicle) use ($today) {
             if ($vehicle->maintenance_start_at && $vehicle->maintenance_expected_end_at) {
                 $maintenanceStart = \Carbon\Carbon::parse($vehicle->maintenance_start_at);
                 $maintenanceEnd = \Carbon\Carbon::parse($vehicle->maintenance_expected_end_at);
@@ -199,6 +242,12 @@ class ReservationSeeder extends Seeder
             $vehicle = $availableVehicles->random();
             $usedVehicles->push($vehicle->id);
 
+            $pickupBranchId = $vehicle->pickup_branch_id;
+            $pickupBranch = $branches->firstWhere('id', $pickupBranchId);
+            if (!$pickupBranch) {
+                continue;
+            }
+
             $startAt = $today->copy()->setTime(9, 0);
             $endAt = $today->copy()->addDays(2)->setTime(18, 0);
 
@@ -212,6 +261,12 @@ class ReservationSeeder extends Seeder
                 continue;
             }
 
+            // 決定是否跨店還車（20%的機率）
+            $isInterbranch = (mt_rand() / mt_getrandmax() < 0.2) && $branches->count() > 1;
+            $returnBranchId = $isInterbranch
+                ? $branches->where('id', '!=', $pickupBranchId)->random()->id
+                : $pickupBranchId;
+
             $customer = $customerPool->random();
 
             // 根據當前時間設定正確的狀態，如果現在已經過了取車時間，就設定為PICKED_UP
@@ -223,6 +278,8 @@ class ReservationSeeder extends Seeder
                     'tenant_id' => $tenant->id,
                     'customer_id' => $customer->id,
                     'vehicle_id' => $vehicle->id,
+                    'pickup_branch_id' => $pickupBranchId,
+                    'return_branch_id' => $returnBranchId,
                     'start_at' => $startAt,
                     'end_at' => $endAt,
                     'status' => $status,
@@ -244,6 +301,12 @@ class ReservationSeeder extends Seeder
             $vehicle = $availableVehicles->random();
             $usedVehicles->push($vehicle->id);
 
+            $pickupBranchId = $vehicle->pickup_branch_id;
+            $pickupBranch = $branches->firstWhere('id', $pickupBranchId);
+            if (!$pickupBranch) {
+                continue;
+            }
+
             $startAt = $today->copy()->subDay()->setTime(10, 0);
             $endAt = $today->copy()->setTime(18, 0);  // 今天還車
 
@@ -254,6 +317,9 @@ class ReservationSeeder extends Seeder
             if (Reservation::hasTimeConflict($vehicle->id, $startAt, $endAt)) {
                 continue;
             }
+
+            // 今日還車的預約通常都是同店取還
+            $returnBranchId = $pickupBranchId;
 
             $customer = $customerPool->random();
 
@@ -266,6 +332,8 @@ class ReservationSeeder extends Seeder
                     'tenant_id' => $tenant->id,
                     'customer_id' => $customer->id,
                     'vehicle_id' => $vehicle->id,
+                    'pickup_branch_id' => $pickupBranchId,
+                    'return_branch_id' => $returnBranchId,
                     'start_at' => $startAt,
                     'end_at' => $endAt,
                     'status' => $status,
@@ -287,6 +355,12 @@ class ReservationSeeder extends Seeder
             $vehicle = $availableVehicles->random();
             $usedVehicles->push($vehicle->id);
 
+            $pickupBranchId = $vehicle->pickup_branch_id;
+            $pickupBranch = $branches->firstWhere('id', $pickupBranchId);
+            if (!$pickupBranch) {
+                continue;
+            }
+
             $startAt = $today->copy()->addDays(3)->setTime(9, 0);
             $endAt = $startAt->copy()->addDays(2)->setTime(18, 0);
 
@@ -298,6 +372,12 @@ class ReservationSeeder extends Seeder
                 continue;
             }
 
+            // 決定是否跨店還車（20%的機率）
+            $isInterbranch = (mt_rand() / mt_getrandmax() < 0.2) && $branches->count() > 1;
+            $returnBranchId = $isInterbranch
+                ? $branches->where('id', '!=', $pickupBranchId)->random()->id
+                : $pickupBranchId;
+
             $customer = $customerPool->random();
 
             try {
@@ -305,6 +385,8 @@ class ReservationSeeder extends Seeder
                     'tenant_id' => $tenant->id,
                     'customer_id' => $customer->id,
                     'vehicle_id' => $vehicle->id,
+                    'pickup_branch_id' => $pickupBranchId,
+                    'return_branch_id' => $returnBranchId,
                     'start_at' => $startAt,
                     'end_at' => $endAt,
                     'status' => Reservation::STATUS_PENDING,
@@ -321,13 +403,23 @@ class ReservationSeeder extends Seeder
     /**
      * 建立未來7天的預約，按照不同的出租率目標
      */
-    private function createFutureWeekReservations($tenant, $customers, $vehicles, $today, $occupancyTargets): void
+    private function createFutureWeekReservations($tenant, $branches, $customers, $vehiclesByBranch, $today, $occupancyTargets): void
     {
         $customerPool = $customers->shuffle();
         $usedVehicles = collect();
+        $branches = $branches->values(); // 重置索引以便隨機存取
+
+        // 將按分店分組的車輛轉換為單一集合以便處理
+        $allVehicles = collect();
+        foreach ($vehiclesByBranch as $branchId => $branchVehicles) {
+            foreach ($branchVehicles as $vehicle) {
+                $vehicle->pickup_branch_id = $branchId; // 記錄車輛所屬的取車分店
+                $allVehicles->push($vehicle);
+            }
+        }
 
         // 過濾出不在維修期間的可用車輛
-        $availableVehicles = $vehicles->filter(function ($vehicle) use ($today) {
+        $availableVehicles = $allVehicles->filter(function ($vehicle) use ($today) {
             if ($vehicle->maintenance_start_at && $vehicle->maintenance_expected_end_at) {
                 $maintenanceStart = \Carbon\Carbon::parse($vehicle->maintenance_start_at);
                 $maintenanceEnd = \Carbon\Carbon::parse($vehicle->maintenance_expected_end_at);
@@ -355,6 +447,12 @@ class ReservationSeeder extends Seeder
             foreach ($shuffledVehicles as $vehicle) {
                 if ($createdCount >= $neededReservations) break;
 
+                $pickupBranchId = $vehicle->pickup_branch_id;
+                $pickupBranch = $branches->firstWhere('id', $pickupBranchId);
+                if (!$pickupBranch) {
+                    continue;
+                }
+
                 // 隨機租用1-2天，確保最少4小時
                 $rentalDays = rand(1, 2);
                 $startAt = $targetDate->copy()->setTime(10, 0);
@@ -367,6 +465,12 @@ class ReservationSeeder extends Seeder
                 if (Reservation::hasTimeConflict($vehicle->id, $startAt, $endAt)) {
                     continue;
                 }
+
+                // 決定是否跨店還車（20%的機率）
+                $isInterbranch = (mt_rand() / mt_getrandmax() < 0.2) && $branches->count() > 1;
+                $returnBranchId = $isInterbranch
+                    ? $branches->where('id', '!=', $pickupBranchId)->random()->id
+                    : $pickupBranchId;
 
                 // 未來的預約主要是PENDING或CONFIRMED，少量CANCELLED
                 $rand = rand(0, 100);
@@ -385,6 +489,8 @@ class ReservationSeeder extends Seeder
                         'tenant_id' => $tenant->id,
                         'customer_id' => $customer->id,
                         'vehicle_id' => $vehicle->id,
+                        'pickup_branch_id' => $pickupBranchId,
+                        'return_branch_id' => $returnBranchId,
                         'start_at' => $startAt,
                         'end_at' => $endAt,
                         'status' => $status,
@@ -403,12 +509,22 @@ class ReservationSeeder extends Seeder
     /**
      * 建立未來8-30天的預約
      */
-    private function createFutureMonthReservations($tenant, $customers, $vehicles, $today): void
+    private function createFutureMonthReservations($tenant, $branches, $customers, $vehiclesByBranch, $today): void
     {
         $customerPool = $customers->shuffle();
+        $branches = $branches->values(); // 重置索引以便隨機存取
+
+        // 將按分店分組的車輛轉換為單一集合以便處理
+        $allVehicles = collect();
+        foreach ($vehiclesByBranch as $branchId => $branchVehicles) {
+            foreach ($branchVehicles as $vehicle) {
+                $vehicle->pickup_branch_id = $branchId; // 記錄車輛所屬的取車分店
+                $allVehicles->push($vehicle);
+            }
+        }
 
         // 過濾出不在維修期間的可用車輛
-        $availableVehicles = $vehicles->filter(function ($vehicle) use ($today) {
+        $availableVehicles = $allVehicles->filter(function ($vehicle) use ($today) {
             if ($vehicle->maintenance_start_at && $vehicle->maintenance_expected_end_at) {
                 $maintenanceStart = \Carbon\Carbon::parse($vehicle->maintenance_start_at);
                 $maintenanceEnd = \Carbon\Carbon::parse($vehicle->maintenance_expected_end_at);
@@ -435,6 +551,12 @@ class ReservationSeeder extends Seeder
             for ($i = 0; $i < $dailyReservations; $i++) {
                 $vehicle = $availableVehicles->random();
 
+                $pickupBranchId = $vehicle->pickup_branch_id;
+                $pickupBranch = $branches->firstWhere('id', $pickupBranchId);
+                if (!$pickupBranch) {
+                    continue;
+                }
+
                 // 隨機租用1-4天，確保最少4小時
                 $rentalDays = rand(1, 4);
                 $startAt = $date->copy()->setTime(9, 0);
@@ -447,6 +569,12 @@ class ReservationSeeder extends Seeder
                 if (Reservation::hasTimeConflict($vehicle->id, $startAt, $endAt)) {
                     continue;
                 }
+
+                // 決定是否跨店還車（20%的機率）
+                $isInterbranch = (mt_rand() / mt_getrandmax() < 0.2) && $branches->count() > 1;
+                $returnBranchId = $isInterbranch
+                    ? $branches->where('id', '!=', $pickupBranchId)->random()->id
+                    : $pickupBranchId;
 
                 // 越遙遠的未來，PENDING的比例越高
                 $rand = rand(0, 100);
@@ -464,6 +592,8 @@ class ReservationSeeder extends Seeder
                         'tenant_id' => $tenant->id,
                         'customer_id' => $customer->id,
                         'vehicle_id' => $vehicle->id,
+                        'pickup_branch_id' => $pickupBranchId,
+                        'return_branch_id' => $returnBranchId,
                         'start_at' => $startAt,
                         'end_at' => $endAt,
                         'status' => $status,
