@@ -220,7 +220,8 @@ class VehicleController extends Controller
         description: "取得目前租戶的所有可租用車輛列表，供前台公開存取",
         tags: ["Vehicles"],
         parameters: [
-            new OA\Parameter(name: "X-Tenant-Slug", in: "header", required: true, schema: new OA\Schema(type: "string"), description: "租戶唯一識別碼")
+            new OA\Parameter(name: "X-Tenant-Slug", in: "header", required: true, schema: new OA\Schema(type: "string"), description: "租戶唯一識別碼"),
+            new OA\Parameter(name: "type", in: "query", required: false, schema: new OA\Schema(type: "string", enum: ["CAR", "MOTORCYCLE"]), description: "車輛類型，可選：CAR=汽車, MOTORCYCLE=機車")
         ],
         responses: [
             new OA\Response(response: 200, description: "成功取得車輛列表", content: new OA\JsonContent(ref: "#/components/schemas/ApiSuccessResponse")),
@@ -235,11 +236,18 @@ class VehicleController extends Controller
             return ApiResponse::error('無法解析租戶資訊，請確認租戶 slug 正確且租戶已開啟公開服務', null, [], 403);
         }
 
+        // 支援依車輛類型篩選
+        $type = request()->input('type');
+
         // 只返回可用的車輛，包含定價資訊
-        $vehicles = Vehicle::where('tenant_id', $tenant->id)
+        $query = Vehicle::where('tenant_id', $tenant->id)
             ->where('status', 'AVAILABLE')
-            ->with('pricing')
-            ->paginate(15);
+            ->when($type, function ($q) use ($type) {
+                return $q->where('type', $type);
+            })
+            ->with('pricing');
+
+        $vehicles = $query->paginate(15);
 
         return ApiResponse::paginate(
             VehicleResource::collection($vehicles),
@@ -300,7 +308,8 @@ class VehicleController extends Controller
             new OA\Parameter(name: "X-Tenant-Slug", in: "header", required: true, schema: new OA\Schema(type: "string"), description: "租戶唯一識別碼"),
             new OA\Parameter(name: "pickup_branch_id", in: "query", required: true, schema: new OA\Schema(type: "integer"), description: "取車據點ID"),
             new OA\Parameter(name: "start_at", in: "query", required: true, schema: new OA\Schema(type: "string", format: "date-time"), description: "開始時間"),
-            new OA\Parameter(name: "end_at", in: "query", required: true, schema: new OA\Schema(type: "string", format: "date-time"), description: "結束時間")
+            new OA\Parameter(name: "end_at", in: "query", required: true, schema: new OA\Schema(type: "string", format: "date-time"), description: "結束時間"),
+            new OA\Parameter(name: "type", in: "query", required: false, schema: new OA\Schema(type: "string", enum: ["CAR", "MOTORCYCLE"]), description: "車輛類型，可選：CAR=汽車, MOTORCYCLE=機車")
         ],
         responses: [
             new OA\Response(response: 200, description: "成功取得可用車輛列表", content: new OA\JsonContent(ref: "#/components/schemas/ApiSuccessResponse")),
@@ -342,9 +351,13 @@ class VehicleController extends Controller
             return ApiResponse::error('最少租用時間為4小時', null, [], 422);
         }
 
-        // 獲取所有狀態為AVAILABLE的車輛
+        // 獲取所有狀態為AVAILABLE的車輛，支援依車輛類型篩選
+        $type = $request->input('type');
         $availableVehicles = \App\Models\Vehicle::where('tenant_id', $tenant->id)
             ->where('status', 'AVAILABLE')
+            ->when($type, function ($q) use ($type) {
+                return $q->where('type', $type);
+            })
             ->with('pricing')
             ->get();
 

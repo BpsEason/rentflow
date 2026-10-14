@@ -88,6 +88,22 @@
                             />
                         </div>
 
+                        <!-- Vehicle Type Filter -->
+                        <div>
+                            <label
+                                class="block text-sm font-semibold text-gray-800 mb-3"
+                                >車輛類型</label
+                            >
+                            <select
+                                v-model="filters.type"
+                                class="w-full px-5 py-4 border-2 border-gray-100 rounded-2xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all duration-300 bg-gray-50/80 focus:bg-white cursor-pointer"
+                            >
+                                <option value="">全部車種</option>
+                                <option value="CAR">汽車</option>
+                                <option value="MOTORCYCLE">機車</option>
+                            </select>
+                        </div>
+
                         <!-- Search Button -->
                         <div class="flex items-end">
                             <button
@@ -226,6 +242,7 @@ const filters = ref({
     returnDate: queryReturn || "",
     startAt: queryStartTime || "",
     endAt: queryEndTime || "",
+    type: "",
 });
 
 const filteredVehicles = computed(() => {
@@ -291,7 +308,11 @@ const fetchVehicles = async () => {
                 const end = new Date(filters.value.returnDate);
                 if (end < start) {
                     // 日期無效，使用一般車輛列表
-                    response = await api.get("/public/vehicles");
+                    const params: any = {};
+                    if (filters.value.type) {
+                        params.type = filters.value.type;
+                    }
+                    response = await api.get("/public/vehicles", { params });
                     allVehicles.value = response.data.data || [];
                     pagination.value.total =
                         response.data.total || allVehicles.value.length;
@@ -304,20 +325,32 @@ const fetchVehicles = async () => {
 
             // 有有效租期且選擇了取車據點，呼叫可用車輛 API
             if (filters.value.pickup_branch_id) {
+                const params: any = {
+                    pickup_branch_id: filters.value.pickup_branch_id,
+                    start_at: startAt,
+                    end_at: endAt,
+                };
+                if (filters.value.type) {
+                    params.type = filters.value.type;
+                }
                 response = await api.get("/public/vehicles/available", {
-                    params: {
-                        pickup_branch_id: filters.value.pickup_branch_id,
-                        start_at: startAt,
-                        end_at: endAt,
-                    },
+                    params,
                 });
             } else {
                 // 未選擇取車據點，使用一般車輛列表
-                response = await api.get("/public/vehicles");
+                const params: any = {};
+                if (filters.value.type) {
+                    params.type = filters.value.type;
+                }
+                response = await api.get("/public/vehicles", { params });
             }
         } else {
             // 沒有選擇租期或取車據點，使用一般車輛列表
-            response = await api.get("/public/vehicles");
+            const params: any = {};
+            if (filters.value.type) {
+                params.type = filters.value.type;
+            }
+            response = await api.get("/public/vehicles", { params });
         }
 
         allVehicles.value = response.data.data || [];

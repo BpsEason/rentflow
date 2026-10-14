@@ -329,9 +329,12 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <!-- 行李箱 -->
+                                    <!-- 行李箱容量 - 僅汽車顯示 -->
                                     <div
-                                        v-if="vehicle.luggage"
+                                        v-if="
+                                            vehicle.type === 'CAR' &&
+                                            vehicle.luggage
+                                        "
                                         class="bg-white p-6"
                                     >
                                         <div class="flex items-start">
@@ -365,6 +368,94 @@
                                                     }}<span
                                                         class="text-sm font-normal text-gray-500 ml-1"
                                                         >件</span
+                                                    >
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- 機車專用：排氣量 -->
+                                    <div
+                                        v-if="
+                                            vehicle.type === 'MOTORCYCLE' &&
+                                            vehicle.engine_cc
+                                        "
+                                        class="bg-white p-6"
+                                    >
+                                        <div class="flex items-start">
+                                            <div
+                                                class="p-3 bg-orange-50 rounded-xl mr-4"
+                                            >
+                                                <svg
+                                                    class="w-6 h-6 text-orange-600"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    viewBox="0 0 24 24"
+                                                >
+                                                    <path
+                                                        stroke-linecap="round"
+                                                        stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M13 10V3L4 14h7v7l9-11h-7z"
+                                                    />
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <p
+                                                    class="text-xs text-gray-500 uppercase tracking-wide mb-1"
+                                                >
+                                                    排氣量
+                                                </p>
+                                                <p
+                                                    class="text-2xl font-bold text-gray-900"
+                                                >
+                                                    {{ vehicle.engine_cc
+                                                    }}<span
+                                                        class="text-sm font-normal text-gray-500 ml-1"
+                                                        >cc</span
+                                                    >
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- 機車專用：安全帽數量 -->
+                                    <div
+                                        v-if="
+                                            vehicle.type === 'MOTORCYCLE' &&
+                                            vehicle.helmet_count
+                                        "
+                                        class="bg-white p-6"
+                                    >
+                                        <div class="flex items-start">
+                                            <div
+                                                class="p-3 bg-green-50 rounded-xl mr-4"
+                                            >
+                                                <svg
+                                                    class="w-6 h-6 text-green-600"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    viewBox="0 0 24 24"
+                                                >
+                                                    <path
+                                                        stroke-linecap="round"
+                                                        stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+                                                    />
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <p
+                                                    class="text-xs text-gray-500 uppercase tracking-wide mb-1"
+                                                >
+                                                    安全帽數量
+                                                </p>
+                                                <p
+                                                    class="text-2xl font-bold text-gray-900"
+                                                >
+                                                    {{ vehicle.helmet_count
+                                                    }}<span
+                                                        class="text-sm font-normal text-gray-500 ml-1"
+                                                        >頂</span
                                                     >
                                                 </p>
                                             </div>

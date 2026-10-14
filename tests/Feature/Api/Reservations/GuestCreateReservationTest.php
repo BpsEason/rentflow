@@ -138,7 +138,7 @@ class GuestCreateReservationTest extends TestCase
         // 創建已被租用的車輛
         $vehicle = Vehicle::factory()->create([
             'tenant_id' => $this->tenant->id,
-            'status' => 'RENTED', // 不可用狀態
+            'status' => 'MAINTENANCE', // 不可用狀態（維修中）
         ]);
 
         // 創建車輛定價

@@ -123,7 +123,7 @@ class Reservation extends Model
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            if ($vehicle->status !== 'AVAILABLE') {
+            if ($vehicle->status !== \App\Domain\Rental\Enums\VehicleStatus::AVAILABLE) {
                 throw new \Exception('車輛目前無法租用', 400);
             }
 
@@ -210,7 +210,7 @@ class Reservation extends Model
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            if ($vehicle->status !== 'AVAILABLE') {
+            if ($vehicle->status !== \App\Domain\Rental\Enums\VehicleStatus::AVAILABLE) {
                 throw new \Exception('車輛目前無法租用');
             }
 

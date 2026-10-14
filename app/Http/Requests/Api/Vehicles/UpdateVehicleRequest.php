@@ -16,6 +16,7 @@ class UpdateVehicleRequest extends FormRequest
         return [
             'name' => ['sometimes', 'required', 'string', 'max:255'],
             'plate_number' => ['sometimes', 'required', 'string', 'max:50'],
+            'type' => ['sometimes', 'required', 'string', 'in:CAR,MOTORCYCLE'],
             'status' => ['sometimes', 'required', 'string', 'in:AVAILABLE,MAINTENANCE,INACTIVE'],
             'seats' => ['sometimes', 'integer', 'min:1'],
             'description' => ['nullable', 'string'],
@@ -23,6 +24,8 @@ class UpdateVehicleRequest extends FormRequest
             'mileage' => ['sometimes', 'nullable', 'integer', 'min:0'],
             'fuel_type' => ['sometimes', 'nullable', 'string', 'in:PETROL,DIESEL,ELECTRIC,HYBRID'],
             'transmission' => ['sometimes', 'nullable', 'string', 'in:AUTOMATIC,MANUAL'],
+            'engine_cc' => ['sometimes', 'nullable', 'integer', 'min:50', 'max:1000'],
+            'helmet_count' => ['sometimes', 'nullable', 'integer', 'min:0', 'max:5'],
             'maintenance_start_at' => ['sometimes', 'nullable', 'date'],
             'maintenance_expected_end_at' => ['sometimes', 'nullable', 'date', 'after:maintenance_start_at'],
             'maintenance_notes' => ['sometimes', 'nullable', 'string'],

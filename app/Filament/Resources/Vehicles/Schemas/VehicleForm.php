@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Vehicles\Schemas;
 
 use App\Domain\Rental\Enums\VehicleStatus;
+use App\Domain\Rental\Enums\VehicleType;
 use App\Filament\Resources\Shared\Concerns\HasDefaultFormLayout;
 use App\Models\Vehicle;
 use Filament\Schemas\Schema;
@@ -12,6 +13,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\Group;
 
 class VehicleForm
 {
@@ -85,6 +87,17 @@ class VehicleForm
                         'lg' => 2,
                     ])
                     ->schema([
+                        Select::make('type')
+                            ->label('車輛類型')
+                            ->options([
+                                VehicleType::CAR->value => '汽車',
+                                VehicleType::MOTORCYCLE->value => '機車',
+                            ])
+                            ->default(VehicleType::CAR->value)
+                            ->required()
+                            ->placeholder('選擇車輛類型')
+                            ->live(),
+
                         Select::make('status')
                             ->label('車輛狀態')
                             ->options([
@@ -151,6 +164,31 @@ class VehicleForm
                             })
                             ->nullable()
                             ->placeholder('選擇車輛目前所在的據點'),
+
+                        // 機車專用欄位，只有選擇機車時才顯示
+                        Group::make()
+                            ->schema([
+                                TextInput::make('engine_cc')
+                                    ->label('排氣量(cc)')
+                                    ->numeric()
+                                    ->minValue(50)
+                                    ->maxValue(1000)
+                                    ->nullable()
+                                    ->placeholder('輸入排氣量'),
+
+                                TextInput::make('helmet_count')
+                                    ->label('提供安全帽數量')
+                                    ->numeric()
+                                    ->minValue(0)
+                                    ->maxValue(5)
+                                    ->nullable()
+                                    ->placeholder('輸入可提供的安全帽數量'),
+                            ])
+                            ->visible(fn($get) => $get('type') === 'MOTORCYCLE')
+                            ->columnSpan([
+                                'default' => 1,
+                                'lg' => 2,
+                            ]),
                     ]),
 
                 Section::make('維修管理')

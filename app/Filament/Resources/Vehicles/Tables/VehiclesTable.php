@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Vehicles\Tables;
 
 use App\Domain\Rental\Enums\VehicleStatus;
+use App\Domain\Rental\Enums\VehicleType;
 use App\Models\Vehicle;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -26,6 +27,18 @@ class VehiclesTable
                     ->label('車牌號碼')
                     ->searchable()
                     ->sortable(),
+
+                TextColumn::make('type')
+                    ->label('車輛類型')
+                    ->badge()
+                    ->color(fn(VehicleType $state): string => match ($state) {
+                        VehicleType::CAR => 'info',
+                        VehicleType::MOTORCYCLE => 'warning',
+                    })
+                    ->formatStateUsing(fn(VehicleType $state): string => match ($state) {
+                        VehicleType::CAR => '汽車',
+                        VehicleType::MOTORCYCLE => '機車',
+                    }),
 
                 TextColumn::make('status')
                     ->label('車輛狀態')
@@ -83,6 +96,12 @@ class VehiclesTable
                     ->toggleable(isToggledHiddenByDefault: false),
             ])
             ->filters([
+                SelectFilter::make('type')
+                    ->label('車輛類型')
+                    ->options([
+                        VehicleType::CAR->value => '汽車',
+                        VehicleType::MOTORCYCLE->value => '機車',
+                    ]),
                 SelectFilter::make('status')
                     ->label('車輛狀態')
                     ->options([

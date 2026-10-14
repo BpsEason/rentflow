@@ -24,11 +24,11 @@ class BranchForm
                     ->icon('heroicon-o-map-pin')
                     ->columnSpan([
                         'default' => 1,
-                        'lg' => 6,
+                        'lg' => 12,
                     ])
                     ->columns([
                         'default' => 1,
-                        'lg' => 2,
+                        'lg' => 4,
                     ])
                     ->schema([
                         // 只有超級管理員可以選擇租戶

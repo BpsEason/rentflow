@@ -4,6 +4,7 @@ namespace App\Domain\Rental\Models;
 
 use App\Models\Tenant;
 use App\Domain\Rental\Enums\VehicleStatus;
+use App\Domain\Rental\Enums\VehicleType;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -24,6 +25,7 @@ class Vehicle extends Model
         'tenant_id',
         'name',
         'plate_number',
+        'type',
         'status',
         'seats',
         'description',
@@ -32,6 +34,8 @@ class Vehicle extends Model
         'mileage',
         'fuel_type',
         'transmission',
+        'engine_cc',
+        'helmet_count',
         'maintenance_start_at',
         'maintenance_expected_end_at',
         'maintenance_notes',
@@ -40,9 +44,12 @@ class Vehicle extends Model
     protected function casts(): array
     {
         return [
+            'type' => VehicleType::class,
             'status' => VehicleStatus::class,
             'manufacture_year' => 'integer',
             'mileage' => 'integer',
+            'engine_cc' => 'integer',
+            'helmet_count' => 'integer',
             'maintenance_start_at' => 'datetime',
             'maintenance_expected_end_at' => 'datetime',
         ];
