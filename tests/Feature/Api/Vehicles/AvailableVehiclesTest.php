@@ -32,6 +32,12 @@ class AvailableVehiclesTest extends TestCase
         $this->customer = \App\Models\Customer::factory()->create([
             'tenant_id' => $this->tenant->id,
         ]);
+
+        // 創建測試用的取車據點
+        $this->pickupBranch = \App\Models\Branch::factory()->create([
+            'tenant_id' => $this->tenant->id,
+            'is_active' => true,
+        ]);
     }
 
     public function test_can_get_available_vehicles_with_valid_rental_period()
@@ -62,7 +68,7 @@ class AvailableVehiclesTest extends TestCase
         $startAt = Carbon::now()->addDay()->setHour(10)->setMinute(0);
         $endAt = Carbon::now()->addDays(3)->setHour(18)->setMinute(0);
 
-        $response = $this->getJson("/api/v1/public/{$this->tenant->slug}/vehicles/available?start_at={$startAt->toDateTimeString()}&end_at={$endAt->toDateTimeString()}");
+        $response = $this->getJson("/api/v1/public/{$this->tenant->slug}/vehicles/available?pickup_branch_id={$this->pickupBranch->id}&start_at={$startAt->toDateTimeString()}&end_at={$endAt->toDateTimeString()}");
 
         // 輸出詳細響應內容用於調試
         echo "Status: " . $response->getStatusCode() . "\n";
@@ -89,6 +95,7 @@ class AvailableVehiclesTest extends TestCase
             'maintenance_start_at' => now(),
             'maintenance_expected_end_at' => now()->addDays(3),
             'maintenance_notes' => '內部維修備註，不應該在公開API顯示',
+            'current_branch_id' => $this->pickupBranch->id,
         ]);
 
         // 創建一輛可用的車輛，同樣包含所有營運欄位
@@ -102,6 +109,7 @@ class AvailableVehiclesTest extends TestCase
             'mileage' => 30000,
             'fuel_type' => 'PETROL',
             'transmission' => 'AUTOMATIC',
+            'current_branch_id' => $this->pickupBranch->id,
         ]);
 
         // 為可用車輛創建定價
@@ -115,7 +123,7 @@ class AvailableVehiclesTest extends TestCase
         $startAt = Carbon::now()->addDay()->setHour(10);
         $endAt = Carbon::now()->addDays(3)->setHour(18);
 
-        $response = $this->getJson("/api/v1/public/{$this->tenant->slug}/vehicles/available?start_at={$startAt->toDateTimeString()}&end_at={$endAt->toDateTimeString()}");
+        $response = $this->getJson("/api/v1/public/{$this->tenant->slug}/vehicles/available?pickup_branch_id={$this->pickupBranch->id}&start_at={$startAt->toDateTimeString()}&end_at={$endAt->toDateTimeString()}");
 
         $response->assertStatus(200);
 
@@ -141,7 +149,7 @@ class AvailableVehiclesTest extends TestCase
         $startAt = Carbon::now()->addDay()->setHour(10);
         $endAt = Carbon::now()->addDay()->setHour(13); // 僅3小時
 
-        $response = $this->getJson("/api/v1/public/{$this->tenant->slug}/vehicles/available?start_at={$startAt->toDateTimeString()}&end_at={$endAt->toDateTimeString()}");
+        $response = $this->getJson("/api/v1/public/{$this->tenant->slug}/vehicles/available?pickup_branch_id={$this->pickupBranch->id}&start_at={$startAt->toDateTimeString()}&end_at={$endAt->toDateTimeString()}");
 
         $response->assertStatus(422)
             ->assertJsonPath('message', '最少租用時間為4小時');
@@ -153,7 +161,7 @@ class AvailableVehiclesTest extends TestCase
         $startAt = Carbon::now()->addDays(3);
         $endAt = Carbon::now()->addDay();
 
-        $response = $this->getJson("/api/v1/public/{$this->tenant->slug}/vehicles/available?start_at={$startAt->toDateTimeString()}&end_at={$endAt->toDateTimeString()}");
+        $response = $this->getJson("/api/v1/public/{$this->tenant->slug}/vehicles/available?pickup_branch_id={$this->pickupBranch->id}&start_at={$startAt->toDateTimeString()}&end_at={$endAt->toDateTimeString()}");
 
         $response->assertStatus(422); // Laravel的驗證會直接拒絕
     }
@@ -164,10 +172,12 @@ class AvailableVehiclesTest extends TestCase
         $vehicle1 = Vehicle::factory()->create([
             'tenant_id' => $this->tenant->id,
             'status' => 'AVAILABLE',
+            'current_branch_id' => $this->pickupBranch->id,
         ]);
         $vehicle2 = Vehicle::factory()->create([
             'tenant_id' => $this->tenant->id,
             'status' => 'AVAILABLE',
+            'current_branch_id' => $this->pickupBranch->id,
         ]);
 
         // 為兩輛車創建定價
@@ -190,7 +200,7 @@ class AvailableVehiclesTest extends TestCase
         $startAt = Carbon::now()->addDays(2)->setHour(10);
         $endAt = Carbon::now()->addDays(5)->setHour(18);
 
-        $response = $this->getJson("/api/v1/public/{$this->tenant->slug}/vehicles/available?start_at={$startAt->toDateTimeString()}&end_at={$endAt->toDateTimeString()}");
+        $response = $this->getJson("/api/v1/public/{$this->tenant->slug}/vehicles/available?start_at={$startAt->toDateTimeString()}&end_at={$endAt->toDateTimeString()}&pickup_branch_id={$this->pickupBranch->id}");
 
         $response->assertStatus(200)
             ->assertJsonCount(1, 'data'); // 只有第二輛車可用
@@ -202,6 +212,7 @@ class AvailableVehiclesTest extends TestCase
         $vehicle = Vehicle::factory()->create([
             'tenant_id' => $this->tenant->id,
             'status' => 'AVAILABLE',
+            'current_branch_id' => $this->pickupBranch->id,
         ]);
         VehiclePricing::factory()->create(['tenant_id' => $this->tenant->id, 'vehicle_id' => $vehicle->id]);
 
@@ -215,13 +226,15 @@ class AvailableVehiclesTest extends TestCase
             'status' => Reservation::STATUS_CONFIRMED,
             'amount' => 3000,
             'rental_days' => 3,
+            'pickup_branch_id' => $this->pickupBranch->id,
+            'return_branch_id' => $this->pickupBranch->id,
         ]);
 
         // 嘗試查詢從前一個預約結束時間開始的新預約
         $startAt = Carbon::parse('2026-10-16 18:00:00'); // 與前一個結束時間完全相同
         $endAt = Carbon::parse('2026-10-18 18:00:00');
 
-        $response = $this->getJson("/api/v1/public/{$this->tenant->slug}/vehicles/available?start_at={$startAt->toDateTimeString()}&end_at={$endAt->toDateTimeString()}");
+        $response = $this->getJson("/api/v1/public/{$this->tenant->slug}/vehicles/available?start_at={$startAt->toDateTimeString()}&end_at={$endAt->toDateTimeString()}&pickup_branch_id={$this->pickupBranch->id}");
 
         $response->assertStatus(200)
             ->assertJsonCount(1, 'data'); // 車輛應該可用，因為半開區間不衝突
@@ -233,6 +246,7 @@ class AvailableVehiclesTest extends TestCase
         $vehicle = Vehicle::factory()->create([
             'tenant_id' => $this->tenant->id,
             'status' => 'AVAILABLE',
+            'current_branch_id' => $this->pickupBranch->id,
         ]);
         VehiclePricing::factory()->create(['tenant_id' => $this->tenant->id, 'vehicle_id' => $vehicle->id]);
 
@@ -246,13 +260,15 @@ class AvailableVehiclesTest extends TestCase
             'status' => Reservation::STATUS_PENDING, // PENDING狀態也會佔用庫存
             'amount' => 3000,
             'rental_days' => 3,
+            'pickup_branch_id' => $this->pickupBranch->id,
+            'return_branch_id' => $this->pickupBranch->id,
         ]);
 
         // 查詢同一時間區間
         $startAt = Carbon::now()->addDay()->setHour(10);
         $endAt = Carbon::now()->addDays(3)->setHour(18);
 
-        $response = $this->getJson("/api/v1/public/{$this->tenant->slug}/vehicles/available?start_at={$startAt->toDateTimeString()}&end_at={$endAt->toDateTimeString()}");
+        $response = $this->getJson("/api/v1/public/{$this->tenant->slug}/vehicles/available?start_at={$startAt->toDateTimeString()}&end_at={$endAt->toDateTimeString()}&pickup_branch_id={$this->pickupBranch->id}");
 
         $response->assertStatus(200)
             ->assertJsonCount(0, 'data'); // 車輛不可用，因為PENDING預約也會佔用
@@ -274,6 +290,7 @@ class AvailableVehiclesTest extends TestCase
             'maintenance_start_at' => now(),
             'maintenance_expected_end_at' => now()->addDays(3),
             'maintenance_notes' => '這是內部維修備註，只有授權用戶可以看到',
+            'current_branch_id' => $this->pickupBranch->id,
         ]);
 
         // 創建一個授權用戶並登入，符合auth.php配置的api guard使用User模型
@@ -303,6 +320,7 @@ class AvailableVehiclesTest extends TestCase
             'fuel_type' => 'PETROL',
             'transmission' => 'AUTOMATIC',
             'maintenance_notes' => '這是機密備註，即使登入也不應該在公開API看到',
+            'current_branch_id' => $this->pickupBranch->id,
         ]);
 
         // 為可用車輛創建定價
@@ -319,7 +337,7 @@ class AvailableVehiclesTest extends TestCase
         $startAt = Carbon::now()->addDay()->setHour(10);
         $endAt = Carbon::now()->addDays(3)->setHour(18);
 
-        $response = $this->getJson("/api/v1/public/{$this->tenant->slug}/vehicles/available?start_at={$startAt->toDateTimeString()}&end_at={$endAt->toDateTimeString()}");
+        $response = $this->getJson("/api/v1/public/{$this->tenant->slug}/vehicles/available?start_at={$startAt->toDateTimeString()}&end_at={$endAt->toDateTimeString()}&pickup_branch_id={$this->pickupBranch->id}");
 
         $response->assertStatus(200);
         $vehicleData = $response->json('data.0');
@@ -336,10 +354,17 @@ class AvailableVehiclesTest extends TestCase
             'slug' => 'another-tenant',
         ]);
 
+        // 創建另一個租戶的據點
+        $anotherBranch = \App\Models\Branch::factory()->create([
+            'tenant_id' => $anotherTenant->id,
+            'is_active' => true,
+        ]);
+
         // 在原租戶創建一輛車
         $vehicleInCurrentTenant = Vehicle::factory()->create([
             'tenant_id' => $this->tenant->id,
             'status' => 'AVAILABLE',
+            'current_branch_id' => $this->pickupBranch->id,
         ]);
         VehiclePricing::factory()->create(['tenant_id' => $this->tenant->id, 'vehicle_id' => $vehicleInCurrentTenant->id]);
 
@@ -347,6 +372,7 @@ class AvailableVehiclesTest extends TestCase
         $vehicleInAnotherTenant = Vehicle::factory()->create([
             'tenant_id' => $anotherTenant->id,
             'status' => 'AVAILABLE',
+            'current_branch_id' => $anotherBranch->id,
         ]);
         VehiclePricing::factory()->create(['tenant_id' => $anotherTenant->id, 'vehicle_id' => $vehicleInAnotherTenant->id]);
 
@@ -354,7 +380,7 @@ class AvailableVehiclesTest extends TestCase
         $startAt = Carbon::now()->addDay()->setHour(10);
         $endAt = Carbon::now()->addDays(3)->setHour(18);
 
-        $response = $this->getJson("/api/v1/public/{$this->tenant->slug}/vehicles/available?start_at={$startAt->toDateTimeString()}&end_at={$endAt->toDateTimeString()}");
+        $response = $this->getJson("/api/v1/public/{$this->tenant->slug}/vehicles/available?start_at={$startAt->toDateTimeString()}&end_at={$endAt->toDateTimeString()}&pickup_branch_id={$this->pickupBranch->id}");
 
         $response->assertStatus(200)
             ->assertJsonCount(1, 'data'); // 只返回原租戶的車輛
@@ -367,6 +393,7 @@ class AvailableVehiclesTest extends TestCase
             $vehicle = Vehicle::factory()->create([
                 'tenant_id' => $this->tenant->id,
                 'status' => 'AVAILABLE',
+                'current_branch_id' => $this->pickupBranch->id,
             ]);
             VehiclePricing::factory()->create(['tenant_id' => $this->tenant->id, 'vehicle_id' => $vehicle->id]);
         }
@@ -374,7 +401,7 @@ class AvailableVehiclesTest extends TestCase
         $startAt = Carbon::now()->addDay()->setHour(10);
         $endAt = Carbon::now()->addDays(3)->setHour(18);
 
-        $response = $this->getJson("/api/v1/public/{$this->tenant->slug}/vehicles/available?start_at={$startAt->toDateTimeString()}&end_at={$endAt->toDateTimeString()}&page=1");
+        $response = $this->getJson("/api/v1/public/{$this->tenant->slug}/vehicles/available?start_at={$startAt->toDateTimeString()}&end_at={$endAt->toDateTimeString()}&pickup_branch_id={$this->pickupBranch->id}&page=1");
 
         $response->assertStatus(200)
             ->assertJsonStructure([

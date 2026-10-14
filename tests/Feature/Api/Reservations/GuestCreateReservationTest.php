@@ -14,6 +14,9 @@ class GuestCreateReservationTest extends TestCase
 
     private Tenant $tenant;
 
+    private \App\Models\Branch $pickupBranch;
+    private \App\Models\Branch $returnBranch;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -21,6 +24,16 @@ class GuestCreateReservationTest extends TestCase
         // 創建測試租戶（與系統的單租戶邏輯一致，第一個租戶）
         $this->tenant = Tenant::factory()->create([
             'is_public' => true,
+        ]);
+
+        // 創建同租戶的有效據點
+        $this->pickupBranch = \App\Models\Branch::factory()->create([
+            'tenant_id' => $this->tenant->id,
+            'is_active' => true,
+        ]);
+        $this->returnBranch = \App\Models\Branch::factory()->create([
+            'tenant_id' => $this->tenant->id,
+            'is_active' => true,
         ]);
     }
 
@@ -47,6 +60,8 @@ class GuestCreateReservationTest extends TestCase
             'pickup_time' => '10:00',
             'return_date' => date('Y-m-d', strtotime('+3 days')),
             'return_time' => '18:00',
+            'pickup_branch_id' => $this->pickupBranch->id,
+            'return_branch_id' => $this->returnBranch->id,
             'customer_name' => '測試訪客',
             'customer_phone' => '0912345678',
             'customer_email' => 'guest@example.com',
@@ -102,6 +117,8 @@ class GuestCreateReservationTest extends TestCase
             'pickup_time' => '10:00',
             'return_date' => date('Y-m-d', strtotime('+1 day')),
             'return_time' => '18:00',
+            'pickup_branch_id' => $this->pickupBranch->id,
+            'return_branch_id' => $this->returnBranch->id,
             'customer_name' => '測試訪客',
             'customer_phone' => '0912345678',
             'customer_email' => 'guest@example.com',
@@ -139,6 +156,8 @@ class GuestCreateReservationTest extends TestCase
             'pickup_time' => '10:00',
             'return_date' => date('Y-m-d', strtotime('+3 days')),
             'return_time' => '18:00',
+            'pickup_branch_id' => $this->pickupBranch->id,
+            'return_branch_id' => $this->returnBranch->id,
             'customer_name' => '測試訪客',
             'customer_phone' => '0912345678',
             'customer_email' => 'guest@example.com',
@@ -183,6 +202,8 @@ class GuestCreateReservationTest extends TestCase
             'pickup_time' => '10:00',
             'return_date' => date('Y-m-d', strtotime('+3 days')),
             'return_time' => '18:00',
+            'pickup_branch_id' => $this->pickupBranch->id,
+            'return_branch_id' => $this->returnBranch->id,
             'customer_name' => '更新名稱',
             'customer_phone' => '0987654321',
             'customer_email' => 'existing@example.com', // 使用相同的email

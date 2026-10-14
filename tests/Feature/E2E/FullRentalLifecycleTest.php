@@ -7,6 +7,7 @@ use App\Models\Order;
 use App\Models\Tenant;
 use App\Models\Customer;
 use App\Models\Vehicle;
+use App\Models\Branch;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -30,6 +31,12 @@ class FullRentalLifecycleTest extends TestCase
         $this->tenantA = Tenant::factory()->create(['name' => '租戶A']);
         $this->tenantB = Tenant::factory()->create(['name' => '租戶B']);
 
+        // 為每個租戶建立兩個活躍的據點
+        $this->branchA1 = Branch::factory()->create(['tenant_id' => $this->tenantA->id, 'is_active' => true, 'name' => '台北據點']);
+        $this->branchA2 = Branch::factory()->create(['tenant_id' => $this->tenantA->id, 'is_active' => true, 'name' => '台中據點']);
+        $this->branchB1 = Branch::factory()->create(['tenant_id' => $this->tenantB->id, 'is_active' => true, 'name' => '高雄據點']);
+        $this->branchB2 = Branch::factory()->create(['tenant_id' => $this->tenantB->id, 'is_active' => true, 'name' => '台南據點']);
+
         // 建立屬於各租戶的使用者
         $this->userA = User::factory()->create();
         $this->userB = User::factory()->create();
@@ -50,7 +57,8 @@ class FullRentalLifecycleTest extends TestCase
         $customerA = Customer::factory()->create(['tenant_id' => $this->tenantA->id]);
         $vehicleX = Vehicle::factory()->create([
             'tenant_id' => $this->tenantA->id,
-            'status' => 'AVAILABLE'
+            'status' => 'AVAILABLE',
+            'current_branch_id' => $this->branchA1->id
         ]);
         $vehicleX->pricing()->update([
             'weekday_price' => 1000,
@@ -67,6 +75,8 @@ class FullRentalLifecycleTest extends TestCase
             'tenant_id' => $this->tenantA->id,
             'customer_id' => $customerA->id,
             'vehicle_id' => $vehicleX->id,
+            'pickup_branch_id' => $this->branchA1->id,
+            'return_branch_id' => $this->branchA2->id,
             'start_at' => $startAtA,
             'end_at' => $endAtA,
         ]);
@@ -121,6 +131,8 @@ class FullRentalLifecycleTest extends TestCase
             'tenant_id' => $this->tenantA->id,
             'customer_id' => $customerA->id,
             'vehicle_id' => $vehicleX->id,
+            'pickup_branch_id' => $this->branchA1->id,
+            'return_branch_id' => $this->branchA2->id,
             'start_at' => $startAtC,
             'end_at' => $endAtC,
         ]);
@@ -137,7 +149,8 @@ class FullRentalLifecycleTest extends TestCase
         $customerA = Customer::factory()->create(['tenant_id' => $this->tenantA->id]);
         $vehicleX = Vehicle::factory()->create([
             'tenant_id' => $this->tenantA->id,
-            'status' => 'AVAILABLE'
+            'status' => 'AVAILABLE',
+            'current_branch_id' => $this->branchA1->id
         ]);
         $vehicleX->pricing()->update([
             'weekday_price' => 1000,
@@ -152,6 +165,8 @@ class FullRentalLifecycleTest extends TestCase
             'tenant_id' => $this->tenantA->id,
             'customer_id' => $customerA->id,
             'vehicle_id' => $vehicleX->id,
+            'pickup_branch_id' => $this->branchA1->id,
+            'return_branch_id' => $this->branchA2->id,
             'start_at' => $startAtA,
             'end_at' => $endAtA,
             'status' => Reservation::STATUS_CONFIRMED, // 標記為已確認，會阻擋重疊預約
@@ -167,6 +182,8 @@ class FullRentalLifecycleTest extends TestCase
             'tenant_id' => $this->tenantA->id,
             'customer_id' => $customerA->id,
             'vehicle_id' => $vehicleX->id,
+            'pickup_branch_id' => $this->branchA1->id,
+            'return_branch_id' => $this->branchA2->id,
             'start_at' => $startAtB,
             'end_at' => $endAtB,
         ]);
@@ -182,7 +199,8 @@ class FullRentalLifecycleTest extends TestCase
         $customerA = Customer::factory()->create(['tenant_id' => $this->tenantA->id]);
         $vehicleX = Vehicle::factory()->create([
             'tenant_id' => $this->tenantA->id,
-            'status' => 'AVAILABLE'
+            'status' => 'AVAILABLE',
+            'current_branch_id' => $this->branchA1->id
         ]);
         $vehicleX->pricing()->update([
             'weekday_price' => 1000,
@@ -197,6 +215,8 @@ class FullRentalLifecycleTest extends TestCase
             'tenant_id' => $this->tenantA->id,
             'customer_id' => $customerA->id,
             'vehicle_id' => $vehicleX->id,
+            'pickup_branch_id' => $this->branchA1->id,
+            'return_branch_id' => $this->branchA2->id,
             'start_at' => $startAtA,
             'end_at' => $endAtA,
             'status' => Reservation::STATUS_CONFIRMED,
@@ -209,6 +229,8 @@ class FullRentalLifecycleTest extends TestCase
             'tenant_id' => $this->tenantA->id,
             'customer_id' => $customerA->id,
             'vehicle_id' => $vehicleX->id,
+            'pickup_branch_id' => $this->branchA1->id,
+            'return_branch_id' => $this->branchA2->id,
             'start_at' => $startAtC,
             'end_at' => $endAtC,
         ]);
@@ -226,7 +248,8 @@ class FullRentalLifecycleTest extends TestCase
         $customerB = Customer::factory()->create(['tenant_id' => $this->tenantB->id]);
         $vehicleB = Vehicle::factory()->create([
             'tenant_id' => $this->tenantB->id,
-            'status' => 'AVAILABLE'
+            'status' => 'AVAILABLE',
+            'current_branch_id' => $this->branchB1->id
         ]);
         $vehicleB->pricing()->update([
             'weekday_price' => 1000,
@@ -246,6 +269,8 @@ class FullRentalLifecycleTest extends TestCase
             'tenant_id' => $this->tenantA->id, // 使用租戶A的ID
             'customer_id' => $customerB->id,   // 但使用租戶B的客戶
             'vehicle_id' => $vehicleB->id,    // 但使用租戶B的車輛
+            'pickup_branch_id' => $this->branchA1->id,
+            'return_branch_id' => $this->branchA2->id,
             'start_at' => $startAt,
             'end_at' => $endAt,
         ]);
@@ -264,7 +289,8 @@ class FullRentalLifecycleTest extends TestCase
         // 測試1：平日（週一到週五）
         $vehicle1 = Vehicle::factory()->create([
             'tenant_id' => $this->tenantA->id,
-            'status' => 'AVAILABLE'
+            'status' => 'AVAILABLE',
+            'current_branch_id' => $this->branchA1->id
         ]);
         $vehicle1->pricing()->update([
             'weekday_price' => 1000,  // 平日
@@ -277,6 +303,8 @@ class FullRentalLifecycleTest extends TestCase
             'tenant_id' => $this->tenantA->id,
             'customer_id' => $customerA->id,
             'vehicle_id' => $vehicle1->id,
+            'pickup_branch_id' => $this->branchA1->id,
+            'return_branch_id' => $this->branchA2->id,
             'start_at' => $startAt,
             'end_at' => $endAt,
         ]);
@@ -285,7 +313,8 @@ class FullRentalLifecycleTest extends TestCase
         // 測試2：週末（週六日）
         $vehicle2 = Vehicle::factory()->create([
             'tenant_id' => $this->tenantA->id,
-            'status' => 'AVAILABLE'
+            'status' => 'AVAILABLE',
+            'current_branch_id' => $this->branchA1->id
         ]);
         $vehicle2->pricing()->update([
             'weekday_price' => 1000,
@@ -298,6 +327,8 @@ class FullRentalLifecycleTest extends TestCase
             'tenant_id' => $this->tenantA->id,
             'customer_id' => $customerA->id,
             'vehicle_id' => $vehicle2->id,
+            'pickup_branch_id' => $this->branchA1->id,
+            'return_branch_id' => $this->branchA2->id,
             'start_at' => $startAt,
             'end_at' => $endAt,
         ]);
@@ -306,7 +337,8 @@ class FullRentalLifecycleTest extends TestCase
         // 測試3：不足24小時仍算一天
         $vehicle3 = Vehicle::factory()->create([
             'tenant_id' => $this->tenantA->id,
-            'status' => 'AVAILABLE'
+            'status' => 'AVAILABLE',
+            'current_branch_id' => $this->branchA1->id
         ]);
         $vehicle3->pricing()->update([
             'weekday_price' => 1000,
@@ -319,6 +351,8 @@ class FullRentalLifecycleTest extends TestCase
             'tenant_id' => $this->tenantA->id,
             'customer_id' => $customerA->id,
             'vehicle_id' => $vehicle3->id,
+            'pickup_branch_id' => $this->branchA1->id,
+            'return_branch_id' => $this->branchA2->id,
             'start_at' => $startAt,
             'end_at' => $endAt,
         ]);
@@ -328,7 +362,8 @@ class FullRentalLifecycleTest extends TestCase
         // 測試4：跨日期（包含平日和週末）
         $vehicle4 = Vehicle::factory()->create([
             'tenant_id' => $this->tenantA->id,
-            'status' => 'AVAILABLE'
+            'status' => 'AVAILABLE',
+            'current_branch_id' => $this->branchA1->id
         ]);
         $vehicle4->pricing()->update([
             'weekday_price' => 1000,
@@ -342,6 +377,8 @@ class FullRentalLifecycleTest extends TestCase
             'tenant_id' => $this->tenantA->id,
             'customer_id' => $customerA->id,
             'vehicle_id' => $vehicle4->id,
+            'pickup_branch_id' => $this->branchA1->id,
+            'return_branch_id' => $this->branchA2->id,
             'start_at' => $startAt,
             'end_at' => $endAt,
         ]);
@@ -358,7 +395,8 @@ class FullRentalLifecycleTest extends TestCase
         $customerA = Customer::factory()->create(['tenant_id' => $this->tenantA->id]);
         $vehicleA = Vehicle::factory()->create([
             'tenant_id' => $this->tenantA->id,
-            'status' => 'AVAILABLE'
+            'status' => 'AVAILABLE',
+            'current_branch_id' => $this->branchA1->id
         ]);
         $vehicleA->pricing()->update([
             'weekday_price' => 1000,
@@ -373,6 +411,8 @@ class FullRentalLifecycleTest extends TestCase
             'tenant_id' => $this->tenantA->id,
             'customer_id' => $customerA->id,
             'vehicle_id' => $vehicleA->id,
+            'pickup_branch_id' => $this->branchA1->id,
+            'return_branch_id' => $this->branchA2->id,
             'start_at' => $startAt,
             'end_at' => $endAt,
         ]);
@@ -401,7 +441,8 @@ class FullRentalLifecycleTest extends TestCase
         $customerA = Customer::factory()->create(['tenant_id' => $this->tenantA->id]);
         $vehicleA = Vehicle::factory()->create([
             'tenant_id' => $this->tenantA->id,
-            'status' => 'AVAILABLE'
+            'status' => 'AVAILABLE',
+            'current_branch_id' => $this->branchA1->id
         ]);
         $vehicleA->pricing()->update([
             'weekday_price' => 1000,
@@ -416,6 +457,8 @@ class FullRentalLifecycleTest extends TestCase
             'tenant_id' => $this->tenantA->id,
             'customer_id' => $customerA->id,
             'vehicle_id' => $vehicleA->id,
+            'pickup_branch_id' => $this->branchA1->id,
+            'return_branch_id' => $this->branchA2->id,
             'start_at' => $startAt,
             'end_at' => $endAt,
             'status' => Reservation::STATUS_PENDING, // 維持待確認狀態

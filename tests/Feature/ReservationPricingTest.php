@@ -7,6 +7,7 @@ use App\Models\Vehicle;
 use App\Models\VehiclePricing;
 use App\Domain\Rental\Models\Customer;
 use App\Models\Reservation;
+use App\Models\Branch;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -27,11 +28,16 @@ class ReservationPricingTest extends TestCase
         // 建立測試用租戶
         $this->tenant = Tenant::factory()->create();
 
-        // 建立測試用車輛
+        // 建立測試用的兩個活躍據點
+        $this->pickupBranch = Branch::factory()->create(['tenant_id' => $this->tenant->id, 'is_active' => true, 'name' => '取車據點']);
+        $this->returnBranch = Branch::factory()->create(['tenant_id' => $this->tenant->id, 'is_active' => true, 'name' => '還車據點']);
+
+        // 建立測試用車輛，設定當前據點為取車據點
         $this->vehicle = Vehicle::factory()->create([
             'tenant_id' => $this->tenant->id,
             'name' => 'Test Vehicle',
             'status' => 'AVAILABLE',
+            'current_branch_id' => $this->pickupBranch->id,
         ]);
 
         // 更新現有的定價，而不是創建新的，因為 VehicleFactory 已經自動創建了
@@ -62,6 +68,8 @@ class ReservationPricingTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'customer_id' => $this->customer->id,
             'vehicle_id' => $this->vehicle->id,
+            'pickup_branch_id' => $this->pickupBranch->id,
+            'return_branch_id' => $this->returnBranch->id,
             'start_at' => $startAt,
             'end_at' => $endAt,
             'status' => Reservation::STATUS_CONFIRMED,
@@ -91,6 +99,8 @@ class ReservationPricingTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'customer_id' => $this->customer->id,
             'vehicle_id' => $this->vehicle->id,
+            'pickup_branch_id' => $this->pickupBranch->id,
+            'return_branch_id' => $this->returnBranch->id,
             'start_at' => $startAt,
             'end_at' => $endAt,
             'status' => Reservation::STATUS_CONFIRMED,
@@ -137,6 +147,8 @@ class ReservationPricingTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'customer_id' => $this->customer->id,
             'vehicle_id' => $this->vehicle->id,
+            'pickup_branch_id' => $this->pickupBranch->id,
+            'return_branch_id' => $this->returnBranch->id,
             'start_at' => $startAt,
             'end_at' => $endAt,
             'status' => Reservation::STATUS_CONFIRMED,

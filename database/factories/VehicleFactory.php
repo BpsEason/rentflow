@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use App\Models\Vehicle;
 use App\Models\Tenant;
+use App\Models\Branch;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class VehicleFactory extends Factory
@@ -11,6 +12,10 @@ class VehicleFactory extends Factory
     public function definition(): array
     {
         $tenant = Tenant::inRandomOrder()->first() ?? Tenant::factory()->create();
+
+        // 取得或建立一個當前租戶的活躍據點作為車輛的當前據點
+        $branch = Branch::where('tenant_id', $tenant->id)->where('is_active', true)->first()
+            ?? Branch::factory()->create(['tenant_id' => $tenant->id, 'is_active' => true]);
 
         $statuses = [
             Vehicle::STATUS_AVAILABLE,
@@ -32,6 +37,7 @@ class VehicleFactory extends Factory
 
         return [
             'tenant_id' => $tenant->id,
+            'current_branch_id' => $branch->id,
             'name' => fake()->words(2, true),
             'plate_number' => strtoupper(fake()->bothify('???-###')),
             'status' => fake()->randomElement($statuses),

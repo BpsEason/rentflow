@@ -136,6 +136,16 @@ class PublicTenantIsolationTest extends TestCase
     {
         $tenant = Tenant::factory()->create(['is_public' => true, 'slug' => 'test-tenant']);
 
+        // 為當前租戶創建有效的取車和還車據點
+        $pickupBranch = \App\Models\Branch::factory()->create([
+            'tenant_id' => $tenant->id,
+            'is_active' => true,
+        ]);
+        $returnBranch = \App\Models\Branch::factory()->create([
+            'tenant_id' => $tenant->id,
+            'is_active' => true,
+        ]);
+
         $vehicle = Vehicle::factory()->create([
             'tenant_id' => $tenant->id,
             'status' => 'AVAILABLE',
@@ -151,6 +161,8 @@ class PublicTenantIsolationTest extends TestCase
 
         $bookingData = [
             'vehicle_id' => $vehicle->id,
+            'pickup_branch_id' => $pickupBranch->id,
+            'return_branch_id' => $returnBranch->id,
             'pickup_date' => date('Y-m-d', strtotime('+1 day')),
             'pickup_time' => '10:00',
             'return_date' => date('Y-m-d', strtotime('+3 days')),
@@ -197,9 +209,20 @@ class PublicTenantIsolationTest extends TestCase
             'email' => 'customer@example.com',
         ]);
 
+        // 為tenant2創建有效的取車和還車據點
+        $pickupBranch = \App\Models\Branch::factory()->create([
+            'tenant_id' => $tenant2->id,
+            'is_active' => true,
+        ]);
+        $returnBranch = \App\Models\Branch::factory()->create([
+            'tenant_id' => $tenant2->id,
+            'is_active' => true,
+        ]);
+
         // 在tenant2中創建可用車輛
         $vehicle = Vehicle::factory()->create([
             'tenant_id' => $tenant2->id,
+            'current_branch_id' => $pickupBranch->id,
             'status' => 'AVAILABLE',
         ]);
 
@@ -213,6 +236,8 @@ class PublicTenantIsolationTest extends TestCase
 
         $bookingData = [
             'vehicle_id' => $vehicle->id,
+            'pickup_branch_id' => $pickupBranch->id,
+            'return_branch_id' => $returnBranch->id,
             'pickup_date' => date('Y-m-d', strtotime('+1 day')),
             'pickup_time' => '10:00',
             'return_date' => date('Y-m-d', strtotime('+3 days')),

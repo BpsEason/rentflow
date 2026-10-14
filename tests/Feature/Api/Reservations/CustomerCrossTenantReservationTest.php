@@ -24,9 +24,20 @@ class CustomerCrossTenantReservationTest extends TestCase
             'password' => bcrypt('password123'),
         ]);
 
-        // 創建租戶A的可用車輛
+        // 創建租戶A的有效據點
+        $pickupBranch = \App\Models\Branch::factory()->create([
+            'tenant_id' => $tenantA->id,
+            'is_active' => true,
+        ]);
+        $returnBranch = \App\Models\Branch::factory()->create([
+            'tenant_id' => $tenantA->id,
+            'is_active' => true,
+        ]);
+
+        // 創建租戶A的可用車輛，明確指定當前據點為取車據點
         $vehicleA = Vehicle::factory()->create([
             'tenant_id' => $tenantA->id,
+            'current_branch_id' => $pickupBranch->id,
             'status' => 'AVAILABLE',
         ]);
 
@@ -53,6 +64,8 @@ class CustomerCrossTenantReservationTest extends TestCase
                 'pickup_time' => '10:00',
                 'return_date' => $endDate,
                 'return_time' => '18:00',
+                'pickup_branch_id' => $pickupBranch->id,
+                'return_branch_id' => $returnBranch->id,
                 'notes' => '需要兒童座椅',
                 // 客戶資料，用於自動建立Customer
                 'customer_name' => '測試會員',
@@ -97,13 +110,33 @@ class CustomerCrossTenantReservationTest extends TestCase
             'email' => 'member@example.com',
         ]);
 
-        // 為每個租戶創建可用車輛
+        // 為每個租戶創建有效據點
+        $pickupBranchA = \App\Models\Branch::factory()->create([
+            'tenant_id' => $tenantA->id,
+            'is_active' => true,
+        ]);
+        $returnBranchA = \App\Models\Branch::factory()->create([
+            'tenant_id' => $tenantA->id,
+            'is_active' => true,
+        ]);
+        $pickupBranchB = \App\Models\Branch::factory()->create([
+            'tenant_id' => $tenantB->id,
+            'is_active' => true,
+        ]);
+        $returnBranchB = \App\Models\Branch::factory()->create([
+            'tenant_id' => $tenantB->id,
+            'is_active' => true,
+        ]);
+
+        // 為每個租戶創建可用車輛，明確指定當前據點為取車據點
         $vehicleA = Vehicle::factory()->create([
             'tenant_id' => $tenantA->id,
+            'current_branch_id' => $pickupBranchA->id,
             'status' => 'AVAILABLE',
         ]);
         $vehicleB = Vehicle::factory()->create([
             'tenant_id' => $tenantB->id,
+            'current_branch_id' => $pickupBranchB->id,
             'status' => 'AVAILABLE',
         ]);
 
@@ -121,6 +154,8 @@ class CustomerCrossTenantReservationTest extends TestCase
                 'pickup_time' => '10:00',
                 'return_date' => $endDate,
                 'return_time' => '18:00',
+                'pickup_branch_id' => $pickupBranchA->id,
+                'return_branch_id' => $returnBranchA->id,
                 'customer_name' => '測試會員',
                 'customer_phone' => '0912345678',
                 'customer_id_number' => 'A123456789',
@@ -143,6 +178,8 @@ class CustomerCrossTenantReservationTest extends TestCase
                 'pickup_time' => '10:00',
                 'return_date' => $endDate,
                 'return_time' => '18:00',
+                'pickup_branch_id' => $pickupBranchB->id,
+                'return_branch_id' => $returnBranchB->id,
                 'customer_name' => '測試會員',
                 'customer_phone' => '0987654321',
                 'customer_id_number' => 'A987654321',
@@ -180,6 +217,16 @@ class CustomerCrossTenantReservationTest extends TestCase
         $tenant = Tenant::factory()->create(['slug' => 'tenant-a', 'is_public' => true]);
         $user = User::factory()->create(['email' => 'member@example.com']);
 
+        // 創建租戶的有效據點
+        $pickupBranch = \App\Models\Branch::factory()->create([
+            'tenant_id' => $tenant->id,
+            'is_active' => true,
+        ]);
+        $returnBranch = \App\Models\Branch::factory()->create([
+            'tenant_id' => $tenant->id,
+            'is_active' => true,
+        ]);
+
         // 預先建立用戶在這個租戶的Customer
         $existingCustomer = Customer::create([
             'tenant_id' => $tenant->id,
@@ -211,6 +258,8 @@ class CustomerCrossTenantReservationTest extends TestCase
                 'pickup_time' => '10:00',
                 'return_date' => $endDate,
                 'return_time' => '18:00',
+                'pickup_branch_id' => $pickupBranch->id,
+                'return_branch_id' => $returnBranch->id,
                 // 故意提交不同的資料，驗證不會覆寫既有Customer
                 'customer_name' => '嘗試修改的姓名',
                 'customer_phone' => '0922222222',
@@ -227,6 +276,8 @@ class CustomerCrossTenantReservationTest extends TestCase
                 'pickup_time' => '14:00',
                 'return_date' => $endDate2,
                 'return_time' => '18:00',
+                'pickup_branch_id' => $pickupBranch->id,
+                'return_branch_id' => $returnBranch->id,
             ]);
         $response2->assertStatus(201);
 
@@ -250,6 +301,16 @@ class CustomerCrossTenantReservationTest extends TestCase
         $tenantB = Tenant::factory()->create(['slug' => 'tenant-b', 'is_public' => true]);
 
         $user = User::factory()->create();
+
+        // 創建租戶A的有效據點
+        $pickupBranch = \App\Models\Branch::factory()->create([
+            'tenant_id' => $tenantA->id,
+            'is_active' => true,
+        ]);
+        $returnBranch = \App\Models\Branch::factory()->create([
+            'tenant_id' => $tenantA->id,
+            'is_active' => true,
+        ]);
 
         // 在租戶A建立用戶的Customer和車輛、預約
         $customerA = Customer::create([
@@ -283,6 +344,8 @@ class CustomerCrossTenantReservationTest extends TestCase
                 'pickup_time' => '10:00',
                 'return_date' => $endDate,
                 'return_time' => '18:00',
+                'pickup_branch_id' => $pickupBranch->id,
+                'return_branch_id' => $returnBranch->id,
             ]);
 
         $response->assertStatus(404);
@@ -294,6 +357,16 @@ class CustomerCrossTenantReservationTest extends TestCase
         // 創建租戶
         $tenant = Tenant::factory()->create(['slug' => 'tenant-a', 'is_public' => true]);
         $user = User::factory()->create(['email' => 'member@example.com']);
+
+        // 創建租戶的有效據點
+        $pickupBranch = \App\Models\Branch::factory()->create([
+            'tenant_id' => $tenant->id,
+            'is_active' => true,
+        ]);
+        $returnBranch = \App\Models\Branch::factory()->create([
+            'tenant_id' => $tenant->id,
+            'is_active' => true,
+        ]);
 
         // 創建兩輛不同的車輛，避免時間衝突
         $vehicle1 = Vehicle::factory()->create(['tenant_id' => $tenant->id, 'status' => 'AVAILABLE']);
@@ -311,6 +384,8 @@ class CustomerCrossTenantReservationTest extends TestCase
             'pickup_time' => '10:00',
             'return_date' => $endDate,
             'return_time' => '18:00',
+            'pickup_branch_id' => $pickupBranch->id,
+            'return_branch_id' => $returnBranch->id,
             'customer_name' => '測試會員',
             'customer_phone' => '0912345678',
             'customer_id_number' => 'A123456789',
@@ -322,9 +397,11 @@ class CustomerCrossTenantReservationTest extends TestCase
         $bookingData2 = [
             'vehicle_id' => $vehicle2->id,
             'pickup_date' => $startDate,
-            'pickup_time' => '10:00',
+            'pickup_time' => '14:00',
             'return_date' => $endDate,
             'return_time' => '18:00',
+            'pickup_branch_id' => $pickupBranch->id,
+            'return_branch_id' => $returnBranch->id,
             'customer_name' => '測試會員',
             'customer_phone' => '0912345678',
             'customer_id_number' => 'A123456789',

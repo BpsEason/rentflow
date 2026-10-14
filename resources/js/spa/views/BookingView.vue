@@ -709,7 +709,7 @@ watch(
 const fetchBranches = async () => {
     loadingBranches.value = true;
     try {
-        const response = await api.get(`/public/branches`);
+        const response = await api.get(`/public/${tenantSlug}/branches`);
         branches.value = response.data.data;
         // 預設選擇第一個據點
         if (branches.value.length > 0) {
@@ -718,6 +718,7 @@ const fetchBranches = async () => {
         }
     } catch (e) {
         console.error("Failed to fetch branches:", e);
+        error.value = "載入據點資料失敗，請稍後再試";
     } finally {
         loadingBranches.value = false;
     }
@@ -762,7 +763,15 @@ const finalTotal = computed(() => {
 });
 
 const canSubmit = computed(() => {
-    return form.value.agreed_to_terms && !loading.value && !error.value;
+    return (
+        form.value.agreed_to_terms &&
+        !loading.value &&
+        !error.value &&
+        !loadingBranches.value &&
+        branches.value.length > 0 &&
+        form.value.pickup_branch_id &&
+        form.value.return_branch_id
+    );
 });
 
 const fetchVehicle = async () => {

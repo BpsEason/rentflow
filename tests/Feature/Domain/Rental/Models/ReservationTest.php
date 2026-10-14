@@ -26,9 +26,22 @@ class ReservationTest extends TestCase
 
         $this->tenant = Tenant::factory()->create();
         $this->customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
+
+        // 先創建測試用的取車和還車據點
+        $this->pickupBranch = \App\Models\Branch::factory()->create([
+            'tenant_id' => $this->tenant->id,
+            'is_active' => true,
+        ]);
+        $this->returnBranch = \App\Models\Branch::factory()->create([
+            'tenant_id' => $this->tenant->id,
+            'is_active' => true,
+        ]);
+
+        // 再創建車輛，這時候pickupBranch已經存在了
         $this->vehicle = Vehicle::factory()->create([
             'tenant_id' => $this->tenant->id,
-            'status' => 'AVAILABLE'
+            'status' => 'AVAILABLE',
+            'current_branch_id' => $this->pickupBranch->id,
         ]);
         // 更新現有的定價，而不是創建新的，因為 VehicleFactory 已經自動創建了
         $this->vehicle->pricing()->update([
@@ -53,6 +66,8 @@ class ReservationTest extends TestCase
             'vehicle_id' => $this->vehicle->id,
             'start_at' => $startAt,
             'end_at' => $endAt,
+            'pickup_branch_id' => $this->pickupBranch->id,
+            'return_branch_id' => $this->returnBranch->id,
         ]);
     }
 
@@ -68,6 +83,8 @@ class ReservationTest extends TestCase
             'vehicle_id' => $this->vehicle->id,
             'start_at' => $startAt,
             'end_at' => $endAt,
+            'pickup_branch_id' => $this->pickupBranch->id,
+            'return_branch_id' => $this->returnBranch->id,
         ]);
 
         $this->assertInstanceOf(Reservation::class, $reservation);
@@ -101,6 +118,8 @@ class ReservationTest extends TestCase
             'start_at' => $startAt,
             'end_at' => $endAt,
             'status' => Reservation::STATUS_CONFIRMED,
+            'pickup_branch_id' => $this->pickupBranch->id,
+            'return_branch_id' => $this->returnBranch->id,
         ]);
 
         // 嘗試建立重疊的預約
@@ -115,6 +134,8 @@ class ReservationTest extends TestCase
             'vehicle_id' => $this->vehicle->id,
             'start_at' => $conflictingStart,
             'end_at' => $conflictingEnd,
+            'pickup_branch_id' => $this->pickupBranch->id,
+            'return_branch_id' => $this->returnBranch->id,
         ]);
     }
 
@@ -131,6 +152,8 @@ class ReservationTest extends TestCase
             'start_at' => $startAt1,
             'end_at' => $endAt1,
             'status' => Reservation::STATUS_CONFIRMED,
+            'pickup_branch_id' => $this->pickupBranch->id,
+            'return_branch_id' => $this->returnBranch->id,
         ]);
 
         // 第二個預約 14:00-18:00 - 應該成功
@@ -142,6 +165,8 @@ class ReservationTest extends TestCase
             'vehicle_id' => $this->vehicle->id,
             'start_at' => $startAt2,
             'end_at' => $endAt2,
+            'pickup_branch_id' => $this->pickupBranch->id,
+            'return_branch_id' => $this->returnBranch->id,
         ]);
 
         $this->assertCount(2, Reservation::all());
@@ -160,6 +185,8 @@ class ReservationTest extends TestCase
             'start_at' => $startAt,
             'end_at' => $endAt,
             'status' => Reservation::STATUS_RETURNED,
+            'pickup_branch_id' => $this->pickupBranch->id,
+            'return_branch_id' => $this->returnBranch->id,
         ]);
 
         // 在相同時間建立新預約 - 應該成功
@@ -171,6 +198,8 @@ class ReservationTest extends TestCase
             'vehicle_id' => $this->vehicle->id,
             'start_at' => $newStart,
             'end_at' => $newEnd,
+            'pickup_branch_id' => $this->pickupBranch->id,
+            'return_branch_id' => $this->returnBranch->id,
         ]);
 
         $this->assertInstanceOf(Reservation::class, $newReservation);
@@ -194,6 +223,8 @@ class ReservationTest extends TestCase
                         'vehicle_id' => $this->vehicle->id,
                         'start_at' => $startAt,
                         'end_at' => $endAt,
+                        'pickup_branch_id' => $this->pickupBranch->id,
+                        'return_branch_id' => $this->returnBranch->id,
                     ]);
                 });
                 $successCount++;
@@ -218,6 +249,8 @@ class ReservationTest extends TestCase
             'vehicle_id' => $this->vehicle->id,
             'start_at' => $startAt,
             'end_at' => $endAt,
+            'pickup_branch_id' => $this->pickupBranch->id,
+            'return_branch_id' => $this->returnBranch->id,
         ]);
 
         // 更新同一個預約的其他欄位 - 應該成功
