@@ -93,6 +93,33 @@ class VehiclePricingSeeder extends Seeder
                 'weekend' => 2500,
                 'holiday' => 3000,
             ],
+
+            // 機車定價
+            'Yamaha Jog 115' => [
+                'weekday' => 400,
+                'weekend' => 500,
+                'holiday' => 600,
+            ],
+            'Kymco Racing 125' => [
+                'weekday' => 500,
+                'weekend' => 600,
+                'holiday' => 750,
+            ],
+            'Yamaha NMAX 155' => [
+                'weekday' => 700,
+                'weekend' => 850,
+                'holiday' => 1000,
+            ],
+            'SYM Jet SL 158' => [
+                'weekday' => 650,
+                'weekend' => 800,
+                'holiday' => 950,
+            ],
+            'Kymco AK550' => [
+                'weekday' => 1200,
+                'weekend' => 1500,
+                'holiday' => 1800,
+            ],
         ];
 
         $tenants = Tenant::with('vehicles')->get();

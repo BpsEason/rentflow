@@ -28,6 +28,12 @@ class VehicleSeeder extends Seeder
             'Mazda 3' => 'vehicles/mazda-3.jpg',
             'Mazda CX-5' => 'vehicles/mazda-cx5.jpg',
             'Mitsubishi Zinger' => 'vehicles/mitsubishi-zinger.jpg',
+            // 機車車款
+            'Yamaha Jog 115' => 'vehicles/yamaha-jog.jpg',
+            'Kymco Racing 125' => 'vehicles/kymco-racing.jpg',
+            'Yamaha NMAX 155' => 'vehicles/yamaha-nmax.jpg',
+            'SYM Jet SL 158' => 'vehicles/sym-jet.jpg',
+            'Kymco AK550' => 'vehicles/kymco-ak550.jpg',
         ];
 
         // 常見車款的預設屬性
@@ -109,6 +115,47 @@ class VehicleSeeder extends Seeder
                 'fuel_type' => \App\Models\Vehicle::FUEL_PETROL,
                 'transmission' => \App\Models\Vehicle::TRANSMISSION_AUTOMATIC,
                 'base_mileage' => 210000,
+            ],
+            // 機車車款預設屬性
+            'Yamaha Jog 115' => [
+                'manufacture_year' => 2022,
+                'fuel_type' => \App\Models\Vehicle::FUEL_PETROL,
+                'transmission' => \App\Models\Vehicle::TRANSMISSION_AUTOMATIC,
+                'base_mileage' => 25000,
+                'engine_cc' => 115,
+                'helmet_count' => 2,
+            ],
+            'Kymco Racing 125' => [
+                'manufacture_year' => 2021,
+                'fuel_type' => \App\Models\Vehicle::FUEL_PETROL,
+                'transmission' => \App\Models\Vehicle::TRANSMISSION_AUTOMATIC,
+                'base_mileage' => 35000,
+                'engine_cc' => 125,
+                'helmet_count' => 2,
+            ],
+            'Yamaha NMAX 155' => [
+                'manufacture_year' => 2023,
+                'fuel_type' => \App\Models\Vehicle::FUEL_PETROL,
+                'transmission' => \App\Models\Vehicle::TRANSMISSION_AUTOMATIC,
+                'base_mileage' => 15000,
+                'engine_cc' => 155,
+                'helmet_count' => 2,
+            ],
+            'SYM Jet SL 158' => [
+                'manufacture_year' => 2022,
+                'fuel_type' => \App\Models\Vehicle::FUEL_PETROL,
+                'transmission' => \App\Models\Vehicle::TRANSMISSION_AUTOMATIC,
+                'base_mileage' => 20000,
+                'engine_cc' => 158,
+                'helmet_count' => 2,
+            ],
+            'Kymco AK550' => [
+                'manufacture_year' => 2021,
+                'fuel_type' => \App\Models\Vehicle::FUEL_PETROL,
+                'transmission' => \App\Models\Vehicle::TRANSMISSION_AUTOMATIC,
+                'base_mileage' => 18000,
+                'engine_cc' => 550,
+                'helmet_count' => 2,
             ],
         ];
 
@@ -215,6 +262,46 @@ class VehicleSeeder extends Seeder
                 'status'      => Vehicle::STATUS_INACTIVE,
                 'description' => '老款八人座，車齡已高暫停營運',
             ],
+
+            // 機車車輛模板 - 加入5台機車，符合展示需求
+            [
+                'name'        => 'Yamaha Jog 115',
+                'seats'       => 1,
+                'status'      => Vehicle::STATUS_AVAILABLE,
+                'type'        => \App\Domain\Rental\Enums\VehicleType::MOTORCYCLE,
+                'description' => '經典都會通勤車，省油好停車，適合短程移動',
+            ],
+            [
+                'name'        => 'Kymco Racing 125',
+                'seats'       => 2,
+                'status'      => Vehicle::STATUS_AVAILABLE,
+                'type'        => \App\Domain\Rental\Enums\VehicleType::MOTORCYCLE,
+                'description' => '熱門運動速克達，動力充足適合雙載',
+            ],
+            [
+                'name'        => 'Yamaha NMAX 155',
+                'seats'       => 2,
+                'status'      => Vehicle::STATUS_AVAILABLE,
+                'type'        => \App\Domain\Rental\Enums\VehicleType::MOTORCYCLE,
+                'description' => '黃牌大型重型機車，舒適穩定適合長途旅行',
+            ],
+            [
+                'name'        => 'SYM Jet SL 158',
+                'seats'       => 2,
+                'status'      => Vehicle::STATUS_AVAILABLE,
+                'type'        => \App\Domain\Rental\Enums\VehicleType::MOTORCYCLE,
+                'description' => '時尚外型黃牌機車，都會通勤首選',
+            ],
+            [
+                'name'        => 'Kymco AK550',
+                'seats'       => 2,
+                'status'      => Vehicle::STATUS_MAINTENANCE,
+                'type'        => \App\Domain\Rental\Enums\VehicleType::MOTORCYCLE,
+                'description' => '頂級大羊重機，目前進行定期保養中',
+                'maintenance_start_at' => now(),
+                'maintenance_expected_end_at' => now()->addDays(2),
+                'maintenance_notes' => '進行定期保養，更換機油與煞車檢查',
+            ],
         ];
 
         // 台灣常見車牌英文前綴（依地區區分，方便識別）
@@ -224,11 +311,11 @@ class VehicleSeeder extends Seeder
             3 => ['EFG', 'HIJ', 'KLM', 'NOP', 'QRS'], // 高雄租車 - 南台灣常用前綴
         ];
 
-        // 針對不同規模的租戶，給予不同數量的車輛
+        // 針對不同規模的租戶，給予不同數量的車輛 (包含新加入的5台機車，第16-20台為機車)
         $tenantVehicleCounts = [
-            1 => 15, // 台北租車 - 規模最大，15台車
-            2 => 10, // 台中租車 - 中型規模，10台車
-            3 => 8,  // 高雄租車 - 小型規模，8台車
+            1 => 20, // 台北租車 - 規模最大，取全部20台（15台汽車+5台機車）
+            2 => 20, // 台中租車 - 中型規模，同樣取全部20台，確保能拿到5台機車
+            3 => 20, // 高雄租車 - 小型規模，同樣取全部20台，確保能拿到5台機車
         ];
 
         $tenants = Tenant::all();
@@ -303,6 +390,16 @@ class VehicleSeeder extends Seeder
                     'fuel_type'   => $defaults['fuel_type'],
                     'transmission' => $defaults['transmission'],
                 ];
+
+                // 如果是機車，加入排氣量和安全帽數量
+                if (isset($vehicleData['type']) && $vehicleData['type'] === \App\Domain\Rental\Enums\VehicleType::MOTORCYCLE) {
+                    $vehicleAttributes['type'] = $vehicleData['type'];
+                    $vehicleAttributes['engine_cc'] = $defaults['engine_cc'] ?? null;
+                    $vehicleAttributes['helmet_count'] = $defaults['helmet_count'] ?? 2;
+                } else {
+                    // 預設為汽車類型
+                    $vehicleAttributes['type'] = \App\Domain\Rental\Enums\VehicleType::CAR;
+                }
 
                 // 如果是維修中的車輛，加入維修時間資訊
                 if (isset($vehicleData['maintenance_start_at'])) {
