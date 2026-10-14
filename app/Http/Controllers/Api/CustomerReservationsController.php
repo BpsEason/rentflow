@@ -45,11 +45,37 @@ class CustomerReservationsController extends Controller
         $user = Auth::user();
 
         // 獲取用戶在當前租戶的Customer資料
+        // 同時支援：1. 已關聯user_id的客戶 2. 訪客時期建立的、email匹配但user_id為null的客戶
         $customer = Customer::where('tenant_id', $tenant->id)
-            ->where('user_id', $user->id)
+            ->where(function ($query) use ($user) {
+                $query->where('user_id', $user->id)
+                    ->orWhere(function ($subQuery) use ($user) {
+                        $subQuery->whereNull('user_id')
+                            ->where('email', $user->email);
+                    });
+            })
             ->first();
 
+        // 如果找到的是訪客客戶（user_id為null），自動關聯到當前登入的用戶
+        if ($customer && is_null($customer->user_id)) {
+            $customer->update(['user_id' => $user->id]);
+        }
+
         if (!$customer) {
+            // 除錯日誌：記錄所有關鍵資訊
+            \Illuminate\Support\Facades\Log::info('Customer lookup failed - debug info', [
+                'tenant_id' => $tenant->id,
+                'user_id' => $user->id,
+                'user_email' => $user->email,
+                'user_tenant_ids' => $user->tenants->pluck('id')->toArray(), // 用戶所屬的所有租戶ID
+            ]);
+
+            // 查詢此租戶下的所有客戶，用於除錯
+            $allCustomersInTenant = \App\Models\Customer::where('tenant_id', $tenant->id)
+                ->get(['id', 'user_id', 'email', 'tenant_id'])
+                ->toArray();
+            \Illuminate\Support\Facades\Log::info('All customers in current tenant:', $allCustomersInTenant);
+
             return ApiResponse::success([], '您尚未在此租戶建立客戶資料');
         }
 
@@ -91,9 +117,21 @@ class CustomerReservationsController extends Controller
         $user = Auth::user();
 
         // 獲取用戶在當前租戶的Customer資料
+        // 同時支援：1. 已關聯user_id的客戶 2. 訪客時期建立的、email匹配但user_id為null的客戶
         $customer = Customer::where('tenant_id', $tenant->id)
-            ->where('user_id', $user->id)
+            ->where(function ($query) use ($user) {
+                $query->where('user_id', $user->id)
+                    ->orWhere(function ($subQuery) use ($user) {
+                        $subQuery->whereNull('user_id')
+                            ->where('email', $user->email);
+                    });
+            })
             ->first();
+
+        // 如果找到的是訪客客戶（user_id為null），自動關聯到當前登入的用戶
+        if ($customer && is_null($customer->user_id)) {
+            $customer->update(['user_id' => $user->id]);
+        }
 
         if (!$customer) {
             return ApiResponse::error('您尚未在此租戶建立客戶資料', null, [], 404);

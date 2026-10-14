@@ -1,7 +1,7 @@
 <template>
     <PublicLayout>
         <div class="py-8 bg-gray-50 min-h-screen">
-            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <!-- Back Button -->
                 <div class="mb-6">
                     <router-link
@@ -48,428 +48,194 @@
 
                 <!-- Reservation Detail Content -->
                 <template v-else-if="reservation">
-                    <!-- Header -->
-                    <div class="bg-white rounded-xl shadow-md p-6 mb-6">
+                    <!-- Header - Modernized -->
+                    <div
+                        class="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 mb-6 hover:shadow-xl transition-all duration-500"
+                    >
                         <div
-                            class="flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                            class="flex flex-col lg:flex-row lg:items-start justify-between gap-6"
                         >
-                            <div>
-                                <h1 class="text-2xl font-bold text-gray-900">
+                            <div class="flex-1">
+                                <h1
+                                    class="text-3xl font-bold text-gray-900 tracking-tight mb-4"
+                                >
                                     預約詳情
                                 </h1>
-                                <p class="text-gray-600">
-                                    預約編號：<span class="font-mono">{{
-                                        reservation.booking_number
-                                    }}</span>
+                                <div class="flex flex-wrap items-center gap-4">
+                                    <div class="flex items-center gap-2">
+                                        <span
+                                            class="text-sm font-medium text-gray-500"
+                                            >預約編號</span
+                                        >
+                                        <code
+                                            class="px-3 py-1 bg-gray-100 rounded-lg text-gray-900 font-mono text-sm font-semibold"
+                                            >{{
+                                                reservation.booking_number
+                                            }}</code
+                                        >
+                                        <button
+                                            @click="
+                                                navigator.clipboard.writeText(
+                                                    reservation.booking_number,
+                                                )
+                                            "
+                                            class="p-1.5 hover:bg-gray-100 rounded-md transition-colors"
+                                            title="複製預約編號"
+                                        >
+                                            <svg
+                                                class="w-4 h-4 text-gray-400 hover:text-gray-600"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <path
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                    stroke-width="2"
+                                                    d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                                                ></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <div
+                                        v-if="reservation.order_number"
+                                        class="flex items-center gap-2"
+                                    >
+                                        <span
+                                            class="text-sm font-medium text-gray-500"
+                                            >訂單編號</span
+                                        >
+                                        <code
+                                            class="px-3 py-1 bg-gray-100 rounded-lg text-gray-900 font-mono text-sm"
+                                            >{{
+                                                reservation.order_number
+                                            }}</code
+                                        >
+                                    </div>
+                                </div>
+                                <p
+                                    class="text-sm text-gray-400 mt-4 flex items-center gap-2"
+                                >
+                                    <svg
+                                        class="w-4 h-4"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            stroke-width="2"
+                                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                                        ></path>
+                                    </svg>
+                                    建立時間：{{
+                                        formatDateTime(reservation.created_at)
+                                    }}
                                 </p>
                             </div>
-                            <span
-                                :class="[
-                                    'px-4 py-2 rounded-full text-sm font-medium',
-                                    getStatusClasses(reservation.status),
-                                ]"
-                            >
-                                {{ getStatusText(reservation.status) }}
-                            </span>
+                            <div class="flex-shrink-0">
+                                <span
+                                    :class="[
+                                        'inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold',
+                                        getStatusClasses(reservation.status),
+                                    ]"
+                                >
+                                    <span
+                                        :class="[
+                                            'w-2 h-2 rounded-full',
+                                            reservation.status === 'PENDING'
+                                                ? 'bg-yellow-500'
+                                                : '',
+                                            reservation.status === 'CONFIRMED'
+                                                ? 'bg-blue-500'
+                                                : '',
+                                            reservation.status === 'ACTIVE'
+                                                ? 'bg-green-500'
+                                                : '',
+                                            reservation.status === 'COMPLETED'
+                                                ? 'bg-gray-500'
+                                                : '',
+                                            reservation.status === 'CANCELLED'
+                                                ? 'bg-red-500'
+                                                : '',
+                                        ]"
+                                    ></span>
+                                    {{ getStatusText(reservation.status) }}
+                                </span>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="grid grid-cols-1 lg:grid-cols-10 gap-8">
                         <!-- Main Content -->
-                        <div class="lg:col-span-2 space-y-6">
-                            <!-- Vehicle Info -->
-                            <div class="bg-white rounded-xl shadow-md p-6">
-                                <h2
-                                    class="text-lg font-semibold text-gray-900 mb-4"
-                                >
-                                    車輛資訊
-                                </h2>
-                                <div class="flex flex-col sm:flex-row gap-6">
-                                    <img
-                                        :src="reservation.vehicle?.image_url"
-                                        :alt="reservation.vehicle?.name"
-                                        class="w-full sm:w-48 h-48 object-cover rounded-lg"
-                                    />
-                                    <div class="flex-1">
-                                        <h3
-                                            class="text-xl font-semibold text-gray-900"
-                                        >
-                                            {{ reservation.vehicle?.name }}
-                                        </h3>
-                                        <p class="text-gray-600 mb-4">
-                                            {{ reservation.vehicle?.brand }}
-                                            {{ reservation.vehicle?.model }}
-                                        </p>
-                                        <div
-                                            class="grid grid-cols-2 gap-3 text-sm"
-                                        >
-                                            <div>
-                                                <span class="text-gray-500"
-                                                    >乘客數：</span
-                                                >
-                                                <span class="text-gray-900"
-                                                    >{{
-                                                        reservation.vehicle
-                                                            ?.seats || 5
-                                                    }}
-                                                    人</span
-                                                >
-                                            </div>
-                                            <div>
-                                                <span class="text-gray-500"
-                                                    >變速箱：</span
-                                                >
-                                                <span class="text-gray-900">{{
-                                                    reservation.vehicle
-                                                        ?.transmission || "自排"
-                                                }}</span>
-                                            </div>
-                                            <div>
-                                                <span class="text-gray-500"
-                                                    >燃油類型：</span
-                                                >
-                                                <span class="text-gray-900">{{
-                                                    reservation.vehicle
-                                                        ?.fuel_type || "汽油"
-                                                }}</span>
-                                            </div>
-                                            <div>
-                                                <span class="text-gray-500"
-                                                    >行李箱：</span
-                                                >
-                                                <span class="text-gray-900"
-                                                    >{{
-                                                        reservation.vehicle
-                                                            ?.luggage || 3
-                                                    }}
-                                                    件</span
-                                                >
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                        <div class="lg:col-span-7 space-y-6">
+                            <!-- Vehicle Card -->
+                            <ReservationVehicleCard
+                                :vehicle="reservation.vehicle"
+                            />
 
-                            <!-- Rental Period -->
-                            <div class="bg-white rounded-xl shadow-md p-6">
-                                <h2
-                                    class="text-lg font-semibold text-gray-900 mb-4"
-                                >
-                                    租賃期間
-                                </h2>
-                                <div
-                                    class="grid grid-cols-1 md:grid-cols-2 gap-6"
-                                >
-                                    <div class="p-4 bg-blue-50 rounded-lg">
-                                        <p class="text-sm text-blue-600 mb-1">
-                                            取車時間
-                                        </p>
-                                        <p
-                                            class="text-lg font-semibold text-blue-900"
-                                        >
-                                            {{
-                                                formatDate(
-                                                    reservation.pickup_date,
-                                                )
-                                            }}
-                                        </p>
-                                        <p class="text-blue-700">
-                                            {{ reservation.pickup_time }}
-                                        </p>
-                                    </div>
-                                    <div class="p-4 bg-green-50 rounded-lg">
-                                        <p class="text-sm text-green-600 mb-1">
-                                            還車時間
-                                        </p>
-                                        <p
-                                            class="text-lg font-semibold text-green-900"
-                                        >
-                                            {{
-                                                formatDate(
-                                                    reservation.return_date,
-                                                )
-                                            }}
-                                        </p>
-                                        <p class="text-green-700">
-                                            {{ reservation.return_time }}
-                                        </p>
-                                    </div>
-                                </div>
-                                <div class="mt-4 p-4 bg-gray-50 rounded-lg">
-                                    <p class="text-center text-gray-600">
-                                        總共租用
-                                        <span
-                                            class="font-bold text-gray-900 text-xl"
-                                            >{{
-                                                calculateDays(
-                                                    reservation.pickup_date,
-                                                    reservation.return_date,
-                                                )
-                                            }}</span
-                                        >
-                                        天
-                                    </p>
-                                </div>
-                            </div>
+                            <!-- Rental Period Card -->
+                            <ReservationPeriodCard
+                                :startAt="reservation.start_at"
+                                :endAt="reservation.end_at"
+                                :rentalDays="
+                                    reservation.rental_days ||
+                                    calculateDays(
+                                        reservation.start_at,
+                                        reservation.end_at,
+                                    )
+                                "
+                            />
 
-                            <!-- Customer Information -->
-                            <div class="bg-white rounded-xl shadow-md p-6">
-                                <h2
-                                    class="text-lg font-semibold text-gray-900 mb-4"
-                                >
-                                    聯絡人資訊
-                                </h2>
-                                <div
-                                    class="grid grid-cols-1 md:grid-cols-2 gap-4"
-                                >
-                                    <div>
-                                        <p class="text-sm text-gray-500">
-                                            姓名
-                                        </p>
-                                        <p class="font-medium text-gray-900">
-                                            {{ reservation.customer_name }}
-                                        </p>
-                                    </div>
-                                    <div>
-                                        <p class="text-sm text-gray-500">
-                                            手機號碼
-                                        </p>
-                                        <p class="font-medium text-gray-900">
-                                            {{ reservation.customer_phone }}
-                                        </p>
-                                    </div>
-                                    <div>
-                                        <p class="text-sm text-gray-500">
-                                            電子郵件
-                                        </p>
-                                        <p class="font-medium text-gray-900">
-                                            {{ reservation.customer_email }}
-                                        </p>
-                                    </div>
-                                    <div>
-                                        <p class="text-sm text-gray-500">
-                                            身份證字號
-                                        </p>
-                                        <p class="font-medium text-gray-900">
-                                            *******{{
-                                                reservation.customer_id_number?.slice(
-                                                    -4,
-                                                )
-                                            }}
-                                        </p>
-                                    </div>
-                                    <div>
-                                        <p class="text-sm text-gray-500">
-                                            駕照號碼
-                                        </p>
-                                        <p class="font-medium text-gray-900">
-                                            {{ reservation.license_number }}
-                                        </p>
-                                    </div>
-                                    <div>
-                                        <p class="text-sm text-gray-500">
-                                            通訊地址
-                                        </p>
-                                        <p class="font-medium text-gray-900">
-                                            {{
-                                                reservation.address || "未提供"
-                                            }}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
+                            <!-- Customer Card -->
+                            <ReservationCustomerCard
+                                :customerName="reservation.customer_name"
+                                :customerPhone="reservation.customer_phone"
+                                :customerEmail="reservation.customer_email"
+                                :customerIdNumber="
+                                    reservation.customer_id_number
+                                "
+                                :licenseNumber="reservation.license_number"
+                                :address="reservation.address"
+                            />
 
-                            <!-- Additional Services -->
-                            <div
+                            <!-- Additional Services Card -->
+                            <ReservationServicesCard
                                 v-if="
                                     reservation.additional_services &&
                                     Object.values(
                                         reservation.additional_services,
                                     ).some((v) => v)
                                 "
-                                class="bg-white rounded-xl shadow-md p-6"
-                            >
-                                <h2
-                                    class="text-lg font-semibold text-gray-900 mb-4"
-                                >
-                                    加購服務
-                                </h2>
-                                <div class="flex flex-wrap gap-2">
-                                    <span
-                                        v-if="
-                                            reservation.additional_services.gps
-                                        "
-                                        class="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm"
-                                    >
-                                        GPS 導航
-                                    </span>
-                                    <span
-                                        v-if="
-                                            reservation.additional_services
-                                                .child_seat
-                                        "
-                                        class="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm"
-                                    >
-                                        兒童安全座椅
-                                    </span>
-                                    <span
-                                        v-if="
-                                            reservation.additional_services
-                                                .additional_driver
-                                        "
-                                        class="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm"
-                                    >
-                                        額外駕駛人
-                                    </span>
-                                </div>
-                            </div>
+                                :additionalServices="
+                                    reservation.additional_services
+                                "
+                            />
                         </div>
 
                         <!-- Sidebar - Price Summary & Actions -->
-                        <div class="lg:col-span-1">
-                            <div
-                                class="bg-white rounded-xl shadow-md p-6 sticky top-8"
-                            >
-                                <h2
-                                    class="text-lg font-semibold text-gray-900 mb-4"
-                                >
-                                    費用明細
-                                </h2>
-                                <div class="space-y-3 mb-6">
-                                    <div
-                                        class="flex justify-between text-gray-600"
-                                    >
-                                        <span>基本租金</span>
-                                        <span
-                                            >NT$
-                                            {{
-                                                (
-                                                    reservation.total_amount *
-                                                    0.95
-                                                ).toLocaleString()
-                                            }}</span
-                                        >
-                                    </div>
-                                    <div
-                                        class="flex justify-between text-gray-600"
-                                    >
-                                        <span>服務費</span>
-                                        <span
-                                            >NT$
-                                            {{
-                                                Math.round(
-                                                    reservation.total_amount *
-                                                        0.05,
-                                                ).toLocaleString()
-                                            }}</span
-                                        >
-                                    </div>
-                                    <div
-                                        class="border-t border-gray-200 pt-3 mt-3"
-                                    >
-                                        <div
-                                            class="flex justify-between items-center"
-                                        >
-                                            <span
-                                                class="font-semibold text-gray-900"
-                                                >總計</span
-                                            >
-                                            <span
-                                                class="text-2xl font-bold text-blue-900"
-                                                >NT$
-                                                {{
-                                                    reservation.total_amount?.toLocaleString()
-                                                }}</span
-                                            >
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Action Buttons -->
-                                <div class="space-y-3">
-                                    <button
-                                        v-if="canCancel(reservation)"
-                                        @click="openCancelModal()"
-                                        class="w-full px-4 py-2 border border-red-500 text-red-500 hover:bg-red-50 rounded-lg font-medium transition"
-                                    >
-                                        取消預約
-                                    </button>
-                                    <button
-                                        v-if="
-                                            reservation.status === 'CONFIRMED'
-                                        "
-                                        class="w-full px-4 py-2 border border-blue-900 text-blue-900 hover:bg-blue-50 rounded-lg font-medium transition"
-                                    >
-                                        聯繫客服
-                                    </button>
-                                </div>
-
-                                <!-- Created At -->
-                                <div class="mt-6 pt-6 border-t border-gray-200">
-                                    <p class="text-xs text-gray-500">
-                                        預約建立時間
-                                    </p>
-                                    <p class="text-sm text-gray-700">
-                                        {{
-                                            formatDateTime(
-                                                reservation.created_at,
-                                            )
-                                        }}
-                                    </p>
-                                </div>
-                            </div>
+                        <div class="lg:col-span-3">
+                            <ReservationSummaryCard
+                                :amount="reservation.amount"
+                                :status="reservation.status"
+                                :canCancel="canCancel(reservation)"
+                                :createdAt="reservation.created_at"
+                                @open-cancel-modal="openCancelModal"
+                            />
                         </div>
                     </div>
                 </template>
             </div>
 
-            <!-- Cancel Modal -->
-            <div
-                v-if="showCancelModal"
-                class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-            >
-                <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
-                    <h3 class="text-xl font-bold text-gray-900 mb-4">
-                        確認取消預約？
-                    </h3>
-                    <p class="text-gray-600 mb-6">
-                        您即將取消預約編號
-                        <span class="font-mono font-semibold">{{
-                            reservation?.booking_number
-                        }}</span
-                        >，此操作無法復原。
-                    </p>
-
-                    <div
-                        class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6"
-                    >
-                        <p class="text-yellow-800 text-sm">
-                            <strong>注意：</strong
-                            >如果在取車前24小時內取消，將收取首日租金作為手續費。
-                        </p>
-                    </div>
-
-                    <div class="flex gap-4">
-                        <button
-                            @click="showCancelModal = false"
-                            class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg font-medium transition"
-                        >
-                            再想想
-                        </button>
-                        <button
-                            @click="confirmCancel"
-                            :disabled="cancelling"
-                            class="flex-1 px-4 py-2 bg-red-500 hover:bg-red-600 disabled:bg-gray-400 text-white rounded-lg font-medium transition flex items-center justify-center"
-                        >
-                            <span
-                                v-if="cancelling"
-                                class="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"
-                            ></span>
-                            確認取消
-                        </button>
-                    </div>
-                </div>
-            </div>
+            <!-- Cancel Reservation Modal -->
+            <CancelReservationModal
+                :show="showCancelModal"
+                :bookingNumber="reservation?.booking_number || ''"
+                :cancelling="cancelling"
+                @close="showCancelModal = false"
+                @confirm="confirmCancel"
+            />
         </div>
     </PublicLayout>
 </template>
@@ -478,6 +244,12 @@
 import { ref, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import PublicLayout from "../components/Layout/PublicLayout.vue";
+import ReservationVehicleCard from "../components/Reservation/ReservationVehicleCard.vue";
+import ReservationPeriodCard from "../components/Reservation/ReservationPeriodCard.vue";
+import ReservationCustomerCard from "../components/Reservation/ReservationCustomerCard.vue";
+import ReservationServicesCard from "../components/Reservation/ReservationServicesCard.vue";
+import ReservationSummaryCard from "../components/Reservation/ReservationSummaryCard.vue";
+import CancelReservationModal from "../components/Reservation/CancelReservationModal.vue";
 import api from "../services/api";
 
 const route = useRoute();
@@ -495,6 +267,14 @@ const formatDate = (dateString: string) => {
     if (!dateString) return "-";
     const date = new Date(dateString);
     return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
+};
+
+const formatTime = (dateString: string) => {
+    if (!dateString) return "-";
+    const date = new Date(dateString);
+    const hours = date.getHours().toString().padStart(2, "0");
+    const minutes = date.getMinutes().toString().padStart(2, "0");
+    return `${hours}:${minutes}`;
 };
 
 const formatDateTime = (dateString: string) => {

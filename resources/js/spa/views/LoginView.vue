@@ -1,15 +1,26 @@
 <template>
-    <div
-        class="min-h-screen bg-gray-50 flex items-center justify-center p-4 sm:p-6 lg:p-8"
-    >
-        <div class="w-full max-w-md">
-            <!-- Logo & Brand -->
-            <div class="text-center mb-8">
+    <div class="min-h-screen flex flex-col lg:flex-row">
+        <!-- 左側品牌區 - 深色有質感 -->
+        <div
+            class="w-full lg:w-[48%] relative bg-gradient-to-br from-slate-900 via-slate-800 to-primary-900 overflow-hidden"
+        >
+            <!-- 克制的背景光暈 - 低透明度、小範圍 -->
+            <div class="absolute inset-0 overflow-hidden pointer-events-none">
                 <div
-                    class="inline-flex items-center justify-center w-16 h-16 bg-primary-600 rounded-2xl mb-4"
+                    class="absolute -top-32 -right-32 w-[400px] h-[400px] bg-primary-600/5 rounded-full blur-3xl"
+                ></div>
+                <div
+                    class="absolute -bottom-24 -left-24 w-[300px] h-[300px] bg-orange-500/5 rounded-full blur-3xl"
+                ></div>
+            </div>
+
+            <!-- Logo -->
+            <div class="absolute top-8 left-8 lg:top-12 lg:left-12 z-10">
+                <div
+                    class="inline-flex items-center justify-center w-12 h-12 bg-white/10 backdrop-blur-sm rounded-xl border border-white/10"
                 >
                     <svg
-                        class="w-8 h-8 text-white"
+                        class="w-7 h-7 text-white"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -22,21 +33,110 @@
                         />
                     </svg>
                 </div>
-                <h1 class="text-2xl font-bold text-gray-900">RentFlow</h1>
-                <p class="text-gray-500 mt-1">專業車輛租賃管理平台</p>
+                <span
+                    class="ml-3 text-white text-xl font-semibold tracking-tight"
+                    >RentFlow</span
+                >
             </div>
 
-            <!-- Login Card -->
-            <div class="card p-8">
-                <h2 class="text-xl font-semibold text-gray-900 mb-6">
-                    使用者登入
-                </h2>
+            <!-- 品牌文案 -->
+            <div
+                class="relative z-10 flex flex-col justify-center h-full px-8 lg:px-16 xl:px-24 py-20"
+            >
+                <h1
+                    class="text-4xl lg:text-5xl xl:text-6xl font-bold text-white leading-[1.05] tracking-tight mb-8"
+                >
+                    歡迎回來
+                    <br />
+                    <span class="text-primary-400">繼續您的旅程</span>
+                </h1>
+                <p class="text-lg text-white/60 leading-relaxed max-w-md mb-16">
+                    專業的車輛租賃平台，為您提供最便捷的租車體驗。登入您的帳號，繼續管理您的預訂與車輛。
+                </p>
 
-                <form @submit.prevent="handleLogin" class="space-y-5">
+                <!-- 特色列表 -->
+                <div class="space-y-5">
+                    <div class="flex items-center text-white/70">
+                        <div
+                            class="w-5 h-5 rounded-full bg-orange-500/20 flex items-center justify-center mr-4"
+                        >
+                            <svg
+                                class="w-3 h-3 text-orange-400"
+                                fill="currentColor"
+                                viewBox="0 0 20 20"
+                            >
+                                <path
+                                    fill-rule="evenodd"
+                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                    clip-rule="evenodd"
+                                />
+                            </svg>
+                        </div>
+                        <span class="text-base">企業級安全防護</span>
+                    </div>
+                    <div class="flex items-center text-white/70">
+                        <div
+                            class="w-5 h-5 rounded-full bg-orange-500/20 flex items-center justify-center mr-4"
+                        >
+                            <svg
+                                class="w-3 h-3 text-orange-400"
+                                fill="currentColor"
+                                viewBox="0 0 20 20"
+                            >
+                                <path
+                                    fill-rule="evenodd"
+                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                    clip-rule="evenodd"
+                                />
+                            </svg>
+                        </div>
+                        <span class="text-base">24/7 全天候客戶支援</span>
+                    </div>
+                    <div class="flex items-center text-white/70">
+                        <div
+                            class="w-5 h-5 rounded-full bg-orange-500/20 flex items-center justify-center mr-4"
+                        >
+                            <svg
+                                class="w-3 h-3 text-orange-400"
+                                fill="currentColor"
+                                viewBox="0 0 20 20"
+                            >
+                                <path
+                                    fill-rule="evenodd"
+                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                    clip-rule="evenodd"
+                                />
+                            </svg>
+                        </div>
+                        <span class="text-base">輕鬆上手的操作介面</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右側登入表單區 -->
+        <div
+            class="w-full lg:w-[52%] bg-white flex items-center justify-center p-8 lg:p-16 xl:p-24"
+        >
+            <div class="w-full max-w-lg">
+                <!-- 表單標題 -->
+                <div class="mb-10">
+                    <h2
+                        class="text-3xl font-semibold text-slate-900 tracking-tight mb-2"
+                    >
+                        登入帳號
+                    </h2>
+                    <p class="text-slate-500 text-lg">
+                        填寫以下資訊，登入您的帳號
+                    </p>
+                </div>
+
+                <!-- 登入表單 -->
+                <form @submit.prevent="handleLogin" class="space-y-6">
                     <div>
                         <label
                             for="email"
-                            class="block text-sm font-medium text-gray-700 mb-2"
+                            class="block text-sm font-medium text-slate-700 mb-3"
                         >
                             電子郵件
                         </label>
@@ -45,15 +145,15 @@
                             id="email"
                             v-model="form.email"
                             required
-                            placeholder="請輸入您的email"
-                            class="w-full"
+                            placeholder="your@email.com"
+                            class="w-full px-5 py-4 bg-slate-50 border-0 rounded-2xl focus:ring-2 focus:ring-primary-500/40 focus:bg-white outline-none transition-all duration-300 placeholder:text-slate-400 text-slate-900 text-base"
                         />
                     </div>
 
                     <div>
                         <label
                             for="password"
-                            class="block text-sm font-medium text-gray-700 mb-2"
+                            class="block text-sm font-medium text-slate-700 mb-3"
                         >
                             密碼
                         </label>
@@ -63,13 +163,13 @@
                                 id="password"
                                 v-model="form.password"
                                 required
-                                placeholder="請輸入您的密碼"
-                                class="w-full pr-10"
+                                placeholder="請輸入密碼"
+                                class="w-full pr-14 px-5 py-4 bg-slate-50 border-0 rounded-2xl focus:ring-2 focus:ring-primary-500/40 focus:bg-white outline-none transition-all duration-300 placeholder:text-slate-400 text-slate-900 text-base"
                             />
                             <button
                                 type="button"
                                 @click="showPassword = !showPassword"
-                                class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors duration-200 p-1.5 rounded-xl hover:bg-slate-100"
                             >
                                 <svg
                                     v-if="!showPassword"
@@ -88,7 +188,7 @@
                                         stroke-linecap="round"
                                         stroke-linejoin="round"
                                         stroke-width="2"
-                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542-7-4.477 0-8.268-2.943-9.542-7z"
                                     />
                                 </svg>
                                 <svg
@@ -109,16 +209,43 @@
                         </div>
                     </div>
 
-                    <div v-if="error" class="alert-danger">
+                    <!-- 記住我 & 忘記密碼 -->
+                    <div class="flex items-center justify-between">
+                        <label class="flex items-center cursor-pointer">
+                            <input
+                                type="checkbox"
+                                class="w-4 h-4 text-primary-600 bg-slate-100 border-slate-200 rounded-lg focus:ring-primary-500/40"
+                            />
+                            <span class="ml-3 text-sm text-slate-600"
+                                >記住我</span
+                            >
+                        </label>
+                        <a
+                            href="#"
+                            class="text-sm text-primary-600 hover:text-primary-500 font-medium transition-colors"
+                        >
+                            忘記密碼？
+                        </a>
+                    </div>
+
+                    <!-- 錯誤訊息 -->
+                    <div
+                        v-if="error"
+                        class="bg-red-50 border-0 text-red-600 px-5 py-4 rounded-2xl text-sm"
+                    >
                         {{ error }}
                     </div>
 
+                    <!-- 登入按鈕 - 絕對焦點 -->
                     <button
                         type="submit"
                         :disabled="loading"
-                        class="btn-primary w-full py-2.5 text-base"
+                        class="w-full py-4.5 text-base font-semibold bg-slate-900 text-white rounded-2xl shadow-lg shadow-slate-900/10 hover:shadow-xl hover:shadow-slate-900/15 transform hover:-translate-y-0.5 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900/50 focus:ring-offset-2 transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none disabled:hover:shadow-lg"
                     >
-                        <span v-if="loading" class="inline-flex items-center">
+                        <span
+                            v-if="loading"
+                            class="inline-flex items-center justify-center"
+                        >
                             <svg
                                 class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
                                 fill="none"
@@ -143,21 +270,25 @@
                         <span v-else>登入</span>
                     </button>
                 </form>
-            </div>
 
-            <p class="text-center text-sm text-gray-600 mt-6">
-                還沒有帳號？
-                <router-link
-                    :to="`/${tenantSlug}/register`"
-                    class="text-primary-600 hover:text-primary-500 font-medium"
+                <!-- 註冊連結 -->
+                <p class="text-center text-base text-slate-500 mt-10">
+                    還沒有帳號？
+                    <router-link
+                        :to="`/${tenantSlug}/register`"
+                        class="text-primary-600 hover:text-primary-500 font-semibold ml-1 transition-colors duration-200"
+                    >
+                        立即註冊
+                    </router-link>
+                </p>
+
+                <!-- 版權 -->
+                <p
+                    class="text-center text-xs text-slate-400 mt-12 tracking-wide"
                 >
-                    立即註冊
-                </router-link>
-            </p>
-
-            <p class="text-center text-sm text-gray-500 mt-4">
-                © 2026 RentFlow. 版權所有
-            </p>
+                    © 2026 RentFlow. 版權所有
+                </p>
+            </div>
         </div>
     </div>
 </template>
@@ -189,24 +320,19 @@ const handleLogin = async () => {
     error.value = null;
 
     try {
-        const response = await api.post("/customer/auth/login", {
+        const response = await api.post(`/${tenantSlug}/customer/auth/login`, {
             email: form.value.email,
             password: form.value.password,
         });
 
-        if (response.data.access_token) {
-            localStorage.setItem("token", response.data.access_token);
+        if (response.data.data.access_token) {
+            localStorage.setItem("token", response.data.data.access_token);
             router.push(`/${tenantSlug}/my-bookings`);
         }
     } catch (e: any) {
-        error.value =
-            e.response?.data?.message || "登入失敗，請檢查您的帳號密碼";
+        error.value = e.response?.data?.message || "登入失敗，請檢查帳號密碼";
     } finally {
         loading.value = false;
     }
 };
 </script>
-
-<style scoped>
-/* 新的設計系統已透過 Tailwind CSS 實作 */
-</style>

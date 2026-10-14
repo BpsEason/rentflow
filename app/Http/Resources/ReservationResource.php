@@ -18,6 +18,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
  *     @OA\Property(property="end_date", type="string", format="date-time", example="2024-01-05T10:00:00Z"),
  *     @OA\Property(property="status", type="string", example="pending"),
  *     @OA\Property(property="notes", type="string", nullable=true),
+ *     @OA\Property(property="order_number", type="string", nullable=true, example="ORD-001-000001"),
  *     @OA\Property(property="created_at", type="string", format="date-time")
  * )
  */
@@ -45,6 +46,7 @@ class ReservationResource extends JsonResource
             'rental_days' => $this->rental_days,
             'notes' => $this->notes,
             'cancellation_reason' => $this->cancellation_reason,
+            'order_number' => $this->order?->order_number,
             'customer' => new CustomerResource($this->whenLoaded('customer')),
             'vehicle' => new VehicleResource($this->whenLoaded('vehicle')),
             'created_at' => $this->created_at?->toISOString(),

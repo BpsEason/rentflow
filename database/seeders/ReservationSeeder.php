@@ -105,7 +105,19 @@ class ReservationSeeder extends Seeder
                     continue;
                 }
 
-                // 隨機租用1-3天
+                // 檢查車輛是否在維修期間，如果是就跳過
+                if ($vehicle->maintenance_start_at && $vehicle->maintenance_expected_end_at) {
+                    $maintenanceStart = \Carbon\Carbon::parse($vehicle->maintenance_start_at);
+                    $maintenanceEnd = \Carbon\Carbon::parse($vehicle->maintenance_expected_end_at);
+                    $potentialStart = $date->copy()->setTime(9, 0);
+                    $potentialEnd = $potentialStart->copy()->addDays(rand(1, 3))->setTime(18, 0);
+
+                    if ($potentialStart->lessThan($maintenanceEnd) && $potentialEnd->greaterThan($maintenanceStart)) {
+                        continue;
+                    }
+                }
+
+                // 隨機租用1-3天，確保最少4小時
                 $rentalDays = rand(1, 3);
                 $startAt = $date->copy()->setTime(9, 0);  // 早上9點取車
                 $endAt = $startAt->copy()->addDays($rentalDays)->setTime(18, 0);  // 晚上6點還車
@@ -115,12 +127,18 @@ class ReservationSeeder extends Seeder
                     continue;
                 }
 
-                // 隨機分配狀態：大部分是RETURNED，少量CANCELLED
-                $status = rand(0, 10) < 9 ? Reservation::STATUS_RETURNED : Reservation::STATUS_CANCELLED;
-
-                // 少量逾期未還的狀況（很早以前的預約但還是PICKED_UP）
-                if ($dayOffset > 7 && rand(0, 20) === 0) {
-                    $status = Reservation::STATUS_PICKED_UP;
+                // 根據時間設定正確的狀態
+                if ($endAt->isPast()) {
+                    // 如果還車時間已經過去，應該是RETURNED
+                    $status = rand(0, 10) < 9 ? Reservation::STATUS_RETURNED : Reservation::STATUS_CANCELLED;
+                } else {
+                    // 如果還車時間還沒到，但取車時間已過，應該是PICKED_UP
+                    if ($startAt->isPast()) {
+                        $status = Reservation::STATUS_PICKED_UP;
+                    } else {
+                        // 未來的預約
+                        $status = rand(0, 10) < 7 ? Reservation::STATUS_CONFIRMED : Reservation::STATUS_PENDING;
+                    }
                 }
 
                 $customer = $customerPool->random();
@@ -135,7 +153,10 @@ class ReservationSeeder extends Seeder
                         'status' => $status,
                     ]);
                 } catch (\Exception $e) {
-                    // 忽略衝突錯誤
+                    // 只記錄非預期的錯誤，預期的衝突錯誤直接跳過
+                    if (!in_array($e->getCode(), [400, 409, 422])) {
+                        Log::warning('建立過去預約時發生非預期錯誤: ' . $e->getMessage());
+                    }
                     continue;
                 }
             }
@@ -148,13 +169,31 @@ class ReservationSeeder extends Seeder
     private function createTodayReservations($tenant, $customers, $vehicles, $today): void
     {
         $customerPool = $customers->shuffle();
-
-        // 建立數筆今日取車的預約
-        $todayPickupCount = min(3, count($vehicles));
         $usedVehicles = collect();
 
+        // 過濾出不在維修期間的可用車輛
+        $availableVehiclesForToday = $vehicles->filter(function ($vehicle) {
+            if ($vehicle->maintenance_start_at && $vehicle->maintenance_expected_end_at) {
+                $maintenanceStart = \Carbon\Carbon::parse($vehicle->maintenance_start_at);
+                $maintenanceEnd = \Carbon\Carbon::parse($vehicle->maintenance_expected_end_at);
+                $today = \Carbon\Carbon::today();
+                // 如果今天在維修期間內，就不能使用
+                if ($today->between($maintenanceStart, $maintenanceEnd)) {
+                    return false;
+                }
+            }
+            return true;
+        });
+
+        if ($availableVehiclesForToday->isEmpty()) {
+            return;
+        }
+
+        // 建立數筆今日取車的預約
+        $todayPickupCount = min(3, $availableVehiclesForToday->count());
+
         for ($i = 0; $i < $todayPickupCount; $i++) {
-            $availableVehicles = $vehicles->whereNotIn('id', $usedVehicles);
+            $availableVehicles = $availableVehiclesForToday->whereNotIn('id', $usedVehicles);
             if ($availableVehicles->isEmpty()) break;
 
             $vehicle = $availableVehicles->random();
@@ -163,7 +202,21 @@ class ReservationSeeder extends Seeder
             $startAt = $today->copy()->setTime(9, 0);
             $endAt = $today->copy()->addDays(2)->setTime(18, 0);
 
+            // 確保符合最少租用時間要求（這裡是57小時，遠超過4小時）
+            if (!Reservation::validateMinimumRentalTime($startAt, $endAt)) {
+                continue;
+            }
+
+            // 檢查時間衝突
+            if (Reservation::hasTimeConflict($vehicle->id, $startAt, $endAt)) {
+                continue;
+            }
+
             $customer = $customerPool->random();
+
+            // 根據當前時間設定正確的狀態，如果現在已經過了取車時間，就設定為PICKED_UP
+            $now = \Carbon\Carbon::now();
+            $status = $now->greaterThan($startAt) ? Reservation::STATUS_PICKED_UP : Reservation::STATUS_CONFIRMED;
 
             try {
                 Reservation::createReservation([
@@ -172,17 +225,20 @@ class ReservationSeeder extends Seeder
                     'vehicle_id' => $vehicle->id,
                     'start_at' => $startAt,
                     'end_at' => $endAt,
-                    'status' => rand(0, 1) ? Reservation::STATUS_CONFIRMED : Reservation::STATUS_PICKED_UP,
+                    'status' => $status,
                 ]);
             } catch (\Exception $e) {
+                if (!in_array($e->getCode(), [400, 409, 422])) {
+                    Log::warning('建立今日取車預約時發生非預期錯誤: ' . $e->getMessage());
+                }
                 continue;
             }
         }
 
         // 建立數筆今日還車的預約（昨天取車，今天還）
-        $todayReturnCount = min(2, count($vehicles) - $usedVehicles->count());
+        $todayReturnCount = min(2, $availableVehiclesForToday->count() - $usedVehicles->count());
         for ($i = 0; $i < $todayReturnCount; $i++) {
-            $availableVehicles = $vehicles->whereNotIn('id', $usedVehicles);
+            $availableVehicles = $availableVehiclesForToday->whereNotIn('id', $usedVehicles);
             if ($availableVehicles->isEmpty()) break;
 
             $vehicle = $availableVehicles->random();
@@ -191,7 +247,19 @@ class ReservationSeeder extends Seeder
             $startAt = $today->copy()->subDay()->setTime(10, 0);
             $endAt = $today->copy()->setTime(18, 0);  // 今天還車
 
+            if (!Reservation::validateMinimumRentalTime($startAt, $endAt)) {
+                continue;
+            }
+
+            if (Reservation::hasTimeConflict($vehicle->id, $startAt, $endAt)) {
+                continue;
+            }
+
             $customer = $customerPool->random();
+
+            // 今天要還車，現在如果還沒到還車時間，狀態是PICKED_UP；如果已經過了，就設定為RETURNED
+            $now = \Carbon\Carbon::now();
+            $status = $now->greaterThan($endAt) ? Reservation::STATUS_RETURNED : Reservation::STATUS_PICKED_UP;
 
             try {
                 Reservation::createReservation([
@@ -200,17 +268,20 @@ class ReservationSeeder extends Seeder
                     'vehicle_id' => $vehicle->id,
                     'start_at' => $startAt,
                     'end_at' => $endAt,
-                    'status' => Reservation::STATUS_PICKED_UP,
+                    'status' => $status,
                 ]);
             } catch (\Exception $e) {
+                if (!in_array($e->getCode(), [400, 409, 422])) {
+                    Log::warning('建立今日還車預約時發生非預期錯誤: ' . $e->getMessage());
+                }
                 continue;
             }
         }
 
         // 確保有一些PENDING的待確認預約
-        $pendingCount = min(4, count($vehicles) - $usedVehicles->count());
+        $pendingCount = min(4, $availableVehiclesForToday->count() - $usedVehicles->count());
         for ($i = 0; $i < $pendingCount; $i++) {
-            $availableVehicles = $vehicles->whereNotIn('id', $usedVehicles);
+            $availableVehicles = $availableVehiclesForToday->whereNotIn('id', $usedVehicles);
             if ($availableVehicles->isEmpty()) break;
 
             $vehicle = $availableVehicles->random();
@@ -218,6 +289,14 @@ class ReservationSeeder extends Seeder
 
             $startAt = $today->copy()->addDays(3)->setTime(9, 0);
             $endAt = $startAt->copy()->addDays(2)->setTime(18, 0);
+
+            if (!Reservation::validateMinimumRentalTime($startAt, $endAt)) {
+                continue;
+            }
+
+            if (Reservation::hasTimeConflict($vehicle->id, $startAt, $endAt)) {
+                continue;
+            }
 
             $customer = $customerPool->random();
 
@@ -231,6 +310,9 @@ class ReservationSeeder extends Seeder
                     'status' => Reservation::STATUS_PENDING,
                 ]);
             } catch (\Exception $e) {
+                if (!in_array($e->getCode(), [400, 409, 422])) {
+                    Log::warning('建立待確認預約時發生非預期錯誤: ' . $e->getMessage());
+                }
                 continue;
             }
         }
@@ -242,7 +324,25 @@ class ReservationSeeder extends Seeder
     private function createFutureWeekReservations($tenant, $customers, $vehicles, $today, $occupancyTargets): void
     {
         $customerPool = $customers->shuffle();
-        $availableVehicles = $vehicles->keyBy('id');
+        $usedVehicles = collect();
+
+        // 過濾出不在維修期間的可用車輛
+        $availableVehicles = $vehicles->filter(function ($vehicle) use ($today) {
+            if ($vehicle->maintenance_start_at && $vehicle->maintenance_expected_end_at) {
+                $maintenanceStart = \Carbon\Carbon::parse($vehicle->maintenance_start_at);
+                $maintenanceEnd = \Carbon\Carbon::parse($vehicle->maintenance_expected_end_at);
+                // 檢查未來7天是否與維修期重疊
+                $futureWeekEnd = $today->copy()->addDays(7);
+                if ($today->lessThan($maintenanceEnd) && $futureWeekEnd->greaterThan($maintenanceStart)) {
+                    return false;
+                }
+            }
+            return true;
+        })->keyBy('id');
+
+        if ($availableVehicles->isEmpty()) {
+            return;
+        }
 
         foreach ($occupancyTargets as $dayOffset => $targetRate) {
             $targetDate = $today->copy()->addDays($dayOffset);
@@ -255,10 +355,14 @@ class ReservationSeeder extends Seeder
             foreach ($shuffledVehicles as $vehicle) {
                 if ($createdCount >= $neededReservations) break;
 
-                // 隨機租用1-2天
+                // 隨機租用1-2天，確保最少4小時
                 $rentalDays = rand(1, 2);
                 $startAt = $targetDate->copy()->setTime(10, 0);
                 $endAt = $startAt->copy()->addDays($rentalDays)->setTime(17, 0);
+
+                if (!Reservation::validateMinimumRentalTime($startAt, $endAt)) {
+                    continue;
+                }
 
                 if (Reservation::hasTimeConflict($vehicle->id, $startAt, $endAt)) {
                     continue;
@@ -287,6 +391,9 @@ class ReservationSeeder extends Seeder
                     ]);
                     $createdCount++;
                 } catch (\Exception $e) {
+                    if (!in_array($e->getCode(), [400, 409, 422])) {
+                        Log::warning('建立未來一週預約時發生非預期錯誤: ' . $e->getMessage());
+                    }
                     continue;
                 }
             }
@@ -300,6 +407,24 @@ class ReservationSeeder extends Seeder
     {
         $customerPool = $customers->shuffle();
 
+        // 過濾出不在維修期間的可用車輛
+        $availableVehicles = $vehicles->filter(function ($vehicle) use ($today) {
+            if ($vehicle->maintenance_start_at && $vehicle->maintenance_expected_end_at) {
+                $maintenanceStart = \Carbon\Carbon::parse($vehicle->maintenance_start_at);
+                $maintenanceEnd = \Carbon\Carbon::parse($vehicle->maintenance_expected_end_at);
+                // 檢查未來30天是否與維修期重疊
+                $futureMonthEnd = $today->copy()->addDays(30);
+                if ($today->lessThan($maintenanceEnd) && $futureMonthEnd->greaterThan($maintenanceStart)) {
+                    return false;
+                }
+            }
+            return true;
+        });
+
+        if ($availableVehicles->isEmpty()) {
+            return;
+        }
+
         // 未來30天內，隨機建立預約
         for ($dayOffset = 8; $dayOffset <= 30; $dayOffset++) {
             $date = $today->copy()->addDays($dayOffset);
@@ -308,12 +433,16 @@ class ReservationSeeder extends Seeder
             $dailyReservations = rand(2, 6);
 
             for ($i = 0; $i < $dailyReservations; $i++) {
-                $vehicle = $vehicles->random();
+                $vehicle = $availableVehicles->random();
 
-                // 隨機租用1-4天
+                // 隨機租用1-4天，確保最少4小時
                 $rentalDays = rand(1, 4);
                 $startAt = $date->copy()->setTime(9, 0);
                 $endAt = $startAt->copy()->addDays($rentalDays)->setTime(18, 0);
+
+                if (!Reservation::validateMinimumRentalTime($startAt, $endAt)) {
+                    continue;
+                }
 
                 if (Reservation::hasTimeConflict($vehicle->id, $startAt, $endAt)) {
                     continue;
@@ -340,6 +469,9 @@ class ReservationSeeder extends Seeder
                         'status' => $status,
                     ]);
                 } catch (\Exception $e) {
+                    if (!in_array($e->getCode(), [400, 409, 422])) {
+                        Log::warning('建立未來一個月預約時發生非預期錯誤: ' . $e->getMessage());
+                    }
                     continue;
                 }
             }

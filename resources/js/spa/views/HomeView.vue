@@ -340,79 +340,156 @@
             </div>
         </section>
 
-        <!-- How It Works -->
-        <section id="how-it-works" class="py-20 bg-white">
+        <!-- How It Works - 2026 極簡流線型重構 -->
+        <section
+            id="how-it-works"
+            class="py-24 my-12 relative overflow-hidden bg-white/60 border-y border-slate-200/60 backdrop-blur-sm"
+        >
+            <!-- 背景微光暈裝飾 (極低飽和度，絕不宣賓奪主) -->
+            <div
+                class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-gradient-to-r from-blue-50/40 via-indigo-50/30 to-amber-50/30 blur-3xl pointer-events-none -z-10 rounded-full"
+            ></div>
+
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="text-center mb-16">
-                    <h2 class="text-3xl font-bold text-gray-900">
-                        租車流程簡單又快速
+                <!-- 區塊標題區 -->
+                <div class="text-center max-w-xl mx-auto mb-16 sm:mb-20">
+                    <span
+                        class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-widest text-blue-600 bg-blue-50 border border-blue-100/80 mb-3"
+                    >
+                        Simple Step-by-Step
+                    </span>
+                    <h2
+                        class="text-2xl sm:text-3xl font-black tracking-tight text-slate-900"
+                    >
+                        租車流程，簡單快速
                     </h2>
-                    <p class="mt-4 text-lg text-gray-600">四個步驟，輕鬆取車</p>
+                    <p
+                        class="text-xs sm:text-sm font-medium text-slate-500 mt-2.5 leading-relaxed"
+                    >
+                        只需簡單 4
+                        個步驟，即可輕鬆完成線上預約，開啟您的精彩旅程。
+                    </p>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
-                    <div class="text-center">
-                        <div
-                            class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4"
-                        >
-                            <span class="text-2xl font-bold text-blue-900"
-                                >1</span
-                            >
-                        </div>
-                        <h3 class="text-xl font-semibold text-gray-900 mb-2">
-                            選擇車輛
-                        </h3>
-                        <p class="text-gray-600">
-                            瀏覽我們的車輛列表，選擇最適合您的車款
-                        </p>
-                    </div>
+                <!-- 4 步驟動態流程卡片 -->
+                <div class="relative">
+                    <!-- 桌面端橫向漸變連接導引線 (Connecting Guidance Line) -->
+                    <div
+                        class="hidden lg:block absolute top-[28px] left-[10%] right-[10%] h-[2px] bg-gradient-to-r from-slate-200 via-blue-200 to-slate-200 -z-0"
+                    ></div>
 
-                    <div class="text-center">
+                    <div
+                        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 relative z-10"
+                    >
+                        <!-- 步驟 1 -->
                         <div
-                            class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4"
+                            class="group flex flex-col items-start lg:items-center text-left lg:text-center"
                         >
-                            <span class="text-2xl font-bold text-blue-900"
-                                >2</span
+                            <!-- 精緻小巧的數字標註與點頭 -->
+                            <div
+                                class="w-14 h-14 rounded-2xl bg-white border border-slate-200/80 shadow-[0_4px_16px_-2px_rgba(0,0,0,0.04)] group-hover:border-blue-500 group-hover:shadow-[0_8px_24px_-4px_rgba(37,99,235,0.12)] group-hover:-translate-y-1 transition-all duration-300 flex items-center justify-center relative mb-6"
                             >
+                                <span
+                                    class="text-xs font-black font-mono tracking-wider text-slate-400 group-hover:text-blue-600 transition-colors"
+                                    >01</span
+                                >
+                                <!-- 右側動態脈衝原點 -->
+                                <span
+                                    class="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-blue-500 border-2 border-white opacity-0 group-hover:opacity-100 transition-opacity animate-pulse"
+                                ></span>
+                            </div>
+                            <h3
+                                class="text-sm font-extrabold text-slate-900 tracking-tight mb-2"
+                            >
+                                1. 選擇車輛
+                            </h3>
+                            <p
+                                class="text-xs text-slate-500 leading-relaxed font-normal max-w-[220px]"
+                            >
+                                挑選符合您需求與成員數量的理想車款。
+                            </p>
                         </div>
-                        <h3 class="text-xl font-semibold text-gray-900 mb-2">
-                            確認租期
-                        </h3>
-                        <p class="text-gray-600">
-                            選擇您的取車和還車日期，查看價格明細
-                        </p>
-                    </div>
 
-                    <div class="text-center">
+                        <!-- 步驟 2 -->
                         <div
-                            class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4"
+                            class="group flex flex-col items-start lg:items-center text-left lg:text-center"
                         >
-                            <span class="text-2xl font-bold text-blue-900"
-                                >3</span
+                            <div
+                                class="w-14 h-14 rounded-2xl bg-white border border-slate-200/80 shadow-[0_4px_16px_-2px_rgba(0,0,0,0.04)] group-hover:border-blue-500 group-hover:shadow-[0_8px_24px_-4px_rgba(37,99,235,0.12)] group-hover:-translate-y-1 transition-all duration-300 flex items-center justify-center relative mb-6"
                             >
+                                <span
+                                    class="text-xs font-black font-mono tracking-wider text-slate-400 group-hover:text-blue-600 transition-colors"
+                                    >02</span
+                                >
+                                <span
+                                    class="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-blue-500 border-2 border-white opacity-0 group-hover:opacity-100 transition-opacity animate-pulse"
+                                ></span>
+                            </div>
+                            <h3
+                                class="text-sm font-extrabold text-slate-900 tracking-tight mb-2"
+                            >
+                                2. 填寫資料
+                            </h3>
+                            <p
+                                class="text-xs text-slate-500 leading-relaxed font-normal max-w-[220px]"
+                            >
+                                設定取還車時間地點，填寫基本聯絡資訊。
+                            </p>
                         </div>
-                        <h3 class="text-xl font-semibold text-gray-900 mb-2">
-                            提交預約
-                        </h3>
-                        <p class="text-gray-600">
-                            填寫基本資料，送出您的預約申請
-                        </p>
-                    </div>
 
-                    <div class="text-center">
+                        <!-- 步驟 3 -->
                         <div
-                            class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4"
+                            class="group flex flex-col items-start lg:items-center text-left lg:text-center"
                         >
-                            <span class="text-2xl font-bold text-blue-900"
-                                >4</span
+                            <div
+                                class="w-14 h-14 rounded-2xl bg-white border border-slate-200/80 shadow-[0_4px_16px_-2px_rgba(0,0,0,0.04)] group-hover:border-blue-500 group-hover:shadow-[0_8px_24px_-4px_rgba(37,99,235,0.12)] group-hover:-translate-y-1 transition-all duration-300 flex items-center justify-center relative mb-6"
                             >
+                                <span
+                                    class="text-xs font-black font-mono tracking-wider text-slate-400 group-hover:text-blue-600 transition-colors"
+                                    >03</span
+                                >
+                                <span
+                                    class="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-blue-500 border-2 border-white opacity-0 group-hover:opacity-100 transition-opacity animate-pulse"
+                                ></span>
+                            </div>
+                            <h3
+                                class="text-sm font-extrabold text-slate-900 tracking-tight mb-2"
+                            >
+                                3. 確認送出
+                            </h3>
+                            <p
+                                class="text-xs text-slate-500 leading-relaxed font-normal max-w-[220px]"
+                            >
+                                核對預約細節與租賃條款，完成線上送出。
+                            </p>
                         </div>
-                        <h3 class="text-xl font-semibold text-gray-900 mb-2">
-                            取車出發
-                        </h3>
-                        <p class="text-gray-600">
-                            預約確認後，依約定時間取車展開旅程
-                        </p>
+
+                        <!-- 步驟 4 -->
+                        <div
+                            class="group flex flex-col items-start lg:items-center text-left lg:text-center"
+                        >
+                            <div
+                                class="w-14 h-14 rounded-2xl bg-white border border-slate-200/80 shadow-[0_4px_16px_-2px_rgba(0,0,0,0.04)] group-hover:border-blue-500 group-hover:shadow-[0_8px_24px_-4px_rgba(37,99,235,0.12)] group-hover:-translate-y-1 transition-all duration-300 flex items-center justify-center relative mb-6"
+                            >
+                                <span
+                                    class="text-xs font-black font-mono tracking-wider text-slate-400 group-hover:text-blue-600 transition-colors"
+                                    >04</span
+                                >
+                                <span
+                                    class="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-blue-500 border-2 border-white opacity-0 group-hover:opacity-100 transition-opacity animate-pulse"
+                                ></span>
+                            </div>
+                            <h3
+                                class="text-sm font-extrabold text-slate-900 tracking-tight mb-2"
+                            >
+                                4. 開心出發
+                            </h3>
+                            <p
+                                class="text-xs text-slate-500 leading-relaxed font-normal max-w-[220px]"
+                            >
+                                依約定時間前往門市取車，踏上美好行程。
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>

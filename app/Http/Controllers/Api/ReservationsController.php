@@ -127,7 +127,7 @@ class ReservationsController extends Controller
             $data = CreateReservationData::fromArray($validated);
 
             $reservation = $useCase->execute($data);
-            $reservation->load(['customer', 'vehicle']);
+            $reservation->load(['customer', 'vehicle', 'order']);
 
             return ApiResponse::success(
                 new ReservationResource($reservation),
@@ -159,7 +159,7 @@ class ReservationsController extends Controller
     {
         try {
             $reservation = $useCase->execute($reservationId);
-            $reservation->load(['customer', 'vehicle']);
+            $reservation->load(['customer', 'vehicle', 'order']);
 
             return ApiResponse::success(
                 new ReservationResource($reservation),
@@ -197,7 +197,7 @@ class ReservationsController extends Controller
         try {
             $reason = $request->input('reason');
             $reservation = $useCase->execute($reservationId, $reason);
-            $reservation->load(['customer', 'vehicle']);
+            $reservation->load(['customer', 'vehicle', 'order']);
 
             return ApiResponse::success(
                 new ReservationResource($reservation),
@@ -235,7 +235,7 @@ class ReservationsController extends Controller
 
         try {
             $reservation->pickUp();
-            $reservation->load(['customer', 'vehicle']);
+            $reservation->load(['customer', 'vehicle', 'order']);
 
             return ApiResponse::success(
                 new ReservationResource($reservation),

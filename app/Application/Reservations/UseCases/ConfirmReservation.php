@@ -5,6 +5,7 @@ namespace App\Application\Reservations\UseCases;
 use App\Domain\Reservations\Repositories\ReservationRepositoryInterface;
 use App\Domain\Reservations\Events\ReservationConfirmed;
 use App\Models\Reservation;
+use App\Models\Order;
 use App\Support\TenantContext;
 use Illuminate\Support\Facades\Event;
 
@@ -38,12 +39,20 @@ class ConfirmReservation
             throw new \RuntimeException('只有待確認的預約可以被確認', 409);
         }
 
-        // 更新預約狀態
-        $reservation = $this->reservationRepository->updateStatus($reservation, Reservation::STATUS_CONFIRMED);
+        // 使用交易包裝狀態更新和訂單創建，確保數據一致性
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($reservation) {
+            // 更新預約狀態
+            $reservation = $this->reservationRepository->updateStatus($reservation, Reservation::STATUS_CONFIRMED);
 
-        // 觸發預約確認事件
-        Event::dispatch(new ReservationConfirmed($reservation));
+            // 自動創建訂單
+            if (!$reservation->order()->exists()) {
+                Order::createFromReservation($reservation);
+            }
 
-        return $reservation;
+            // 觸發預約確認事件
+            Event::dispatch(new ReservationConfirmed($reservation));
+
+            return $reservation;
+        });
     }
 }

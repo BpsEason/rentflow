@@ -109,6 +109,9 @@ class Reservation extends Model
                 throw new \Exception('車輛目前無法租用', 400);
             }
 
+            $startAt = Carbon::parse($data['start_at']);
+            $endAt = Carbon::parse($data['end_at']);
+
             // 檢查車輛是否處於維修時段內，如果預約時間與維修時間重疊，則不可租用
             if ($vehicle->maintenance_start_at && $vehicle->maintenance_expected_end_at) {
                 $maintenanceStart = Carbon::parse($vehicle->maintenance_start_at);
@@ -122,9 +125,6 @@ class Reservation extends Model
             $customer = Customer::where('id', $data['customer_id'])
                 ->where('tenant_id', $data['tenant_id'])
                 ->firstOrFail();
-
-            $startAt = Carbon::parse($data['start_at']);
-            $endAt = Carbon::parse($data['end_at']);
 
             if ($endAt->lte($startAt)) {
                 throw new \Exception('結束時間必須晚於開始時間', 422);
@@ -166,6 +166,15 @@ class Reservation extends Model
                 throw new \Exception('車輛目前無法租用');
             }
 
+            if (isset($data['customer_id'])) {
+                Customer::where('id', $data['customer_id'])
+                    ->where('tenant_id', $this->tenant_id)
+                    ->firstOrFail();
+            }
+
+            $startAt = isset($data['start_at']) ? Carbon::parse($data['start_at']) : $this->start_at;
+            $endAt = isset($data['end_at']) ? Carbon::parse($data['end_at']) : $this->end_at;
+
             // 檢查車輛是否處於維修時段內，如果預約時間與維修時間重疊，則不可租用
             if ($vehicle->maintenance_start_at && $vehicle->maintenance_expected_end_at) {
                 $maintenanceStart = Carbon::parse($vehicle->maintenance_start_at);
@@ -175,15 +184,6 @@ class Reservation extends Model
                     throw new \Exception('車輛目前處於維修時段，無法租用', 400);
                 }
             }
-
-            if (isset($data['customer_id'])) {
-                Customer::where('id', $data['customer_id'])
-                    ->where('tenant_id', $this->tenant_id)
-                    ->firstOrFail();
-            }
-
-            $startAt = isset($data['start_at']) ? Carbon::parse($data['start_at']) : $this->start_at;
-            $endAt = isset($data['end_at']) ? Carbon::parse($data['end_at']) : $this->end_at;
 
             if ($endAt->lte($startAt)) {
                 throw new \Exception('結束時間必須晚於開始時間');
@@ -247,6 +247,11 @@ class Reservation extends Model
         }
 
         $this->update(['status' => self::STATUS_PICKED_UP]);
+
+        // 確保訂單已創建
+        if (!$this->order()->exists()) {
+            \App\Models\Order::createFromReservation($this);
+        }
     }
 
     /**

@@ -48,8 +48,10 @@ class Order extends Model
     public static function generateOrderNumber(int $tenantId): string
     {
         $prefix = 'ORD-' . str_pad($tenantId, 3, '0', STR_PAD_LEFT) . '-';
+        // 使用lockForUpdate()進行排他鎖定，防止併發創建時產生重複編號
         $lastOrder = self::where('tenant_id', $tenantId)
             ->orderBy('id', 'desc')
+            ->lockForUpdate()
             ->first();
 
         if (!$lastOrder) {

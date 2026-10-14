@@ -46,8 +46,9 @@ class TenantContext
             return $this->currentTenant;
         }
 
-        if (Auth::check()) {
-            $user = Auth::user();
+        // 優先檢查API guard（前台JWT認證） - 確保前台API永遠使用正確的JWT認證使用者
+        if (auth('api')->check()) {
+            $user = auth('api')->user();
             $requestedTenantId = request()?->header('X-Tenant-ID');
 
             if ($requestedTenantId) {
@@ -60,10 +61,18 @@ class TenantContext
             }
 
             $this->currentTenant = $user->tenants()->first();
+            return $this->currentTenant;
+        }
 
-            // 保留管理端的Super Admin邏輯，但只在管理端認證環境下觸發
-            if (!$this->currentTenant && $user->hasRole('Super Admin')) {
+        // 只有在API guard未認證時，才檢查web guard（後台Filament Session認證）
+        if (auth('web')->check()) {
+            $user = auth('web')->user();
+
+            // 保留管理端的Super Admin邏輯，只在web guard（後台）環境下觸發
+            if ($user->hasRole('Super Admin')) {
                 $this->currentTenant = Tenant::first();
+            } else {
+                $this->currentTenant = $user->tenants()->first();
             }
         }
 

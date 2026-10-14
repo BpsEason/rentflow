@@ -141,8 +141,19 @@ class CustomerAuthController extends Controller
         $customer = null;
         if ($tenant) {
             $customer = Customer::where('tenant_id', $tenant->id)
-                ->where('user_id', $user->id)
+                ->where(function ($query) use ($user) {
+                    $query->where('user_id', $user->id)
+                        ->orWhere(function ($subQuery) use ($user) {
+                            $subQuery->whereNull('user_id')
+                                ->where('email', $user->email);
+                        });
+                })
                 ->first();
+
+            // 如果找到的是訪客客戶（user_id為null），自動關聯到當前登入的用戶
+            if ($customer && is_null($customer->user_id)) {
+                $customer->update(['user_id' => $user->id]);
+            }
         }
 
         return ApiResponse::success([
@@ -318,10 +329,20 @@ class CustomerAuthController extends Controller
 
         // 檢查當前租戶下是否已有此用戶的Customer資料
         $customer = Customer::where('tenant_id', $tenant->id)
-            ->where('user_id', $user->id)
+            ->where(function ($query) use ($user) {
+                $query->where('user_id', $user->id)
+                    ->orWhere(function ($subQuery) use ($user) {
+                        $subQuery->whereNull('user_id')
+                            ->where('email', $user->email);
+                    });
+            })
             ->first();
 
         if ($customer) {
+            // 如果找到的是訪客客戶（user_id為null），自動關聯到當前登入的用戶
+            if (is_null($customer->user_id)) {
+                $customer->update(['user_id' => $user->id]);
+            }
             // 更新現有資料
             $customer->update(array_merge($validated, [
                 'email' => $user->email,

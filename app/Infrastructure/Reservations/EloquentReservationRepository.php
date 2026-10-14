@@ -16,6 +16,7 @@ class EloquentReservationRepository implements ReservationRepositoryInterface
     {
         return Reservation::where('id', $reservationId)
             ->where('tenant_id', $tenantId)
+            ->with('order')
             ->first();
     }
 
@@ -60,6 +61,6 @@ class EloquentReservationRepository implements ReservationRepositoryInterface
 
     public function getAllForTenant(int $tenantId)
     {
-        return Reservation::where('tenant_id', $tenantId)->get();
+        return Reservation::where('tenant_id', $tenantId)->with('order')->get();
     }
 }
