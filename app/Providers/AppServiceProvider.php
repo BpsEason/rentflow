@@ -34,5 +34,6 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Role::class, RolePolicy::class);
         Gate::policy(User::class, UserPolicy::class);
         Gate::policy(\App\Domain\Rental\Models\Customer::class, \App\Policies\CustomerPolicy::class);
+        Gate::policy(\App\Models\Branch::class, \App\Policies\BranchPolicy::class);
     }
 }

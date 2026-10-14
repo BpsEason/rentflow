@@ -34,6 +34,8 @@ class Reservation extends Model
         'tenant_id',
         'customer_id',
         'vehicle_id',
+        'pickup_branch_id',
+        'return_branch_id',
         'start_at',
         'end_at',
         'status',
@@ -65,6 +67,22 @@ class Reservation extends Model
     public function order(): \Illuminate\Database\Eloquent\Relations\HasOne
     {
         return $this->hasOne(Order::class);
+    }
+
+    /**
+     * 取車據點
+     */
+    public function pickupBranch(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Branch::class, 'pickup_branch_id');
+    }
+
+    /**
+     * 還車據點
+     */
+    public function returnBranch(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Branch::class, 'return_branch_id');
     }
 
     public static function hasTimeConflict(int $vehicleId, Carbon $startAt, Carbon $endAt, ?int $excludeReservationId = null): bool
@@ -138,9 +156,31 @@ class Reservation extends Model
                 throw new \Exception('指定時間區間內車輛已被預約', 409);
             }
 
+            // 驗證取車與還車據點（必須提供）
+            if (!isset($data['pickup_branch_id'], $data['return_branch_id'])) {
+                throw new \Exception('取車與還車據點必須同時指定', 422);
+            }
+
+            // 驗證兩個據點都屬於當前租戶且為啟用狀態
+            $validBranches = \App\Models\Branch::where('tenant_id', $data['tenant_id'])
+                ->where('is_active', true)
+                ->whereIn('id', [$data['pickup_branch_id'], $data['return_branch_id']])
+                ->count();
+
+            if ($validBranches !== 2) {
+                throw new \Exception('取車或還車據點無效，請確認據點屬於您的租戶且已啟用', 400);
+            }
+
+            // 檢查車輛是否能在取車時間到位於取車據點
+            if (!$vehicle->canBeAtBranchAt($data['pickup_branch_id'], $startAt)) {
+                $expectedBranchId = $vehicle->getExpectedBranchIdAt($startAt);
+                $expectedBranch = $expectedBranchId ? \App\Models\Branch::find($expectedBranchId)?->name : '未知據點';
+                throw new \Exception("車輛在取車時間預計位於【{$expectedBranch}】，無法在指定據點取車", 400);
+            }
+
             $pricingData = self::calculateAmount($vehicle, $startAt, $endAt);
 
-            return self::create([
+            $reservationData = [
                 'tenant_id' => $data['tenant_id'],
                 'customer_id' => $data['customer_id'],
                 'vehicle_id' => $data['vehicle_id'],
@@ -149,7 +189,15 @@ class Reservation extends Model
                 'status' => $data['status'] ?? self::STATUS_PENDING,
                 'amount' => $pricingData['amount'],
                 'rental_days' => $pricingData['rental_days'],
-            ]);
+            ];
+
+            // 如果有提供取還車據點，一併儲存
+            if (isset($data['pickup_branch_id'], $data['return_branch_id'])) {
+                $reservationData['pickup_branch_id'] = $data['pickup_branch_id'];
+                $reservationData['return_branch_id'] = $data['return_branch_id'];
+            }
+
+            return self::create($reservationData);
         });
     }
 
@@ -223,6 +271,38 @@ class Reservation extends Model
         }
 
         $this->update(['status' => self::STATUS_CONFIRMED]);
+    }
+
+    /**
+     * 標記為已取車
+     */
+    public function markAsPickedUp(): void
+    {
+        if (!in_array($this->status, [self::STATUS_CONFIRMED])) {
+            throw new \RuntimeException('只有已確認狀態的預約可以標記為已取車');
+        }
+
+        $this->update(['status' => self::STATUS_PICKED_UP]);
+    }
+
+    /**
+     * 標記為已歸還，並更新車輛的目前據點
+     */
+    public function markAsReturned(): void
+    {
+        if (!in_array($this->status, [self::STATUS_PICKED_UP])) {
+            throw new \RuntimeException('只有已取車狀態的預約可以標記為已歸還');
+        }
+
+        DB::transaction(function () {
+            // 更新預約狀態
+            $this->update(['status' => self::STATUS_RETURNED]);
+
+            // 更新車輛的目前所在地為此預約的還車據點
+            if ($this->return_branch_id) {
+                $this->vehicle()->update(['current_branch_id' => $this->return_branch_id]);
+            }
+        });
     }
 
     /**

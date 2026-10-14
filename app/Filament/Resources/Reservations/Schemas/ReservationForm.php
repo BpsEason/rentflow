@@ -77,6 +77,36 @@ class ReservationForm
                             ->label('結束時間')
                             ->required()
                             ->placeholder('選擇結束時間'),
+
+                        Forms\Components\Select::make('pickup_branch_id')
+                            ->label('取車據點')
+                            ->options(function () use ($user, $tenant) {
+                                $query = \App\Models\Branch::query();
+
+                                if (!$user->hasRole('Super Admin') && $tenant) {
+                                    $query->where('tenant_id', $tenant->id)
+                                        ->where('is_active', true);
+                                }
+
+                                return $query->pluck('name', 'id');
+                            })
+                            ->required()
+                            ->placeholder('選擇取車據點'),
+
+                        Forms\Components\Select::make('return_branch_id')
+                            ->label('還車據點')
+                            ->options(function () use ($user, $tenant) {
+                                $query = \App\Models\Branch::query();
+
+                                if (!$user->hasRole('Super Admin') && $tenant) {
+                                    $query->where('tenant_id', $tenant->id)
+                                        ->where('is_active', true);
+                                }
+
+                                return $query->pluck('name', 'id');
+                            })
+                            ->required()
+                            ->placeholder('選擇還車據點'),
                     ]),
 
                 Section::make('預約狀態與費用')

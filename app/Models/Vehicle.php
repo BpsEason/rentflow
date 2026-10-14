@@ -25,6 +25,7 @@ class Vehicle extends Model
 
     protected $fillable = [
         'tenant_id',
+        'current_branch_id',
         'name',
         'plate_number',
         'status',
@@ -75,5 +76,44 @@ class Vehicle extends Model
     public function reservations(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(Reservation::class);
+    }
+
+    /**
+     * 車輛目前所在地的據點
+     */
+    public function currentBranch(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Branch::class, 'current_branch_id');
+    }
+
+    /**
+     * 查詢指定時間點車輛的預計位置據點ID
+     * 用於判斷未來預約時車輛是否能在指定據點
+     */
+    public function getExpectedBranchIdAt(\Carbon\Carbon $dateTime): ?int
+    {
+        // 找到在指定時間之前最後一個完成的預約
+        $lastReservation = $this->reservations()
+            ->whereIn('status', [Reservation::STATUS_RETURNED])
+            ->where('end_at', '<=', $dateTime)
+            ->orderByDesc('end_at')
+            ->first();
+
+        if ($lastReservation) {
+            // 如果有最後一個完成的預約，車輛會在該預約的還車據點
+            return $lastReservation->return_branch_id;
+        }
+
+        // 如果沒有任何歷史預約，使用目前的據點
+        return $this->current_branch_id;
+    }
+
+    /**
+     * 檢查車輛在指定時間是否能到位於指定據點
+     */
+    public function canBeAtBranchAt(int $branchId, \Carbon\Carbon $dateTime): bool
+    {
+        $expectedBranchId = $this->getExpectedBranchIdAt($dateTime);
+        return $expectedBranchId === $branchId;
     }
 }

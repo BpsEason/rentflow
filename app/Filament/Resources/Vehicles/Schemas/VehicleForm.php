@@ -137,6 +137,20 @@ class VehicleForm
                             ])
                             ->nullable()
                             ->placeholder('選擇變速箱類型'),
+
+                        Select::make('current_branch_id')
+                            ->label('目前所在地據點')
+                            ->options(function () {
+                                $tenant = filament()->getTenant();
+                                if ($tenant) {
+                                    return \App\Models\Branch::where('tenant_id', $tenant->id)
+                                        ->where('is_active', true)
+                                        ->pluck('name', 'id');
+                                }
+                                return [];
+                            })
+                            ->nullable()
+                            ->placeholder('選擇車輛目前所在的據點'),
                     ]),
 
                 Section::make('維修管理')
