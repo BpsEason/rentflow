@@ -25,6 +25,8 @@ class TenantContext
             return null;
         }
 
+        // 不論是否登入，公開路由都只能存取is_public=true的租戶
+        // 已登入的使用者也可以存取公開租戶，不需要是該租戶的成員
         $tenant = Tenant::where('slug', $tenantSlug)
             ->where('is_public', true)
             ->first();
@@ -41,12 +43,14 @@ class TenantContext
      */
     public function getCurrentTenant(): ?Tenant
     {
-        // 如果已經設置了currentTenant（比如公開API的中間件設置的），直接返回
+        // 如果已經通過中間件解析了租戶（從URL的tenantSlug），直接返回
+        // 公開路由已經在resolvePublicTenant中驗證過is_public=true，不論是否登入都可存取
+        // 讓控制器自己處理權限驗證，這樣控制器可以返回正確的404而不是中間件返回403
         if ($this->currentTenant) {
             return $this->currentTenant;
         }
 
-        // 優先檢查API guard（前台JWT認證） - 確保前台API永遠使用正確的JWT認證使用者
+        // 處理header傳入X-Tenant-ID的場景
         if (auth('api')->check()) {
             $user = auth('api')->user();
             $requestedTenantId = request()?->header('X-Tenant-ID');
@@ -60,6 +64,7 @@ class TenantContext
                 return null;
             }
 
+            // 只有當請求中沒有指定任何租戶時，才返回用戶的第一個租戶
             $this->currentTenant = $user->tenants()->first();
             return $this->currentTenant;
         }

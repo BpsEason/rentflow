@@ -24,6 +24,9 @@ class CustomerCrossTenantReservationTest extends TestCase
             'password' => bcrypt('password123'),
         ]);
 
+        // 手動將使用者關聯到租戶A，符合正式環境的授權規則
+        $user->tenants()->attach($tenantA->id);
+
         // 創建租戶A的有效據點
         $pickupBranch = \App\Models\Branch::factory()->create([
             'tenant_id' => $tenantA->id,
@@ -109,6 +112,10 @@ class CustomerCrossTenantReservationTest extends TestCase
         $user = User::factory()->create([
             'email' => 'member@example.com',
         ]);
+
+        // 手動將使用者關聯到租戶A和租戶B，符合正式環境的授權規則
+        $user->tenants()->attach($tenantA->id);
+        $user->tenants()->attach($tenantB->id);
 
         // 為每個租戶創建有效據點
         $pickupBranchA = \App\Models\Branch::factory()->create([
@@ -217,6 +224,9 @@ class CustomerCrossTenantReservationTest extends TestCase
         $tenant = Tenant::factory()->create(['slug' => 'tenant-a', 'is_public' => true]);
         $user = User::factory()->create(['email' => 'member@example.com']);
 
+        // 手動將使用者關聯到租戶，符合正式環境的授權規則
+        $user->tenants()->attach($tenant->id);
+
         // 創建租戶的有效據點
         $pickupBranch = \App\Models\Branch::factory()->create([
             'tenant_id' => $tenant->id,
@@ -302,6 +312,9 @@ class CustomerCrossTenantReservationTest extends TestCase
 
         $user = User::factory()->create();
 
+        // 手動將使用者關聯到租戶A，符合正式環境的授權規則
+        $user->tenants()->attach($tenantA->id);
+
         // 創建租戶A的有效據點
         $pickupBranch = \App\Models\Branch::factory()->create([
             'tenant_id' => $tenantA->id,
@@ -357,6 +370,9 @@ class CustomerCrossTenantReservationTest extends TestCase
         // 創建租戶
         $tenant = Tenant::factory()->create(['slug' => 'tenant-a', 'is_public' => true]);
         $user = User::factory()->create(['email' => 'member@example.com']);
+
+        // 手動將使用者關聯到租戶，符合正式環境的授權規則
+        $user->tenants()->attach($tenant->id);
 
         // 創建租戶的有效據點
         $pickupBranch = \App\Models\Branch::factory()->create([

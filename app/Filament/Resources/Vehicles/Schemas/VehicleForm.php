@@ -13,7 +13,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\DateTimePicker;
-use Filament\Forms\Components\Group;
+use Filament\Schemas\Components\Group;
 
 class VehicleForm
 {

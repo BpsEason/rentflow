@@ -38,6 +38,9 @@ class CancelReservationTest extends TestCase
             'password' => bcrypt('password123'),
         ]);
 
+        // 手動將使用者關聯到租戶，符合正式環境的授權規則
+        $this->user->tenants()->attach($this->tenant->id);
+
         // 創建客戶資料
         $this->customer = Customer::create([
             'tenant_id' => $this->tenant->id,

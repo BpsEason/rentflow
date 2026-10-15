@@ -163,176 +163,34 @@ class RentalDemoSeeder extends Seeder
     }
 
     /**
-     * 為租戶建立車輛，分配到不同分店
+     * 為租戶查詢既有車輛
      */
     private function createVehiclesForTenant($tenant, $branches): array
     {
-        $branchList = collect($branches)->values();
+        // 依租戶查詢所有既有車輛，並預載價格資料
+        $vehicles = Vehicle::where('tenant_id', $tenant->id)
+            ->with('pricing')
+            ->get();
 
-        // 車型資料
-        $vehicleTemplates = [
-            [
-                'name' => 'Toyota Yaris',
-                'seats' => 5,
-                'fuel_type' => Vehicle::FUEL_PETROL,
-                'transmission' => Vehicle::TRANSMISSION_AUTOMATIC,
-                'manufacture_year' => 2021,
-                'weekday_price' => 1200,
-                'weekend_price' => 1500,
-                'holiday_price' => 1800,
-            ],
-            [
-                'name' => 'Toyota Corolla Altis',
-                'seats' => 5,
-                'fuel_type' => Vehicle::FUEL_PETROL,
-                'transmission' => Vehicle::TRANSMISSION_AUTOMATIC,
-                'manufacture_year' => 2022,
-                'weekday_price' => 1500,
-                'weekend_price' => 1800,
-                'holiday_price' => 2100,
-            ],
-            [
-                'name' => 'Toyota Corolla Cross',
-                'seats' => 5,
-                'fuel_type' => Vehicle::FUEL_HYBRID,
-                'transmission' => Vehicle::TRANSMISSION_AUTOMATIC,
-                'manufacture_year' => 2023,
-                'weekday_price' => 2000,
-                'weekend_price' => 2400,
-                'holiday_price' => 2800,
-            ],
-            [
-                'name' => 'Toyota RAV4',
-                'seats' => 5,
-                'fuel_type' => Vehicle::FUEL_PETROL,
-                'transmission' => Vehicle::TRANSMISSION_AUTOMATIC,
-                'manufacture_year' => 2023,
-                'weekday_price' => 2500,
-                'weekend_price' => 3000,
-                'holiday_price' => 3500,
-            ],
-            [
-                'name' => 'Honda HR-V',
-                'seats' => 5,
-                'fuel_type' => Vehicle::FUEL_PETROL,
-                'transmission' => Vehicle::TRANSMISSION_AUTOMATIC,
-                'manufacture_year' => 2022,
-                'weekday_price' => 1800,
-                'weekend_price' => 2200,
-                'holiday_price' => 2600,
-            ],
-            [
-                'name' => 'Nissan Kicks',
-                'seats' => 5,
-                'fuel_type' => Vehicle::FUEL_ELECTRIC,
-                'transmission' => Vehicle::TRANSMISSION_AUTOMATIC,
-                'manufacture_year' => 2022,
-                'weekday_price' => 1600,
-                'weekend_price' => 1900,
-                'holiday_price' => 2300,
-            ],
-            [
-                'name' => 'Mazda CX-5',
-                'seats' => 5,
-                'fuel_type' => Vehicle::FUEL_DIESEL,
-                'transmission' => Vehicle::TRANSMISSION_AUTOMATIC,
-                'manufacture_year' => 2020,
-                'weekday_price' => 2200,
-                'weekend_price' => 2600,
-                'holiday_price' => 3000,
-            ],
-            [
-                'name' => 'Toyota Sienta',
-                'seats' => 7,
-                'fuel_type' => Vehicle::FUEL_PETROL,
-                'transmission' => Vehicle::TRANSMISSION_AUTOMATIC,
-                'manufacture_year' => 2022,
-                'weekday_price' => 2300,
-                'weekend_price' => 2700,
-                'holiday_price' => 3100,
-            ],
-            [
-                'name' => 'Honda CR-V',
-                'seats' => 5,
-                'fuel_type' => Vehicle::FUEL_PETROL,
-                'transmission' => Vehicle::TRANSMISSION_AUTOMATIC,
-                'manufacture_year' => 2021,
-                'weekday_price' => 2400,
-                'weekend_price' => 2800,
-                'holiday_price' => 3200,
-            ],
-            [
-                'name' => 'Mitsubishi Zinger',
-                'seats' => 7,
-                'fuel_type' => Vehicle::FUEL_PETROL,
-                'transmission' => Vehicle::TRANSMISSION_AUTOMATIC,
-                'manufacture_year' => 2017,
-                'weekday_price' => 1400,
-                'weekend_price' => 1700,
-                'holiday_price' => 2000,
-            ],
-        ];
-
-        $vehicles = [];
-        $plateNumberCounter = 1;
-        $tenantSlug = $tenant->slug;
-
-        foreach ($vehicleTemplates as $index => $template) {
-            // 每個車型建立2台，總共20台車
-            for ($copy = 0; $copy < 2; $copy++) {
-                // 輪流分配到不同分店
-                $branchIndex = ($index * 2 + $copy) % count($branchList);
-                $currentBranch = $branchList[$branchIndex];
-
-                // 設定狀態，最後2台設定為維修或停用來測試各種狀態
-                $status = Vehicle::STATUS_AVAILABLE;
-                $maintenanceStart = null;
-                $maintenanceEnd = null;
-                if ($index === count($vehicleTemplates) - 1 && $copy === 0) {
-                    // 最後一台設定為維修中
-                    $status = Vehicle::STATUS_MAINTENANCE;
-                    $maintenanceStart = Carbon::now()->subDays(2);
-                    $maintenanceEnd = Carbon::now()->addDays(3);
-                } elseif ($index === count($vehicleTemplates) - 1 && $copy === 1) {
-                    // 倒數第二台設定為停用
-                    $status = Vehicle::STATUS_INACTIVE;
-                }
-
-                // 產生唯一車牌
-                $plateSuffix = str_pad($plateNumberCounter++, 4, '0', STR_PAD_LEFT);
-                $plateNumber = "demo-{$tenantSlug}-{$plateSuffix}";
-
-                $vehicle = Vehicle::updateOrCreate(
-                    ['tenant_id' => $tenant->id, 'plate_number' => $plateNumber],
-                    [
-                        'current_branch_id' => $currentBranch->id,
-                        'name' => $template['name'],
-                        'seats' => $template['seats'],
-                        'status' => $status,
-                        'description' => "{$template['name']} - 演示用車輛",
-                        'manufacture_year' => $template['manufacture_year'],
-                        'mileage' => rand(30000, 150000),
-                        'fuel_type' => $template['fuel_type'],
-                        'transmission' => $template['transmission'],
-                        'maintenance_start_at' => $maintenanceStart,
-                        'maintenance_expected_end_at' => $maintenanceEnd,
-                    ]
-                );
-                $vehicles[] = $vehicle;
-
-                // 建立價格資料
-                VehiclePricing::updateOrCreate(
-                    ['tenant_id' => $tenant->id, 'vehicle_id' => $vehicle->id],
-                    [
-                        'weekday_price' => $template['weekday_price'],
-                        'weekend_price' => $template['weekend_price'],
-                        'holiday_price' => $template['holiday_price'],
-                    ]
-                );
-            }
+        if ($vehicles->isEmpty()) {
+            $this->command->warn("  租戶 {$tenant->name} 沒有任何車輛，將略過預約建立");
+            return [];
         }
 
-        return $vehicles;
+        // 過濾出有價格資料的車輛，預約建立需要價格
+        $vehiclesWithPricing = $vehicles->filter(function ($vehicle) {
+            return $vehicle->pricing !== null;
+        });
+
+        if ($vehiclesWithPricing->isEmpty()) {
+            $this->command->warn("  租戶 {$tenant->name} 的所有車輛都沒有價格資料，將略過預約建立");
+            return [];
+        }
+
+        $this->command->info("  找到 {$vehicles->count()} 台車輛，其中 {$vehiclesWithPricing->count()} 台有價格資料");
+
+        // 只返回有價格的車輛用於建立預約
+        return $vehiclesWithPricing->all();
     }
 
     /**
