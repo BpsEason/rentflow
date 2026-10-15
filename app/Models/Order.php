@@ -78,8 +78,8 @@ class Order extends Model
                 throw new \RuntimeException('Order already exists for this reservation.');
             }
 
-            // 驗證預約狀態必須是已確認才能建立訂單
-            if (!in_array($reservation->status, [Reservation::STATUS_CONFIRMED, Reservation::STATUS_PICKED_UP])) {
+            // 驗證預約狀態必須是已確認、已取車或已歸還才能建立訂單
+            if (!in_array($reservation->status, [Reservation::STATUS_CONFIRMED, Reservation::STATUS_PICKED_UP, Reservation::STATUS_RETURNED])) {
                 throw new \RuntimeException('Cannot create order from an unconfirmed reservation.');
             }
 

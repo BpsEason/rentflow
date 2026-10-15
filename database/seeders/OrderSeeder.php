@@ -13,9 +13,12 @@ class OrderSeeder extends Seeder
      */
     public function run(): void
     {
-        // 從現有的已確認預約建立訂單
-        $confirmedReservations = Reservation::where('status', Reservation::STATUS_CONFIRMED)
-            ->orWhere('status', Reservation::STATUS_PICKED_UP)
+        // 從現有的已確認、已取車或已歸還預約建立訂單
+        $confirmedReservations = Reservation::whereIn('status', [
+            Reservation::STATUS_CONFIRMED,
+            Reservation::STATUS_PICKED_UP,
+            Reservation::STATUS_RETURNED
+        ])
             ->get();
 
         foreach ($confirmedReservations as $reservation) {

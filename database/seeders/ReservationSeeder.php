@@ -238,18 +238,19 @@ class ReservationSeeder extends Seeder
 
         // 建立數筆今日取車的預約
         $todayPickupCount = min(3, $availableVehiclesForToday->count());
+        $createdTodayPickup = 0;
 
-        for ($i = 0; $i < $todayPickupCount; $i++) {
+        while ($createdTodayPickup < $todayPickupCount) {
             $availableVehicles = $availableVehiclesForToday->whereNotIn('vehicle.id', $usedVehicles);
             if ($availableVehicles->isEmpty()) break;
 
             $item = $availableVehicles->random();
             $vehicle = $item['vehicle'];
-            $usedVehicles->push($vehicle->id);
 
             $pickupBranchId = $item['branch_id'];
             $pickupBranch = $branches->firstWhere('id', $pickupBranchId);
             if (!$pickupBranch) {
+                $usedVehicles->push($vehicle->id);
                 continue;
             }
 
@@ -258,11 +259,13 @@ class ReservationSeeder extends Seeder
 
             // 確保符合最少租用時間要求（這裡是57小時，遠超過4小時）
             if (!Reservation::validateMinimumRentalTime($startAt, $endAt)) {
+                $usedVehicles->push($vehicle->id);
                 continue;
             }
 
             // 檢查時間衝突
             if (Reservation::hasTimeConflict($vehicle->id, $startAt, $endAt)) {
+                $usedVehicles->push($vehicle->id);
                 continue;
             }
 
@@ -289,7 +292,11 @@ class ReservationSeeder extends Seeder
                     'end_at' => $endAt,
                     'status' => $status,
                 ]);
+                // 只有預約成功建立後，才將車輛加入已使用列表
+                $usedVehicles->push($vehicle->id);
+                $createdTodayPickup++;
             } catch (\Exception $e) {
+                $usedVehicles->push($vehicle->id);
                 if (!in_array($e->getCode(), [400, 409, 422])) {
                     Log::warning('建立今日取車預約時發生非預期錯誤: ' . $e->getMessage());
                 }
@@ -299,17 +306,20 @@ class ReservationSeeder extends Seeder
 
         // 建立數筆今日還車的預約（昨天取車，今天還）
         $todayReturnCount = min(2, $availableVehiclesForToday->count() - $usedVehicles->count());
-        for ($i = 0; $i < $todayReturnCount; $i++) {
+        $createdTodayReturn = 0;
+
+        while ($createdTodayReturn < $todayReturnCount) {
             $availableVehicles = $availableVehiclesForToday->whereNotIn('vehicle.id', $usedVehicles);
             if ($availableVehicles->isEmpty()) break;
 
             $item = $availableVehicles->random();
             $vehicle = $item['vehicle'];
-            $usedVehicles->push($vehicle->id);
 
-            $pickupBranchId = $vehicle->pickup_branch_id;
+            // 正確使用車輛當前所在的分店ID，而不是vehicle->pickup_branch_id
+            $pickupBranchId = $item['branch_id'];
             $pickupBranch = $branches->firstWhere('id', $pickupBranchId);
             if (!$pickupBranch) {
+                $usedVehicles->push($vehicle->id);
                 continue;
             }
 
@@ -317,10 +327,12 @@ class ReservationSeeder extends Seeder
             $endAt = $today->copy()->setTime(18, 0);  // 今天還車
 
             if (!Reservation::validateMinimumRentalTime($startAt, $endAt)) {
+                $usedVehicles->push($vehicle->id);
                 continue;
             }
 
             if (Reservation::hasTimeConflict($vehicle->id, $startAt, $endAt)) {
+                $usedVehicles->push($vehicle->id);
                 continue;
             }
 
@@ -344,7 +356,11 @@ class ReservationSeeder extends Seeder
                     'end_at' => $endAt,
                     'status' => $status,
                 ]);
+                // 只有預約成功建立後，才將車輛加入已使用列表
+                $usedVehicles->push($vehicle->id);
+                $createdTodayReturn++;
             } catch (\Exception $e) {
+                $usedVehicles->push($vehicle->id);
                 if (!in_array($e->getCode(), [400, 409, 422])) {
                     Log::warning('建立今日還車預約時發生非預期錯誤: ' . $e->getMessage());
                 }
@@ -354,17 +370,20 @@ class ReservationSeeder extends Seeder
 
         // 確保有一些PENDING的待確認預約
         $pendingCount = min(4, $availableVehiclesForToday->count() - $usedVehicles->count());
-        for ($i = 0; $i < $pendingCount; $i++) {
+        $createdPending = 0;
+
+        while ($createdPending < $pendingCount) {
             $availableVehicles = $availableVehiclesForToday->whereNotIn('vehicle.id', $usedVehicles);
             if ($availableVehicles->isEmpty()) break;
 
             $item = $availableVehicles->random();
             $vehicle = $item['vehicle'];
-            $usedVehicles->push($vehicle->id);
 
-            $pickupBranchId = $vehicle->pickup_branch_id;
+            // 正確使用車輛當前所在的分店ID，而不是vehicle->pickup_branch_id
+            $pickupBranchId = $item['branch_id'];
             $pickupBranch = $branches->firstWhere('id', $pickupBranchId);
             if (!$pickupBranch) {
+                $usedVehicles->push($vehicle->id);
                 continue;
             }
 
@@ -398,7 +417,11 @@ class ReservationSeeder extends Seeder
                     'end_at' => $endAt,
                     'status' => Reservation::STATUS_PENDING,
                 ]);
+                // 只有預約成功建立後，才將車輛加入已使用列表
+                $usedVehicles->push($vehicle->id);
+                $createdPending++;
             } catch (\Exception $e) {
+                $usedVehicles->push($vehicle->id);
                 if (!in_array($e->getCode(), [400, 409, 422])) {
                     Log::warning('建立待確認預約時發生非預期錯誤: ' . $e->getMessage());
                 }
@@ -451,17 +474,20 @@ class ReservationSeeder extends Seeder
             $targetDate = $today->copy()->addDays($dayOffset);
             $neededReservations = (int)(count($availableVehicles) * $targetRate / 100);
             $createdCount = 0;
+            $usedVehiclesForDay = collect();
 
             // 隨機選擇車輛來達到目標出租率
-            $shuffledVehicles = $availableVehicles->shuffle();
+            while ($createdCount < $neededReservations) {
+                $availableVehiclesForDay = $availableVehicles->whereNotIn('vehicle.id', $usedVehiclesForDay);
+                if ($availableVehiclesForDay->isEmpty()) break;
 
-            foreach ($shuffledVehicles as $item) {
+                $item = $availableVehiclesForDay->random();
                 $vehicle = $item['vehicle'];
-                if ($createdCount >= $neededReservations) break;
 
                 $pickupBranchId = $item['branch_id'];
                 $pickupBranch = $branches->firstWhere('id', $pickupBranchId);
                 if (!$pickupBranch) {
+                    $usedVehiclesForDay->push($vehicle->id);
                     continue;
                 }
 
@@ -471,10 +497,12 @@ class ReservationSeeder extends Seeder
                 $endAt = $startAt->copy()->addDays($rentalDays)->setTime(17, 0);
 
                 if (!Reservation::validateMinimumRentalTime($startAt, $endAt)) {
+                    $usedVehiclesForDay->push($vehicle->id);
                     continue;
                 }
 
                 if (Reservation::hasTimeConflict($vehicle->id, $startAt, $endAt)) {
+                    $usedVehiclesForDay->push($vehicle->id);
                     continue;
                 }
 
@@ -507,8 +535,11 @@ class ReservationSeeder extends Seeder
                         'end_at' => $endAt,
                         'status' => $status,
                     ]);
+                    // 只有預約成功建立後，才將車輛加入已使用列表
+                    $usedVehiclesForDay->push($vehicle->id);
                     $createdCount++;
                 } catch (\Exception $e) {
+                    $usedVehiclesForDay->push($vehicle->id);
                     if (!in_array($e->getCode(), [400, 409, 422])) {
                         Log::warning('建立未來一週預約時發生非預期錯誤: ' . $e->getMessage());
                     }
@@ -563,14 +594,20 @@ class ReservationSeeder extends Seeder
 
             // 每天隨機建立一些預約
             $dailyReservations = rand(2, 6);
+            $createdDaily = 0;
+            $usedVehiclesForDay = collect();
 
-            for ($i = 0; $i < $dailyReservations; $i++) {
-                $item = $availableVehicles->random();
+            while ($createdDaily < $dailyReservations) {
+                $availableVehiclesForDay = $availableVehicles->whereNotIn('vehicle.id', $usedVehiclesForDay);
+                if ($availableVehiclesForDay->isEmpty()) break;
+
+                $item = $availableVehiclesForDay->random();
                 $vehicle = $item['vehicle'];
 
                 $pickupBranchId = $item['branch_id'];
                 $pickupBranch = $branches->firstWhere('id', $pickupBranchId);
                 if (!$pickupBranch) {
+                    $usedVehiclesForDay->push($vehicle->id);
                     continue;
                 }
 
@@ -580,10 +617,12 @@ class ReservationSeeder extends Seeder
                 $endAt = $startAt->copy()->addDays($rentalDays)->setTime(18, 0);
 
                 if (!Reservation::validateMinimumRentalTime($startAt, $endAt)) {
+                    $usedVehiclesForDay->push($vehicle->id);
                     continue;
                 }
 
                 if (Reservation::hasTimeConflict($vehicle->id, $startAt, $endAt)) {
+                    $usedVehiclesForDay->push($vehicle->id);
                     continue;
                 }
 
@@ -615,7 +654,11 @@ class ReservationSeeder extends Seeder
                         'end_at' => $endAt,
                         'status' => $status,
                     ]);
+                    // 只有預約成功建立後，才將車輛加入已使用列表
+                    $usedVehiclesForDay->push($vehicle->id);
+                    $createdDaily++;
                 } catch (\Exception $e) {
+                    $usedVehiclesForDay->push($vehicle->id);
                     if (!in_array($e->getCode(), [400, 409, 422])) {
                         Log::warning('建立未來一個月預約時發生非預期錯誤: ' . $e->getMessage());
                     }
