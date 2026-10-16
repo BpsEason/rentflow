@@ -15,11 +15,11 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             TenantSeeder::class,
             UserSeeder::class,
-            VehicleSeeder::class,
-            VehiclePricingSeeder::class,
             HolidaySeeder::class,
             CustomerSeeder::class,
-            RentalDemoSeeder::class,
+            RentalDemoSeeder::class, // 先建立分店，再建立車輛
+            VehicleSeeder::class,
+            VehiclePricingSeeder::class,
             ReservationSeeder::class,
             OrderSeeder::class,
         ]);

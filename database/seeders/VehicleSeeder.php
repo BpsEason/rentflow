@@ -9,6 +9,11 @@ use Illuminate\Database\Seeder;
 class VehicleSeeder extends Seeder
 {
     /**
+     * 完整的車輛模板，包含所有要建立的車輛資料
+     */
+    public $vehiclesTemplate = [];
+
+    /**
      * Run the database seeds.
      */
     public function run(): void
@@ -159,8 +164,8 @@ class VehicleSeeder extends Seeder
             ],
         ];
 
-        // 更貼近台灣租車行實際會有的車款 - 總共15台車，符合70%可用、15%保養中、15%停用的比例
-        $vehiclesTemplate = [
+        // 更貼近台灣租車行實際會有的車款 - 總共20台車，包含15台汽車+5台機車，符合70%可用、15%保養中、15%停用的比例
+        $this->vehiclesTemplate = [
             // available（可出租）- 11台 (73%)
             [
                 'name'        => 'Toyota Yaris',
@@ -304,60 +309,53 @@ class VehicleSeeder extends Seeder
             ],
         ];
 
-        // 台灣常見車牌英文前綴（依地區區分，方便識別）
-        $platePrefixes = [
-            1 => ['ABC', 'DEF', 'GHI', 'JKL', 'MNO'], // 台北租車 - 大台北地區常用前綴
-            2 => ['PQR', 'STU', 'VWX', 'YZA', 'BCD'], // 台中租車 - 中台灣常用前綴
-            3 => ['EFG', 'HIJ', 'KLM', 'NOP', 'QRS'], // 高雄租車 - 南台灣常用前綴
-        ];
+        // 所有租戶都使用完整的車輛模板，確保每個租戶都有完整的展示資料
+        $fullVehicleCount = count($this->vehiclesTemplate); // 20台車輛
 
-        // 針對不同規模的租戶，給予不同數量的車輛 (包含新加入的5台機車，第16-20台為機車)
-        $tenantVehicleCounts = [
-            1 => 20, // 台北租車 - 規模最大，取全部20台（15台汽車+5台機車）
-            2 => 20, // 台中租車 - 中型規模，同樣取全部20台，確保能拿到5台機車
-            3 => 20, // 高雄租車 - 小型規模，同樣取全部20台，確保能拿到5台機車
-        ];
-
+        // 為每個租戶動態生成車牌前綴，避免寫死租戶ID
         $tenants = Tenant::all();
 
+        // 為每個租戶分配唯一的車牌前綴起始點，避免跨租戶車牌重複
+        $tenantPrefixBase = 0;
+
         foreach ($tenants as $tenant) {
-            $prefixes = $platePrefixes[$tenant->id] ?? ['XYZ'];
-            $vehicleCount = $tenantVehicleCounts[$tenant->id] ?? 5;
+            // 台灣真實小型車車牌前綴池，每個租戶分配獨立的前綴組，完全避免跨租戶重複
+            // 符合交通部核發的常見車牌前綴組合，無違規字母
+            $tenantPrefixPools = [
+                // 台北租戶(ID:1)使用的前綴
+                ['ABC', 'DEF', 'GHI', 'JKL', 'MNO', 'PQR', 'STU', 'VWX'],
+                // 台中租戶(ID:2)使用的前綴
+                ['YZA', 'BCD', 'EFG', 'HIJ', 'KLM', 'NOP', 'QRS', 'TUV'],
+                // 高雄租戶(ID:3)使用的前綴
+                ['WXY', 'ZAB', 'CDE', 'FGH', 'IJK', 'LMN', 'OPQ', 'RST'],
+            ];
+
+            // 依租戶ID選擇對應的前綴池，不足的租戶自動循環使用
+            $prefixPool = $tenantPrefixPools[($tenant->id - 1) % count($tenantPrefixPools)] ?? ['XYZ'];
+
+            $vehicleCount = $fullVehicleCount; // 所有租戶都使用完整的20台車輛
 
             // 取得此租戶的所有活躍據點，用於分配車輛
             $tenantBranches = \App\Models\Branch::where('tenant_id', $tenant->id)
                 ->where('is_active', true)
                 ->get();
 
-            // 如果沒有據點，先建立預設據點
+            // 如果沒有活躍據點，顯示警告並略過此租戶的車輛填充
             if ($tenantBranches->isEmpty()) {
-                $defaultBranch = \App\Models\Branch::updateOrCreate(
-                    ['tenant_id' => $tenant->id, 'name' => '預設分店'],
-                    [
-                        'address' => '預設地址',
-                        'phone' => '02-12345678',
-                        'is_active' => true,
-                        'business_hours' => json_encode([
-                            'monday' => ['09:00', '21:00'],
-                            'tuesday' => ['09:00', '21:00'],
-                            'wednesday' => ['09:00', '21:00'],
-                            'thursday' => ['09:00', '21:00'],
-                            'friday' => ['09:00', '22:00'],
-                            'saturday' => ['08:00', '22:00'],
-                            'sunday' => ['08:00', '21:00'],
-                        ])
-                    ]
-                );
-                $tenantBranches->push($defaultBranch);
+                $this->command->warn("租戶 {$tenant->name} (ID: {$tenant->id}) 沒有任何活躍分店，將略過車輛填充");
+                continue;
             }
 
-            // 從模板中取前N台車，確保不同租戶有不同數量的車輛
-            $tenantVehicles = array_slice($vehiclesTemplate, 0, $vehicleCount);
+            // 從模板中取前N台車，所有租戶都使用完整的車輛模板
+            $tenantVehicles = array_slice($this->vehiclesTemplate, 0, $vehicleCount);
 
             foreach ($tenantVehicles as $index => $vehicleData) {
                 // 生成真實的台灣車牌格式：3英數-4數字，例如ABC-1234
-                $prefix = $prefixes[$index % count($prefixes)];
-                $number = str_pad((string)(1000 + $index), 4, '0', STR_PAD_LEFT);
+                // 每個租戶從獨立的編號區間開始，確保跨租戶車牌絕不會重複
+                $prefix = $prefixPool[$index % count($prefixPool)];
+                // 每個租戶的編號起始點不同，台北從1001、台中從3001、高雄從5001開始
+                $startNumber = ($tenant->id - 1) * 2000 + 1000;
+                $number = str_pad((string)($startNumber + $index), 4, '0', STR_PAD_LEFT);
                 $plateNumber = $prefix . '-' . $number;
 
                 // 取得對應的圖片路徑
@@ -408,12 +406,14 @@ class VehicleSeeder extends Seeder
                     $vehicleAttributes['maintenance_notes'] = $vehicleData['maintenance_notes'];
                 }
 
+                // 使用updateOrCreate確保車輛存在，並更新缺漏的資料
+                // 唯一識別條件：同一租戶下的同一車牌號碼
                 Vehicle::updateOrCreate(
                     [
                         'tenant_id'    => $tenant->id,
                         'plate_number' => $plateNumber,
                     ],
-                    $vehicleAttributes
+                    array_merge($vehicleAttributes)
                 );
             }
         }

@@ -2,6 +2,8 @@
 
 namespace Database\Seeders;
 
+use App\Domain\Rental\Enums\VehicleType;
+use App\Domain\Rental\Enums\VehicleStatus;
 use App\Models\Tenant;
 use App\Models\Branch;
 use App\Models\Vehicle;
@@ -39,10 +41,17 @@ class RentalDemoSeeder extends Seeder
             // 建立車輛，分配到不同分店
             $vehicles = $this->createVehiclesForTenant($tenant, $branches);
             $this->command->info("  已建立/確認車輛數量: " . count($vehicles));
+            if (empty($vehicles)) {
+                continue;
+            }
 
-            // 建立客戶
-            $customers = $this->createCustomersForTenant($tenant);
-            $this->command->info("  已建立/確認客戶數量: " . count($customers));
+            // 查詢租戶現有客戶
+            $customers = Customer::where('tenant_id', $tenant->id)->get();
+            if ($customers->isEmpty()) {
+                $this->command->warn("  租戶 {$tenant->name} 沒有任何客戶，將略過預約建立");
+                continue;
+            }
+            $this->command->info("  找到 {$customers->count()} 位既有客戶");
 
             // 建立各種預約情境
             $this->createReservationsForTenant($tenant, $branches, $vehicles, $customers);
@@ -163,104 +172,72 @@ class RentalDemoSeeder extends Seeder
     }
 
     /**
-     * 為租戶查詢既有車輛
+     * 為租戶建立車輛
      */
     private function createVehiclesForTenant($tenant, $branches): array
     {
-        // 依租戶查詢所有既有車輛，並預載價格資料
-        $vehicles = Vehicle::where('tenant_id', $tenant->id)
-            ->with('pricing')
-            ->get();
-
-        if ($vehicles->isEmpty()) {
-            $this->command->warn("  租戶 {$tenant->name} 沒有任何車輛，將略過預約建立");
-            return [];
-        }
-
-        // 過濾出有價格資料的車輛，預約建立需要價格
-        $vehiclesWithPricing = $vehicles->filter(function ($vehicle) {
-            return $vehicle->pricing !== null;
-        });
-
-        if ($vehiclesWithPricing->isEmpty()) {
-            $this->command->warn("  租戶 {$tenant->name} 的所有車輛都沒有價格資料，將略過預約建立");
-            return [];
-        }
-
-        $this->command->info("  找到 {$vehicles->count()} 台車輛，其中 {$vehiclesWithPricing->count()} 台有價格資料");
-
-        // 只返回有價格的車輛用於建立預約
-        return $vehiclesWithPricing->all();
-    }
-
-    /**
-     * 為租戶建立客戶
-     */
-    private function createCustomersForTenant($tenant): array
-    {
-        $customerData = [
-            [
-                'name' => '演示客戶一',
-                'email_suffix' => 'demo1',
-                'id_number' => 'A123456789',
-                'license_number' => 'AA12345678',
-                'phone' => '0912111111',
-            ],
-            [
-                'name' => '演示客戶二',
-                'email_suffix' => 'demo2',
-                'id_number' => 'B234567890',
-                'license_number' => 'BB23456789',
-                'phone' => '0912222222',
-            ],
-            [
-                'name' => '演示客戶三',
-                'email_suffix' => 'demo3',
-                'id_number' => 'C345678901',
-                'license_number' => 'CC34567890',
-                'phone' => '0912333333',
-            ],
-            [
-                'name' => '演示客戶四',
-                'email_suffix' => 'demo4',
-                'id_number' => 'D456789012',
-                'license_number' => 'DD45678901',
-                'phone' => '0912444444',
-            ],
-            [
-                'name' => '演示客戶五',
-                'email_suffix' => 'demo5',
-                'id_number' => 'E567890123',
-                'license_number' => 'EE56789012',
-                'phone' => '0912555555',
-            ],
+        // 定義要建立的車輛資料
+        $vehicleTemplates = [
+            // 台北車站店
+            ['branch_name' => '台北車站店', 'brand' => 'Toyota', 'model' => 'Camry', 'plate_number' => 'ABC-123', 'year' => 2023],
+            ['branch_name' => '台北車站店', 'brand' => 'Honda', 'model' => 'CR-V', 'plate_number' => 'DEF-456', 'year' => 2024],
+            // 板橋店
+            ['branch_name' => '板橋店', 'brand' => 'Nissan', 'model' => 'X-Trail', 'plate_number' => 'GHI-789', 'year' => 2023],
+            // 內湖店
+            ['branch_name' => '內湖店', 'brand' => 'Mazda', 'model' => 'CX-5', 'plate_number' => 'JKL-012', 'year' => 2024],
+            // 台中車站店
+            ['branch_name' => '台中車站店', 'brand' => 'Toyota', 'model' => 'RAV4', 'plate_number' => 'MNO-345', 'year' => 2023],
+            // 西屯店
+            ['branch_name' => '西屯店', 'brand' => 'Honda', 'model' => 'Accord', 'plate_number' => 'PQR-678', 'year' => 2024],
+            // 逢甲店
+            ['branch_name' => '逢甲店', 'brand' => 'Ford', 'model' => 'Kuga', 'plate_number' => 'STU-901', 'year' => 2023],
+            // 高雄車站店
+            ['branch_name' => '高雄車站店', 'brand' => 'Toyota', 'model' => 'Corolla Cross', 'plate_number' => 'VWX-234', 'year' => 2024],
+            // 左營店
+            ['branch_name' => '左營店', 'brand' => 'Mercedes-Benz', 'model' => 'C-Class', 'plate_number' => 'YZA-567', 'year' => 2023],
+            // 鳳山店
+            ['branch_name' => '鳳山店', 'brand' => 'BMW', 'model' => '3 Series', 'plate_number' => 'BCD-890', 'year' => 2024],
         ];
 
-        $customers = [];
-        $tenantSlug = $tenant->slug;
+        $vehicles = [];
+        foreach ($vehicleTemplates as $template) {
+            if (!isset($branches[$template['branch_name']])) {
+                continue;
+            }
 
-        foreach ($customerData as $data) {
-            $email = "{$data['email_suffix']}@{$tenantSlug}.demo";
-
-            $customer = Customer::updateOrCreate(
-                ['tenant_id' => $tenant->id, 'email' => $email],
+            $vehicle = Vehicle::updateOrCreate(
+                ['tenant_id' => $tenant->id, 'plate_number' => $template['plate_number']],
                 [
-                    'name' => $data['name'],
-                    'phone' => $data['phone'],
-                    'id_number' => $data['id_number'],
-                    'license_number' => $data['license_number'],
-                    'license_expiry' => '2035-12-31',
-                    'address' => '台北市演示區演示路100號',
-                    'emergency_contact_name' => '緊急聯絡人',
-                    'emergency_contact_phone' => '0900000000',
-                    'is_active' => true,
+                    'current_branch_id' => $branches[$template['branch_name']]->id,
+                    'name' => $template['brand'] . ' ' . $template['model'],
+                    'manufacture_year' => $template['year'],
+                    'status' => \App\Domain\Rental\Enums\VehicleStatus::AVAILABLE,
+                    'seats' => 5,
+                    'type' => \App\Domain\Rental\Enums\VehicleType::CAR,
+                    'fuel_type' => \App\Models\Vehicle::FUEL_PETROL,
+                    'transmission' => \App\Models\Vehicle::TRANSMISSION_AUTOMATIC,
                 ]
             );
-            $customers[] = $customer;
+            $vehicles[] = $vehicle;
         }
 
-        return $customers;
+        // 確保車輛都有價格資料
+        foreach ($vehicles as $vehicle) {
+            if (!$vehicle->pricing) {
+                $basePrice = 2000 + rand(500, 3000);
+                $vehicle->pricing()->create([
+                    'tenant_id' => $tenant->id,
+                    'weekday_price' => $basePrice,
+                    'weekend_price' => $basePrice * 1.3,
+                    'holiday_price' => $basePrice * 1.6,
+                ]);
+            }
+        }
+
+        return $vehicles;
     }
+
+
 
     /**
      * 建立各種預約情境
@@ -270,7 +247,7 @@ class RentalDemoSeeder extends Seeder
         $today = Carbon::today();
         $availableVehicles = collect($vehicles)->where('status', Vehicle::STATUS_AVAILABLE);
 
-        if ($availableVehicles->isEmpty() || empty($customers)) {
+        if ($availableVehicles->isEmpty() || $customers->isEmpty()) {
             return;
         }
 

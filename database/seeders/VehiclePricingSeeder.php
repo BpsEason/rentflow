@@ -3,8 +3,8 @@
 namespace Database\Seeders;
 
 use App\Models\Tenant;
-use App\Domain\Rental\Models\Vehicle;
-use App\Domain\Rental\Models\VehiclePricing;
+use App\Models\Vehicle;
+use App\Models\VehiclePricing;
 use Illuminate\Database\Seeder;
 
 class VehiclePricingSeeder extends Seeder
