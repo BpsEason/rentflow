@@ -35,4 +35,11 @@ return [
         ],
     ],
 
+    'gemini' => [
+        'api_key' => env('GEMINI_API_KEY'),
+        'model' => env('GEMINI_MODEL', 'gemini-3.5-flash-lite'),
+        'daily_quota' => env('GEMINI_DAILY_QUOTA', 1000), // 本地安全門檻
+        'base_url' => 'https://generativelanguage.googleapis.com/v1beta',
+    ],
+
 ];
