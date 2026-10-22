@@ -162,12 +162,13 @@ class Reservation extends Model
             }
 
             // 驗證兩個據點都屬於當前租戶且為啟用狀態
+            $branchIds = array_unique([$data['pickup_branch_id'], $data['return_branch_id']]);
             $validBranches = \App\Models\Branch::where('tenant_id', $data['tenant_id'])
                 ->where('is_active', true)
-                ->whereIn('id', [$data['pickup_branch_id'], $data['return_branch_id']])
+                ->whereIn('id', $branchIds)
                 ->count();
 
-            if ($validBranches !== 2) {
+            if ($validBranches !== count($branchIds)) {
                 throw new \Exception('取車或還車據點無效，請確認據點屬於您的租戶且已啟用', 400);
             }
 

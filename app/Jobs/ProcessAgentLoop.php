@@ -43,7 +43,8 @@ class ProcessAgentLoop implements ShouldQueue
                 ->lockForUpdate()
                 ->update([
                     'status' => 'processing',
-                    'processing_started_at' => now()
+                    'processing_started_at' => now(),
+                    'loop_started_at' => now(),
                 ]);
         });
 
@@ -53,116 +54,438 @@ class ProcessAgentLoop implements ShouldQueue
             return;
         }
 
-        // 從資料庫重新刷新模型狀態
+        // 從資料庫重新刷新模型狀態 - 必須在計算current_loop之前刷新，才能獲得最新的輪次
         $this->agentLoop->refresh();
 
-        $result = $aiAgentService->analyzeTestFailure($this->agentLoop);
+        $maxLoops = (int) $this->agentLoop->max_loops;
 
-        // 再次檢查當前狀態是否仍是processing，避免舊Worker覆寫已完成的任務
-        $currentAgentLoop = AgentLoop::find($this->agentLoop->id);
-        if (!in_array($currentAgentLoop->status, ['processing'])) {
-            Log::info('Agent loop already in terminal state, skipping updates', [
+        // 在執行耗時測試前，確認任務是否已超過最大迴圈次數（current_loop > max_loops 代表非法超額派發）
+        // 注意：current_loop == max_loops 時是最後一輪，仍須允許執行，不可在此終止
+        if ((int) $this->agentLoop->current_loop > $maxLoops) {
+            DB::transaction(function () use ($maxLoops) {
+                AgentLoop::where('id', $this->agentLoop->id)
+                    ->where('status', 'processing')
+                    ->update([
+                        'status' => 'failed',
+                        'failure_reason' => "Maximum loop iterations ({$maxLoops}) reached",
+                        'termination_reason' => 'Max loops exceeded',
+                        'processing_started_at' => null,
+                    ]);
+            });
+
+            Log::error('Agent loop terminated - current_loop exceeded max_loops (illegal over-dispatch)', [
                 'agent_loop_id' => $this->agentLoop->id,
-                'current_status' => $currentAgentLoop->status
+                'max_loops' => $maxLoops,
+                'current_loop' => $this->agentLoop->current_loop,
             ]);
             return;
         }
 
-        if ($result['success']) {
-            // 使用條件式更新，只有狀態仍是processing才能更新為completed
-            $updated = AgentLoop::where('id', $this->agentLoop->id)
+        // 確保目前的迴圈輪次正確（若初次執行為 0 則初始化為 1）
+        $currentLoop = DB::transaction(function () {
+            $agentLoop = AgentLoop::where('id', $this->agentLoop->id)
                 ->where('status', 'processing')
-                ->update([
-                    'ai_analysis' => $result['analysis'],
-                    'status' => 'completed',
-                    'completed_at' => now(),
-                    'provider' => 'gemini',
-                    'model' => config('services.gemini.model'),
-                ]);
+                ->lockForUpdate()
+                ->first();
 
-            if ($updated > 0) {
-                Log::info('Agent loop processing completed', ['agent_loop_id' => $this->agentLoop->id]);
+            if (!$agentLoop) {
+                return null;
+            }
+
+            if ($agentLoop->current_loop <= 0) {
+                $agentLoop->update(['current_loop' => 1]);
+            }
+
+            return (int) $agentLoop->fresh()->current_loop;
+        });
+
+        // 如果無法獲得正確的currentLoop，說明狀態已經變更，直接返回
+        if ($currentLoop === null) {
+            Log::info('Agent loop status changed, cannot increment current_loop', ['agent_loop_id' => $this->agentLoop->id]);
+            return;
+        }
+
+        // 記錄本輪開始
+        Log::info("Starting loop iteration {$currentLoop}/{$maxLoops}", ['agent_loop_id' => $this->agentLoop->id]);
+
+        // 步驟1：執行測試（僅在明確指定有效 test_path 時執行）
+        if (!empty($this->agentLoop->test_path)) {
+            $testPaths = [$this->agentLoop->test_path];
+            $testResult = $aiAgentService->runTests($testPaths);
+
+            // 保存測試結果
+            $this->agentLoop->update([
+                'last_test_exit_code' => $testResult['exit_code'],
+                'last_test_output' => $testResult['output'] . $testResult['error_output'],
+                'last_test_summary' => json_encode($testResult['summary']),
+                'loop_completed_at' => now(),
+                'total_execution_time' => $this->agentLoop->total_execution_time + ($this->agentLoop->loop_started_at ? $this->agentLoop->loop_started_at->diffInSeconds(now()) : 0),
+            ]);
+
+            // 步驟2：檢查測試是否通過
+            if ($testResult['success']) {
+                // 測試通過，標記任務完成
+                DB::transaction(function () {
+                    AgentLoop::where('id', $this->agentLoop->id)
+                        ->where('status', 'processing')
+                        ->update([
+                            'status' => 'completed',
+                            'completed_at' => now(),
+                            'termination_reason' => 'Tests passed successfully',
+                            'processing_started_at' => null,
+                        ]);
+                });
+
+                Log::info('Agent loop completed successfully - all tests passed', ['agent_loop_id' => $this->agentLoop->id]);
+                return;
+            }
+
+            // 步驟4：檢查是否有測試逾時或執行錯誤
+            if ($testResult['timed_out'] || $testResult['exit_code'] === -1) {
+                DB::transaction(function () use ($testResult) {
+                    AgentLoop::where('id', $this->agentLoop->id)
+                        ->where('status', 'processing')
+                        ->update([
+                            'status' => 'failed',
+                            'failure_reason' => $testResult['exception'] ?? 'Test process timed out or failed to execute',
+                            'termination_reason' => 'Test execution failure',
+                            'processing_started_at' => null,
+                        ]);
+                });
+
+                Log::error('Agent loop terminated - test execution failed', [
+                    'agent_loop_id' => $this->agentLoop->id,
+                    'timed_out' => $testResult['timed_out'],
+                    'exit_code' => $testResult['exit_code']
+                ]);
+                return;
+            }
+
+            // 更新失敗內容以供 AI 分析
+            if (!empty($testResult['output']) || !empty($testResult['error_output'])) {
+                $this->agentLoop->update([
+                    'test_failure_content' => $testResult['output'] . $testResult['error_output']
+                ]);
+            }
+        } elseif (!empty($this->agentLoop->test_failure_content)) {
+            // 未指定 test_path，但已有外部傳入的失敗內容，略過執行測試，直接使用既有失敗內容分析
+            Log::info('No test_path specified, using existing test_failure_content for AI analysis', [
+                'agent_loop_id' => $this->agentLoop->id
+            ]);
+        } else {
+            // 既無 test_path 也無 test_failure_content，設定錯誤並終止
+            DB::transaction(function () {
+                AgentLoop::where('id', $this->agentLoop->id)
+                    ->where('status', 'processing')
+                    ->update([
+                        'status' => 'failed',
+                        'failure_reason' => 'Neither test_path nor test_failure_content was provided',
+                        'termination_reason' => 'Missing test input',
+                        'processing_started_at' => null,
+                    ]);
+            });
+
+            Log::error('Agent loop terminated - missing test path and failure content', [
+                'agent_loop_id' => $this->agentLoop->id,
+            ]);
+            return;
+        }
+
+        // 步驟3（僅適用無 test_path 情境）：
+        // 若沒有 test_path，只能執行單次分析。此時不論輪數，完成 AI 分析後即結束，
+        // 不進入步驟 9 的多輪排程。本段落僅做旗標記錄，實際提前結束在步驟 6 之後處理。
+        $isTextOnlyAnalysis = empty($this->agentLoop->test_path);
+
+        // 檢查任務狀態是否仍為 processing（避免被其他 Worker 或失敗處理器異動）
+        $statusCheck = AgentLoop::where('id', $this->agentLoop->id)->value('status');
+        if ($statusCheck !== 'processing') {
+            Log::info('Agent loop status is no longer processing, skipping AI analysis', [
+                'agent_loop_id' => $this->agentLoop->id,
+                'status' => $statusCheck,
+            ]);
+            return;
+        }
+
+        // 步驟5：測試失敗，調用AI分析並生成修正方案
+        $analysisResult = $aiAgentService->analyzeTestFailure($this->agentLoop);
+
+        if (!$analysisResult['success']) {
+            // AI分析失敗，處理重試邏輯
+            $newRetryCount = $this->agentLoop->retry_count + 1;
+
+            if ($analysisResult['should_retry'] && $newRetryCount < self::MAX_BUSINESS_RETRIES) {
+                $delay = $analysisResult['retry_delay'] ?? 60;
+                $nextRetryAt = Carbon::now()->addSeconds($delay);
+
+                if (str_contains($analysisResult['reason'], 'quota') || str_contains($analysisResult['reason'], '429')) {
+                    AgentLoop::where('id', $this->agentLoop->id)
+                        ->where('status', 'processing')
+                        ->update([
+                            'failure_reason' => $analysisResult['reason'],
+                            'retry_count' => $newRetryCount,
+                            'status' => 'waiting_quota',
+                            'next_retry_at' => $nextRetryAt,
+                            'processing_started_at' => null,
+                            'loop_started_at' => null,
+                        ]);
+                    Log::warning('Agent loop entered waiting_quota state', ['agent_loop_id' => $this->agentLoop->id]);
+                } else {
+                    AgentLoop::where('id', $this->agentLoop->id)
+                        ->where('status', 'processing')
+                        ->update([
+                            'failure_reason' => $analysisResult['reason'],
+                            'retry_count' => $newRetryCount,
+                            'next_retry_at' => $nextRetryAt,
+                            'status' => 'pending',
+                            'processing_started_at' => null,
+                            'loop_started_at' => null,
+                        ]);
+                    $this->release($delay);
+                    Log::warning('Agent loop will be retried', ['agent_loop_id' => $this->agentLoop->id]);
+                }
             } else {
-                Log::warning('Failed to mark agent loop as completed, status was not processing', ['agent_loop_id' => $this->agentLoop->id]);
+                AgentLoop::where('id', $this->agentLoop->id)
+                    ->where('status', 'processing')
+                    ->update([
+                        'status' => 'failed',
+                        'retry_count' => $newRetryCount,
+                        'failure_reason' => $analysisResult['reason'],
+                        'termination_reason' => 'AI analysis failed permanently',
+                        'processing_started_at' => null,
+                    ]);
+                Log::error('Agent loop failed - AI analysis failed permanently', ['agent_loop_id' => $this->agentLoop->id]);
             }
             return;
         }
 
-        // 處理失敗情況，先遞增重試次數
-        $newRetryCount = $this->agentLoop->retry_count + 1;
+        // 步驟6：解析AI返回的JSON格式分析結果
+        $aiAnalysis = json_decode($analysisResult['analysis'], true);
+        $patchHistory = $this->agentLoop->patch_history ?? [];
+        $modifiedFiles = $this->agentLoop->modified_files ?? [];
 
-        // 判斷是否需要重試：業務層允許重試 且 未超過最大業務重試次數
-        if ($result['should_retry'] && $newRetryCount < self::MAX_BUSINESS_RETRIES) {
-            $delay = $result['retry_delay'] ?? 60;
-            $nextRetryAt = Carbon::now()->addSeconds($delay);
+        // 必要欄位：JSON 必須可解析、包含 fixes 陣列，以及 error_summary 和 root_cause
+        // 情況：無效 JSON、截斷、空字串 → 走重試路徑（視為暫時性解析失敗）
+        // 情況：JSON 有效但缺少 fixes 鍵或缺少必要分析欄位 → 視為格式不符，標記完成（無法自動修復）
+        $hasValidJson = json_last_error() === JSON_ERROR_NONE && is_array($aiAnalysis);
+        $hasFixesKey = $hasValidJson && isset($aiAnalysis['fixes']) && is_array($aiAnalysis['fixes']);
+        $hasRequiredFields = $hasFixesKey
+            && isset($aiAnalysis['error_summary'])
+            && isset($aiAnalysis['root_cause']);
 
-            // 如果是配額問題，設定狀態為waiting_quota，由定時掃描任務恢復
-            if (str_contains($result['reason'], 'quota') || str_contains($result['reason'], '429')) {
-                // 條件式更新，只有狀態仍是processing才能更新
-                $updated = AgentLoop::where('id', $this->agentLoop->id)
-                    ->where('status', 'processing')
-                    ->update([
-                        'failure_reason' => $result['reason'],
-                        'retry_count' => $newRetryCount,
-                        'status' => 'waiting_quota',
-                        'next_retry_at' => $nextRetryAt,
-                        'processing_started_at' => null,
-                    ]);
+        if (!$hasValidJson) {
+            // JSON 無法解析（空字串、截斷、純文字）：記錄為分析失敗，但不自動重試（AI 已成功回應）
+            Log::info('AI response is not valid JSON, saving raw analysis as completed', [
+                'agent_loop_id' => $this->agentLoop->id,
+                'raw_analysis' => $analysisResult['analysis'],
+            ]);
 
-                if ($updated > 0) {
-                    Log::warning('Agent loop entered waiting_quota state, will be recovered by scheduler', [
-                        'agent_loop_id' => $this->agentLoop->id,
-                        'retry_count' => $newRetryCount,
-                        'next_retry_at' => $nextRetryAt,
-                        'reason' => $result['reason'],
-                    ]);
-                } else {
-                    Log::warning('Failed to update agent loop to waiting_quota, status was not processing', ['agent_loop_id' => $this->agentLoop->id]);
-                }
-            } else {
-                // 其他錯誤使用Laravel Queue的release()機制，讓Queue負責重試排程
-                $updated = AgentLoop::where('id', $this->agentLoop->id)
-                    ->where('status', 'processing')
-                    ->update([
-                        'failure_reason' => $result['reason'],
-                        'retry_count' => $newRetryCount,
-                        'next_retry_at' => $nextRetryAt,
-                        'status' => 'pending', // 重置為pending，讓下一次重試能被處理
-                        'processing_started_at' => null,
-                    ]);
-
-                if ($updated > 0) {
-                    $this->release($delay);
-                    Log::warning('Agent loop will be retried by queue', [
-                        'agent_loop_id' => $this->agentLoop->id,
-                        'retry_count' => $newRetryCount,
-                        'retry_delay' => $delay,
-                        'reason' => $result['reason'],
-                    ]);
-                } else {
-                    Log::warning('Failed to update agent loop to pending for retry, status was not processing', ['agent_loop_id' => $this->agentLoop->id]);
-                }
-            }
-        } else {
-            // 超過重試次數或不應重試，標記為失敗
-            $updated = AgentLoop::where('id', $this->agentLoop->id)
+            AgentLoop::where('id', $this->agentLoop->id)
                 ->where('status', 'processing')
                 ->update([
-                    'failure_reason' => $result['reason'],
-                    'retry_count' => $newRetryCount,
+                    'ai_analysis' => $analysisResult['analysis'],
+                    'provider' => 'gemini',
+                    'model' => config('services.gemini.model'),
+                    'status' => 'completed',
+                    'completed_at' => now(),
+                    'termination_reason' => 'Analysis completed without automated fixes',
+                ]);
+            return;
+        }
+
+        if (!$hasFixesKey || !$hasRequiredFields) {
+            // JSON 有效，但缺少 fixes 鍵或必要分析欄位（error_summary/root_cause）
+            // 此情況代表 AI 回傳的結構不符合預期格式，不能宣稱分析有效完成
+            Log::warning('AI response JSON is missing required fields (fixes/error_summary/root_cause)', [
+                'agent_loop_id' => $this->agentLoop->id,
+                'has_fixes_key' => $hasFixesKey,
+                'has_required_fields' => $hasRequiredFields,
+            ]);
+
+            AgentLoop::where('id', $this->agentLoop->id)
+                ->where('status', 'processing')
+                ->update([
+                    'ai_analysis' => $analysisResult['analysis'],
+                    'provider' => 'gemini',
+                    'model' => config('services.gemini.model'),
                     'status' => 'failed',
+                    'failure_reason' => 'AI response missing required fields: error_summary, root_cause, or fixes array',
+                    'termination_reason' => 'Invalid AI response structure',
                     'processing_started_at' => null,
                 ]);
+            return;
+        }
 
-            if ($updated > 0) {
-                Log::error('Agent loop processing failed permanently', [
+        // 步驟6a：明確處理 fixes 為空陣列的情況
+        // isset($aiAnalysis['fixes']) 為 true 但 empty([]) 也為 true，必須獨立判斷
+        if (empty($aiAnalysis['fixes'])) {
+            // 保存分析結果
+            $this->agentLoop->update([
+                'ai_analysis' => $analysisResult['analysis'],
+                'provider' => 'gemini',
+                'model' => config('services.gemini.model'),
+            ]);
+
+            if (!empty($this->agentLoop->test_path)) {
+                // 有真實測試但 AI 無任何修復方案：無法繼續，標記為 failed
+                AgentLoop::where('id', $this->agentLoop->id)
+                    ->where('status', 'processing')
+                    ->update([
+                        'status' => 'failed',
+                        'failure_reason' => 'AI analysis provided no fix proposals to resolve the test failure',
+                        'termination_reason' => 'No fixes proposed',
+                        'processing_started_at' => null,
+                    ]);
+                Log::warning('Agent loop terminated - AI returned empty fixes for real test failure', [
                     'agent_loop_id' => $this->agentLoop->id,
-                    'retry_count' => $newRetryCount,
-                    'reason' => $result['reason'],
+                    'current_loop' => $currentLoop,
                 ]);
             } else {
-                Log::warning('Failed to mark agent loop as failed, status was not processing', ['agent_loop_id' => $this->agentLoop->id]);
+                // 無 test_path 的文字分析，AI 無建議修復：分析已完成，標記 completed
+                AgentLoop::where('id', $this->agentLoop->id)
+                    ->where('status', 'processing')
+                    ->update([
+                        'status' => 'completed',
+                        'completed_at' => now(),
+                        'termination_reason' => 'Analysis completed with no fixes (text-only input, no test_path)',
+                        'processing_started_at' => null,
+                    ]);
+                Log::info('Agent loop completed - AI returned empty fixes for text-only analysis', [
+                    'agent_loop_id' => $this->agentLoop->id,
+                ]);
             }
+            return;
+        }
+
+        // 保存AI分析結果
+        $this->agentLoop->update([
+            'ai_analysis' => $analysisResult['analysis'],
+            'provider' => 'gemini',
+            'model' => config('services.gemini.model'),
+        ]);
+
+        // 步驟7：驗證修正方案是否符合安全規則
+        $validationResult = $aiAgentService->validateFixes($aiAnalysis['fixes'], $this->agentLoop->allowed_files);
+
+        if (!$validationResult['valid']) {
+            Log::error('Fix validation failed', [
+                'agent_loop_id' => $this->agentLoop->id,
+                'errors' => $validationResult['errors']
+            ]);
+
+            // 修正方案無效，結束任務
+            AgentLoop::where('id', $this->agentLoop->id)
+                ->where('status', 'processing')
+                ->update([
+                    'status' => 'failed',
+                    'failure_reason' => 'Fix validation failed: ' . implode(', ', $validationResult['errors']),
+                    'termination_reason' => 'Invalid fix proposals',
+                    'processing_started_at' => null,
+                ]);
+            return;
+        }
+
+        // 步驟8：如果允許自動套用修正，則套用
+        if ($this->agentLoop->auto_apply_fixes) {
+            $applyResult = $aiAgentService->applyFixes($validationResult['valid_fixes']);
+
+            if ($applyResult['success']) {
+                // 合併修補歷史和修改的檔案清單
+                $patchHistory = array_merge($patchHistory, $applyResult['patch_history']);
+                $modifiedFiles = array_merge($modifiedFiles, $applyResult['modified_files']);
+
+                $this->agentLoop->update([
+                    'patch_history' => $patchHistory,
+                    'modified_files' => $modifiedFiles,
+                ]);
+
+                Log::info('Successfully applied fixes', [
+                    'agent_loop_id' => $this->agentLoop->id,
+                    'modified_files' => $applyResult['modified_files']
+                ]);
+            } else {
+                // 套用失敗，記錄錯誤但繼續下一輪
+                Log::error('Failed to apply fixes', [
+                    'agent_loop_id' => $this->agentLoop->id,
+                    'error' => $applyResult['error']
+                ]);
+            }
+        } else {
+            // 不自動套用，僅記錄建議的修正方案
+            Log::info('Auto-apply disabled, fix proposals saved but not applied', [
+                'agent_loop_id' => $this->agentLoop->id,
+                'proposed_fixes' => $validationResult['valid_fixes']
+            ]);
+        }
+
+        // 步驟9：判斷是否可進行下一輪
+        // 三個條件必須同時滿足才能排程下一輪：
+        // 1. 有真實 test_path（無測試路徑時僅做單次分析，不能反覆驗證修復）
+        // 2. 有非空的修復方案（步驟 6a 已確保到此點 fixes 非空）
+        // 3. 當前輪次未達最大輪數
+        if ($isTextOnlyAnalysis) {
+            // 無 test_path：AI 提供了修復建議，但無測試可驗證，保存分析結果並標記已完成（未驗證）
+            AgentLoop::where('id', $this->agentLoop->id)
+                ->where('status', 'processing')
+                ->update([
+                    'status' => 'completed',
+                    'completed_at' => now(),
+                    'termination_reason' => 'Analysis completed with proposed fixes (unverified, no test_path)',
+                    'processing_started_at' => null,
+                ]);
+            Log::info('Agent loop completed - fixes proposed but unverified (no test_path)', [
+                'agent_loop_id' => $this->agentLoop->id,
+                'fix_count' => count($aiAnalysis['fixes']),
+            ]);
+            return;
+        }
+
+        if ($currentLoop >= $maxLoops) {
+            // 已達最大輪數，本輪已執行測試與分析，不再派送下一輪
+            DB::transaction(function () use ($maxLoops) {
+                AgentLoop::where('id', $this->agentLoop->id)
+                    ->where('status', 'processing')
+                    ->update([
+                        'status' => 'failed',
+                        'failure_reason' => "Maximum loop iterations ({$maxLoops}) reached",
+                        'termination_reason' => 'Max loops exceeded',
+                        'processing_started_at' => null,
+                    ]);
+            });
+            Log::error('Agent loop terminated - max loops reached after completing current loop', [
+                'agent_loop_id' => $this->agentLoop->id,
+                'max_loops' => $maxLoops,
+                'current_loop' => $currentLoop,
+            ]);
+            return;
+        }
+
+        // 準備下一輪，重新派送任務
+        $nextLoop = $currentLoop + 1;
+        $updated = AgentLoop::where('id', $this->agentLoop->id)
+            ->where('status', 'processing')
+            ->update([
+                'status' => 'pending',
+                'current_loop' => $nextLoop,
+                'retry_count' => 0,
+                'processing_started_at' => null,
+                'loop_started_at' => null,
+                'next_retry_at' => now()->addSeconds(10), // 10秒後開始下一輪
+            ]);
+
+        if ($updated > 0) {
+            // 只有更新成功才派送下一輪，並延遲10秒派送，與next_retry_at保持一致
+            $dispatch = ProcessAgentLoop::dispatch($this->agentLoop->fresh())
+                ->delay(now()->addSeconds(10));
+
+            // 當系統預設佇列為 sync 且非 Queue::fake 測試時，若有配置異步 database 佇列，則導向 database 避免在同一個呼叫堆疊中同步無限遞迴
+            if (config('queue.default') === 'sync' && config('queue.connections.database') && !(\Illuminate\Support\Facades\Queue::getFacadeRoot() instanceof \Illuminate\Support\Testing\Fakes\QueueFake)) {
+                $dispatch->onConnection('database');
+            }
+
+            Log::info("Loop {$currentLoop} completed, next iteration scheduled in 10 seconds", ['agent_loop_id' => $this->agentLoop->id]);
+        } else {
+            // 更新失敗，無法派送下一輪
+            Log::warning("Failed to update agent loop status to pending, skipping next iteration dispatch", ['agent_loop_id' => $this->agentLoop->id]);
         }
     }
 

@@ -394,6 +394,7 @@ class RentalDemoSeeder extends Seeder
             }
         } catch (\Exception $e) {
             Log::warning("建立預約時發生錯誤: " . $e->getMessage());
+            $this->command->error("  建立預約失敗: 租戶ID {$tenant->id}, 取車分店ID {$pickupBranchId}, 還車分店ID {$returnBranchId}, 錯誤: " . $e->getMessage());
             // 不丟出例外，讓seeder繼續執行
         }
     }

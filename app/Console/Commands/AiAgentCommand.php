@@ -21,6 +21,11 @@ class AiAgentCommand extends Command
         {action : start|usage|recover|test}
         {--file= : Path to test failure log file (for start action)}
         {--content= : Direct test failure content string (for start action)}
+        {--test-path= : Test file/path to execute (for start/loop action)}
+        {--max-loops=3 : Maximum loop iterations (default: 3)}
+        {--auto-apply-fixes : Automatically apply validated fixes (default: false)}
+        {--execution-timeout=3600 : Total execution time limit in seconds (default: 3600)}
+        {--allowed-files=* : Comma-separated list of allowed files to modify (optional)}
         {--filter= : Filter tests by name (for test action)}
         {--group= : Filter tests by group (for test action)}
         {--testdox : Output testdox format (for test action)}';
@@ -79,10 +84,14 @@ class AiAgentCommand extends Command
                         ->where('processing_started_at', '<=', $timeoutThreshold);
                 })->orWhere(function ($q) {
                     $q->where('status', 'pending')
-                        ->whereNotNull('next_retry_at')
-                        ->where('next_retry_at', '<=', now())
-                        // 新增保護：確保任務至少存在30秒才會被恢復，避免派送中的新任務被誤判
-                        ->where('created_at', '<=', now()->subSeconds(30));
+                        ->where(function ($subQ) {
+                            $subQ->whereNotNull('next_retry_at')
+                                ->where('next_retry_at', '<=', now());
+                        })->orWhere(function ($subQ) {
+                            $subQ->whereNull('next_retry_at')
+                                ->where('created_at', '<=', now()->subSeconds(60)); // 超過1分鐘的舊pending任務，即使next_retry_at是null也恢復
+                        })
+                        ->where('created_at', '<=', now()->subSeconds(30)); // 新增保護：確保任務至少存在30秒才會被恢復，避免派送中的新任務被誤判
                 });
             })
                 ->lockForUpdate() // 在交易中使用悲觀鎖，避免並發問題
@@ -97,14 +106,20 @@ class AiAgentCommand extends Command
                 $updated = AgentLoop::where('id', $candidate->id)
                     ->where(function ($query) use ($timeoutThreshold) {
                         $query->where(function ($q) {
-                            $q->where('status', 'waiting_quota');
+                            $q->where('status', 'waiting_quota')
+                                ->where('next_retry_at', '<=', now());
                         })->orWhere(function ($q) use ($timeoutThreshold) {
                             $q->where('status', 'processing')
                                 ->where('processing_started_at', '<=', $timeoutThreshold);
                         })->orWhere(function ($q) {
                             $q->where('status', 'pending')
-                                ->whereNotNull('next_retry_at')
-                                ->where('next_retry_at', '<=', now())
+                                ->where(function ($subQ) {
+                                    $subQ->whereNotNull('next_retry_at')
+                                        ->where('next_retry_at', '<=', now());
+                                })->orWhere(function ($subQ) {
+                                    $subQ->whereNull('next_retry_at')
+                                        ->where('created_at', '<=', now()->subSeconds(60));
+                                })
                                 ->where('created_at', '<=', now()->subSeconds(30));
                         });
                     })
@@ -129,6 +144,7 @@ class AiAgentCommand extends Command
         foreach ($recoveredIds as $id) {
             $agentLoop = AgentLoop::find($id);
             if ($agentLoop && $agentLoop->status === 'pending') {
+                // 任務已成功恢復，立即派送（因為已經通過條件檢查過next_retry_at已到期）
                 ProcessAgentLoop::dispatch($agentLoop);
                 $count++;
                 $this->line("Recovered agent loop ID: {$id}");
@@ -154,10 +170,15 @@ class AiAgentCommand extends Command
             $content = file_get_contents($filePath);
         } elseif ($this->option('content')) {
             $content = $this->option('content');
+        } elseif ($this->option('test-path')) {
+            // 如果指定了test-path，先執行測試獲取失敗內容
+            $this->info('Test path provided, will execute tests first in the loop.');
+            $content = 'Will execute tests automatically in loop: ' . $this->option('test-path');
         } else {
-            $this->error('Either --file or --content must be provided for start action.');
+            $this->error('Either --file, --content, or --test-path must be provided for start action.');
             $this->line('Example: php artisan ai:agent start --file=/path/to/test-failures.log');
             $this->line('Example: php artisan ai:agent start --content="Test failed: SQL error..."');
+            $this->line('Example: php artisan ai:agent start --test-path=tests/Feature/ExampleTest.php --max-loops=5 --auto-apply-fixes');
             return;
         }
 
@@ -166,13 +187,42 @@ class AiAgentCommand extends Command
             return;
         }
 
-        // 建立新的AgentLoop記錄
-        $agentLoop = AgentLoop::create([
+        // 處理允許修改的檔案清單
+        $allowedFiles = null;
+        $optionAllowed = (array) $this->option('allowed-files');
+        if (!empty($optionAllowed) && $optionAllowed !== ['*']) {
+            $allowedFiles = [];
+            foreach ($optionAllowed as $item) {
+                foreach (explode(',', (string) $item) as $file) {
+                    $trimmed = trim($file);
+                    if (!empty($trimmed) && $trimmed !== '*') {
+                        $allowedFiles[] = $trimmed;
+                    }
+                }
+            }
+            if (empty($allowedFiles)) {
+                $allowedFiles = null;
+            }
+        }
+
+        // 建立新的AgentLoop記錄，包含所有迴圈參數
+        $agentLoopData = [
             'test_failure_content' => $content,
             'next_retry_at' => now()->addSeconds(30), // 預先設定next_retry_at，確保即使派送失敗也能被恢復
-        ]);
+            'current_loop' => 0,
+            'max_loops' => (int)$this->option('max-loops'),
+            'test_path' => $this->option('test-path'),
+            'auto_apply_fixes' => $this->option('auto-apply-fixes'),
+            'total_execution_time' => 0,
+            'allowed_files' => $allowedFiles,
+            'loop_started_at' => null,
+            'loop_completed_at' => null,
+        ];
+
+        $agentLoop = AgentLoop::create($agentLoopData);
 
         $this->info("Created new agent loop with ID: {$agentLoop->id}");
+        $this->line("Loop configuration: max_loops={$agentLoop->max_loops}, auto_apply=" . ($agentLoop->auto_apply_fixes ? 'true' : 'false') . ', test_path=' . ($agentLoop->test_path ?? 'none'));
 
         // dispatch到隊列
         ProcessAgentLoop::dispatch($agentLoop);
@@ -288,18 +338,47 @@ class AiAgentCommand extends Command
                 $truncatedOutput = $this->extractRelevantFailureContent($output);
 
                 if (!empty($truncatedOutput)) {
-                    // 建立新的AgentLoop記錄，沿用現有分析流程
-                    $agentLoop = AgentLoop::create([
+                    // 處理允許修改的檔案清單
+                    $allowedFiles = null;
+                    $optionAllowed = (array) $this->option('allowed-files');
+                    if (!empty($optionAllowed) && $optionAllowed !== ['*']) {
+                        $allowedFiles = [];
+                        foreach ($optionAllowed as $item) {
+                            foreach (explode(',', (string) $item) as $file) {
+                                $trimmed = trim($file);
+                                if (!empty($trimmed) && $trimmed !== '*') {
+                                    $allowedFiles[] = $trimmed;
+                                }
+                            }
+                        }
+                        if (empty($allowedFiles)) {
+                            $allowedFiles = null;
+                        }
+                    }
+
+                    // 建立新的AgentLoop記錄，包含所有迴圈參數
+                    $agentLoopData = [
                         'test_failure_content' => $truncatedOutput,
                         'next_retry_at' => now()->addSeconds(30),
-                    ]);
+                        'current_loop' => 0,
+                        'max_loops' => (int)$this->option('max-loops'),
+                        'test_path' => $this->option('test-path') ?: null,
+                        'auto_apply_fixes' => $this->option('auto-apply-fixes'),
+                        'total_execution_time' => 0,
+                        'allowed_files' => $allowedFiles,
+                        'loop_started_at' => null,
+                        'loop_completed_at' => null,
+                    ];
+
+                    $agentLoop = AgentLoop::create($agentLoopData);
 
                     $this->info("Created new agent loop with ID: {$agentLoop->id}");
+                    $this->line("Loop configuration: max_loops={$agentLoop->max_loops}, auto_apply=" . ($agentLoop->auto_apply_fixes ? 'true' : 'false'));
 
                     // 分派到隊列
                     ProcessAgentLoop::dispatch($agentLoop);
 
-                    $this->info('AI analysis job dispatched to queue. Check status in agent_loops table.');
+                    $this->info('AI analysis and loop job dispatched to queue. Check status in agent_loops table.');
                 }
             } else {
                 $this->newLine();
