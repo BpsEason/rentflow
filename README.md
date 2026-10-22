@@ -83,6 +83,30 @@ RentFlow 是一個以真實租車營運場景為基礎的技術展示專案，�
 
 ---
 
+## 3.1 AI Agent 功能介紹
+
+RentFlow 內建基於 Google Gemini 的 AI Agent 自動化分析與修復系統，支援兩種任務模式：
+
+### 支援的任務模式
+
+#### 純分析模式
+- 使用者提供既有的錯誤描述或測試失敗內容
+- **`test_path = NULL`**：不會自動執行 PHPUnit
+- Agent 將提供的內容交給 Gemini 分析，保存 AI 分析結果
+- 提供可能的根因與修復建議，但**不會自動套用修復**
+- 分析完成僅代表 AI 已回應，不代表修復已完成或測試已通過
+- 若修復提案無效但分析本身有效，仍會標記為完成並記錄修復未套用
+- 若 AI 回應無效或分析本身失敗，會正確標記為失敗狀態
+
+#### 自動修復模式
+- 必須指定有效的 `test_path`（測試檔案路徑）
+- 系統會自動執行測試 → 分析失敗 → 生成修復方案 → 驗證修復的完整流程
+- 預設最大迴圈次數：3 次（可透過 `--max-loops` 參數調整）
+- 只有開啟 `--auto-apply-fixes` 參數才會自動套用驗證通過的修復
+- 終止條件：測試通過、達到最大迴圈次數、AI 分析永久失敗、測試執行失敗
+
+---
+
 ## 4. Technology Stack
 
 | Component | Technology | 版本 | 說明 |
@@ -497,6 +521,109 @@ rentflow/
 - 無獨立ADR文件，所有設計決策皆反映在程式碼與本README中
 - 核心設計原則：先解決實際問題，不過度預先抽象
 - 堅持單一資料庫事務保證關鍵資料正確性，不依賴Redis做最終一致性邊界
+
+---
+
+## 19.1 AI Agent 手動驗證指南
+
+### 前置準備
+確認 `.env` 中已正確設定 Gemini API 相關參數：
+```env
+GEMINI_API_KEY=your_api_key_here
+GEMINI_MODEL=gemini-3.5-flash-lite
+GEMINI_DAILY_QUOTA=1000
+```
+
+### 手動驗證方式
+
+#### 1. 建立純分析任務
+使用 `--content` 參數直接傳入錯誤描述，不指定 `--test-path`（此時 test_path 會自動為 NULL），且不開啟 `--auto-apply-fixes`：
+```bash
+php artisan ai:agent start --content="測試失敗：假設 UserController 的 store 方法發生資料庫錯誤，請分析可能根因並提供修復建議。這是待分析的錯誤描述，尚未經過實際測試驗證。" --max-loops=3
+```
+
+#### 2. 確認任務建立成功
+命令執行後會輸出：
+```
+Created new agent loop with ID: {YOUR_TASK_ID}
+Loop configuration: max_loops=3, auto_apply=false, test_path=none
+Job dispatched to queue. Processing will begin shortly.
+Check status with: SELECT * FROM agent_loops WHERE id = {YOUR_TASK_ID}
+```
+
+#### 3. 依專案 Queue 設定執行任務
+根據專案的佇列設定，啟動 Queue Worker 處理任務：
+```bash
+# 使用database連接的情況（開發環境常用）
+php artisan queue:work --queue=default --tries=6
+
+# 若使用sync驅動（本地開發測試），任務會立即執行
+```
+
+#### 4. 查看執行結果
+透過資料庫查詢 `agent_loops` 資料表，觀察以下欄位的變化：
+- `id`：任務ID
+- `status`：任務狀態（pending → processing → completed/failed）
+- `ai_analysis`：AI 回應的分析內容（JSON格式）
+- `failure_reason`：失敗原因（若有）
+- `termination_reason`：終止原因（完成時記錄為何結束）
+- `current_loop`：當前執行的迴圈次數
+- `last_test_exit_code`：PHPUnit 退出碼（純分析模式下此欄位不會更新）
+- `last_test_output`：PHPUnit 輸出（純分析模式下此欄位不會更新）
+
+查詢指令範例：
+```sql
+SELECT id, status, termination_reason, ai_analysis, completed_at 
+FROM agent_loops 
+WHERE id = YOUR_TASK_ID;
+```
+
+### 驗證情境範例
+
+#### 情境 A：純分析成功 ✅
+- 操作：使用非空的錯誤描述建立任務，不指定 test_path
+- 預期結果：
+  - `status` 變更為 `completed`
+  - `ai_analysis` 有內容
+  - `termination_reason` 為 `Analysis completed with proposed fixes (unverified, no test_path)` 或類似完成訊息
+  - `last_test_exit_code` 維持 NULL（從未執行PHPUnit）
+- ⚠️ 注意：此情境會消耗 Gemini API 配額
+
+#### 情境 B：沒有可用修復方案
+- 操作：傳入AI無法生成修復建議的模糊錯誤描述
+- 預期結果：
+  - `status` 變更為 `completed`
+  - `termination_reason` 為 `Analysis completed with no fixes (text-only input, no test_path)`
+  - AI 已完成分析但無法提供具體修復步驟
+
+#### 情境 C：修復提案路徑無效
+- 操作：提供的錯誤內容使AI生成了不存在的檔案路徑修復提案
+- 預期結果：
+  - `status` 仍為 `completed`（純分析模式下即使修復無效也標記完成）
+  - `termination_reason` 為 `Analysis completed with invalid fix proposals (unable to apply fixes)`
+  - 分析本身成功，但系統無法驗證修復路徑的有效性
+
+#### 情境 D：PHPUnit 驗證（自動修復模式）
+- 操作：指定有效的測試檔案路徑，建立自動修復任務
+```bash
+php artisan ai:agent start --test-path=tests/Feature/ExampleTest.php --max-loops=3
+```
+- 判斷測試是否真的執行過：
+  - `last_test_exit_code` 有數值（非NULL）
+  - `last_test_output` 包含 PHPUnit 的執行輸出
+  - 可手動重新執行相同測試比對輸出：`./vendor/bin/phpunit tests/Feature/ExampleTest.php`
+
+### 驗證結果判讀表
+
+| 驗證項目 | 如何判斷 |
+|---|---|
+| Gemini API 呼叫 | 檢查 Laravel 日誌 `storage/logs/laravel.log` 中的 API 請求記錄及錯誤訊息 |
+| AI 分析完成 | 檢查 `ai_analysis` 欄位不為NULL，且 `status` 為 `completed` |
+| PHPUnit 執行 | 檢查 `last_test_exit_code` 與 `last_test_output` 有實際內容，僅有 `test_path IS NOT NULL` 的任務會更新這些欄位 |
+| 修復已套用 | 檢查 `modified_files` 欄位有修改的檔案清單，或直接查看Git狀態 `git status` / `git diff`，不可只依賴AI提案 |
+| 修復驗證通過 | 必須有修復後重新執行PHPUnit的測試結果，`status` 為 `completed` 且 `termination_reason` 為 `Tests passed successfully` |
+
+> ⚠️ 重要提醒：`test_path = NULL` 的純分析任務從未執行 PHPUnit，因此 `last_test_exit_code = 0` 不代表測試通過，僅代表欄位未被更新。分析完成≠修復完成≠測試通過，這些是不同的結果。
 
 ---
 

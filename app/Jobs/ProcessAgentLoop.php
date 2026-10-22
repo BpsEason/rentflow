@@ -294,24 +294,42 @@ class ProcessAgentLoop implements ShouldQueue
 
         if (!$hasFixesKey || !$hasRequiredFields) {
             // JSON 有效，但缺少 fixes 鍵或必要分析欄位（error_summary/root_cause）
-            // 此情況代表 AI 回傳的結構不符合預期格式，不能宣稱分析有效完成
             Log::warning('AI response JSON is missing required fields (fixes/error_summary/root_cause)', [
                 'agent_loop_id' => $this->agentLoop->id,
                 'has_fixes_key' => $hasFixesKey,
                 'has_required_fields' => $hasRequiredFields,
             ]);
 
-            AgentLoop::where('id', $this->agentLoop->id)
-                ->where('status', 'processing')
-                ->update([
-                    'ai_analysis' => $analysisResult['analysis'],
-                    'provider' => 'gemini',
-                    'model' => config('services.gemini.model'),
-                    'status' => 'failed',
-                    'failure_reason' => 'AI response missing required fields: error_summary, root_cause, or fixes array',
-                    'termination_reason' => 'Invalid AI response structure',
-                    'processing_started_at' => null,
+            if (!empty($this->agentLoop->test_path)) {
+                // 有真實測試的自動修復任務：缺少必要欄位，無法繼續修復流程，標記失敗
+                AgentLoop::where('id', $this->agentLoop->id)
+                    ->where('status', 'processing')
+                    ->update([
+                        'ai_analysis' => $analysisResult['analysis'],
+                        'provider' => 'gemini',
+                        'model' => config('services.gemini.model'),
+                        'status' => 'failed',
+                        'failure_reason' => 'AI response missing required fields: error_summary, root_cause, or fixes array',
+                        'termination_reason' => 'Invalid AI response structure',
+                        'processing_started_at' => null,
+                    ]);
+            } else {
+                // 純分析任務（test_path = NULL）：即使結構不完整，只要能保存分析結果即標記完成
+                AgentLoop::where('id', $this->agentLoop->id)
+                    ->where('status', 'processing')
+                    ->update([
+                        'ai_analysis' => $analysisResult['analysis'],
+                        'provider' => 'gemini',
+                        'model' => config('services.gemini.model'),
+                        'status' => 'completed',
+                        'completed_at' => now(),
+                        'termination_reason' => 'Analysis completed with incomplete response structure',
+                        'processing_started_at' => null,
+                    ]);
+                Log::info('Agent loop completed - analysis saved despite incomplete JSON structure (text-only analysis)', [
+                    'agent_loop_id' => $this->agentLoop->id,
                 ]);
+            }
             return;
         }
 
@@ -372,15 +390,31 @@ class ProcessAgentLoop implements ShouldQueue
                 'errors' => $validationResult['errors']
             ]);
 
-            // 修正方案無效，結束任務
-            AgentLoop::where('id', $this->agentLoop->id)
-                ->where('status', 'processing')
-                ->update([
-                    'status' => 'failed',
-                    'failure_reason' => 'Fix validation failed: ' . implode(', ', $validationResult['errors']),
-                    'termination_reason' => 'Invalid fix proposals',
-                    'processing_started_at' => null,
+            if (!empty($this->agentLoop->test_path)) {
+                // 有真實測試的自動修復任務：修正方案無效，標記失敗
+                AgentLoop::where('id', $this->agentLoop->id)
+                    ->where('status', 'processing')
+                    ->update([
+                        'status' => 'failed',
+                        'failure_reason' => 'Fix validation failed: ' . implode(', ', $validationResult['errors']),
+                        'termination_reason' => 'Invalid fix proposals',
+                        'processing_started_at' => null,
+                    ]);
+            } else {
+                // 純分析任務（test_path = NULL）：分析已成功完成，但修復提案無效，仍標記完成
+                AgentLoop::where('id', $this->agentLoop->id)
+                    ->where('status', 'processing')
+                    ->update([
+                        'status' => 'completed',
+                        'completed_at' => now(),
+                        'termination_reason' => 'Analysis completed with invalid fix proposals (unable to apply fixes)',
+                        'processing_started_at' => null,
+                    ]);
+                Log::info('Agent loop completed - analysis successful but fix proposals invalid (text-only analysis)', [
+                    'agent_loop_id' => $this->agentLoop->id,
+                    'validation_errors' => $validationResult['errors']
                 ]);
+            }
             return;
         }
 
