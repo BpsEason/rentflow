@@ -9,6 +9,8 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use PHPUnit\Framework\Attributes\Test;
 use RuntimeException;
+use Symfony\Component\Process\Exception\ProcessTimedOutException;
+use Symfony\Component\Process\Process;
 use Tests\TestCase;
 
 class AiAgentSafetyTest extends TestCase
@@ -85,6 +87,20 @@ class AiAgentSafetyTest extends TestCase
         ]);
     }
 
+    #[Test]
+    public function installed_symfony_process_reports_timeouts_with_an_exception(): void
+    {
+        $process = new Process([PHP_BINARY, '-r', 'usleep(500000);']);
+        $process->setTimeout(0.001);
+
+        try {
+            $process->run();
+            $this->fail('Expected Symfony Process to throw when its timeout is exceeded.');
+        } catch (ProcessTimedOutException $exception) {
+            $this->assertSame($process, $exception->getProcess());
+        }
+    }
+
     private function loop(string $status, $createdAt, $nextRetryAt, $processingStartedAt = null): AgentLoop
     {
         $loop = AgentLoop::create([
@@ -100,7 +116,3 @@ class AiAgentSafetyTest extends TestCase
         return $loop->fresh();
     }
 }
-
-
-
-

@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
+use Symfony\Component\Process\Exception\ProcessTimedOutException;
 
 class AiAgentService
 {
@@ -268,7 +269,14 @@ EOT;
         try {
             $process = \App\Support\AiAgentTestProcess::create($command, base_path());
             $process->setTimeout($timeout);
-            $process->run();
+            $timedOut = false;
+
+            try {
+                $process->run();
+            } catch (ProcessTimedOutException $exception) {
+                $process = $exception->getProcess();
+                $timedOut = true;
+            }
 
             $output = $process->getOutput();
             $errorOutput = $process->getErrorOutput();
@@ -281,7 +289,7 @@ EOT;
                 'output' => $output,
                 'error_output' => $errorOutput,
                 'summary' => $summary,
-                'timed_out' => $process->isTimedOut(),
+                'timed_out' => $timedOut,
             ];
         } catch (\Exception $e) {
             Log::error('Failed to run tests', ['message' => $e->getMessage()]);
