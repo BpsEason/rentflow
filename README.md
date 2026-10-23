@@ -2,6 +2,147 @@
 
 > Multi-Tenant Rental SaaS Platform built with Laravel 12
 
+[繁體中文](README.md) | [English](README.en.md)
+
+## Laravel Autonomous AI Code Repair Agent Demo
+
+本專案是在既有 Laravel 12 Repository 中新增的可執行工程展示案例，不是另一個 Laravel 專案。Demo 展示受控的測試失敗分析與修復提案流程，和 RentFlow 原有 Queue AI Agent 任務分開操作；原有租車系統與其 Agent 文件仍保留於下方。
+
+Demo 具備可重現的 PHPUnit 案例、有限迴圈、狀態及逐輪歷史紀錄、離線模擬與選擇性 Gemini 分析，以及人工審核修復提案流程。Demo 不會自動套用修復。
+
+## Demo 功能
+
+- 10% 折扣案例：小計 100、折扣率 10%，預期總額 90；刻意錯誤的實作直接回傳小計 100。
+- Symfony Process 在獨立 PHPUnit 子程序執行指定 Fixture。啟動前檢查 Laravel 有效設定必須為 `sqlite` 與 `:memory:`，否則拒絕執行。
+- Loop 與逐輪歷史寫入獨立 `database/agent-demo.sqlite`：使用既有 `agent_loops` 表保存任務狀態，`agent_loop_demo_runs` 保存各輪測試輸出、分析來源、狀態與 Token 數。
+- 離線模式使用固定展示分析、零 Token、不發送網路請求。只有提供 `--real` 才呼叫 Gemini。
+- 分析產生的是修復提案；開發者檢視並自行修改 Fixture，再恢復任務驗證。
+- 可展示測試成功、達迴圈上限及模擬配額不足的終態。
+
+## Demo Agent Loop 架構
+
+```mermaid
+flowchart TD
+    A[在 Demo SQLite 建立或恢復 AgentLoop] --> B[Symfony Process 執行指定 PHPUnit Fixture]
+    B --> C{退出碼}
+    C -->|0| D[保存本輪結果；completed]
+    C -->|非 0| E[保存失敗輸出]
+    E --> F{分析模式}
+    F -->|離線| G[固定模擬分析]
+    F -->|--real| H[Gemini 結構化分析]
+    G --> I[保存分析與 Token 數]
+    H --> I
+    I --> J[顯示提案；等待人工審核]
+    J --> K[開發者只修改 Demo Fixture]
+    K --> L[恢復任務並再次執行 PHPUnit]
+    L --> C
+```
+
+每次命令執行一輪。狀態通常為 `pending → processing → pending（等待人工審核）→ completed`，也可能結束為 `failed` 或 `waiting_quota`。若到達設定上限時測試仍失敗，則為 `failed / Max loops exceeded`。
+
+## Demo 系統需求與設定
+
+- PHP 8.2+、已安裝 Composer 套件並啟用 `pdo_sqlite` 擴充功能。
+- Clone 本 Repository 並執行 `composer install`。若應用程式環境需要，執行 `php artisan key:generate`。Demo 使用專用 SQLite 檔案，不會對 `.env` 預設資料庫執行 Migration。
+- 離線模式不需要租車資料庫、種子資料、Queue Worker 或 API Key。
+
+Demo Command 的實際參數如下：`--max-loops=2` 設定新 Loop 的預設上限，`--case=repair|quota` 選擇預設修復案例或離線模擬配額不足，`--resume=ID` 恢復同一個 Demo Loop，`--real` 明確啟用 Gemini。`--resume=ID --real` 可組合使用；恢復時沿用資料庫中已保存的迴圈上限。`--case=quota` 僅在離線模式模擬配額不足。
+
+真實分析需在本機 `.env` 設定以下變數（勿提交 API Key）：
+
+```dotenv
+GEMINI_API_KEY=your_key_here
+GEMINI_MODEL=gemini-3.5-flash-lite
+GEMINI_DAILY_QUOTA=1000
+```
+
+應用程式從 `GEMINI_API_KEY` 讀取金鑰。請勿將金鑰放入命令列或版控。
+
+## 離線 Demo：完整重現流程
+
+先執行刻意失敗的測試：
+
+```bash
+php artisan ai:demo
+```
+
+命令會輸出 Agent Loop ID、輪次、實際 PHPUnit 失敗輸出、固定的**模擬分析**、單行修復提案、零模擬 Token 及恢復命令。此模式不發送 HTTP 請求，也不修改檔案。
+
+檢視提案後，只手動修改 `tests/Fixtures/AgentDemo/RepairExampleTest.php`，將：
+
+```php
+$total = $subtotal; // Intentional defect: the discount is not applied.
+```
+
+改成：
+
+```php
+$total = (int) ($subtotal * (1 - $discountRate));
+```
+
+接著使用首次命令輸出的 ID 恢復任務：
+
+```bash
+php artisan ai:demo --resume=ID
+```
+
+第二次 PHPUnit 執行應會通過，Loop 結束狀態為 `completed`。開始另一個全新展示前，請將 Fixture 還原為刻意失敗的程式碼。若要不呼叫 Gemini 並展示迴圈上限，保持 Fixture 失敗並執行 `php artisan ai:demo --max-loops=1`；終態為 `failed`，原因是 `Max loops exceeded`。
+
+終端機會輸出以下內容（數字 ID 於執行時產生）：
+
+```text
+Agent Loop #<id> | iteration 1/2 | mode: OFFLINE SIMULATION
+PHPUnit: FAIL (exit 1)
+Failed asserting that 100 is identical to 90.
+Offline simulated analysis (not Gemini):
+Fix status: proposed; not applied. Human review required.
+Next iteration: paused until a human reviews and applies the suggestion.
+Token usage: 0 (offline simulation: 0)
+```
+
+人工檢視並套用 Fixture 修正後，恢復任務會輸出：
+
+```text
+Agent Loop #<id> | iteration 2/2 | mode: OFFLINE SIMULATION
+PHPUnit: PASS
+Final status: completed — Tests passed successfully
+Token usage: 0 (demo database)
+```
+
+Fixture 保持失敗並使用 `--max-loops=1` 時，命令完成失敗分析後會輸出 `Final status: failed | Max loops exceeded`。
+
+若要不發送 API 請求而展示配額處理，執行 `php artisan ai:demo --case=quota`。輸出會明確標示配額不足是模擬情境。
+
+## 真實 Gemini 模式
+
+在本機環境設定 `GEMINI_API_KEY`，並明確選擇真實模式：
+
+```bash
+php artisan ai:demo --real
+```
+
+此模式會將指定 Fixture 的 PHPUnit 輸出送給 Gemini，可能消耗 API 配額。模型名稱來自 `GEMINI_MODEL`（`config/services.php` 預設為 `gemini-3.5-flash-lite`），本機每日配額門檻由 `GEMINI_DAILY_QUOTA` 設定（預設 1000 次）；此外仍可能遇到 Gemini 的速率限制或配額錯誤。API Key 必須由 `GEMINI_API_KEY` 環境變數提供。恢復同一任務時使用 `php artisan ai:demo --resume=ID --real`。即使環境中存在 API Key，未指定 `--real` 也不會呼叫 Gemini。分析失敗且原因包含 quota 或 HTTP 429 時，狀態保存為 `waiting_quota`；命令不會自動重試。網路、認證、請求格式及服務端錯誤也可能使分析失敗。
+
+## 執行結果與 Token 紀錄
+
+Loop 任務及逐輪歷史記錄在獨立的 `database/agent-demo.sqlite`，不在應用程式設定的開發資料庫。每輪保存退出碼、完整程序輸出、分析內容與來源標籤、狀態及回報的 Token 數。離線分析標示為 `offline simulation`，Token 固定為 0。真實模式 Token 數取自 Gemini 回應；若提供者未回報用量中繼資料，數值可能為 0。此檔案是本機 Demo 狀態，不再需要時可手動刪除。
+
+## 隔離設計與目前限制
+
+- Demo 狀態資料庫是專用檔案 `database/agent-demo.sqlite`。命令在建立模型記錄前將 Laravel 預設連線切換為 `agent_demo`，並只對此連線執行建立 AI 使用量、Agent Loop 欄位及 Demo 逐輪記錄表所需的 Migration。`agent_loop_demo_runs.agent_loop_id` 外鍵關聯 `agent_loops.id`。
+- `App\Support\AiAgentTestProcess` 為子程序建立環境變數 `APP_ENV=testing`、`DB_CONNECTION=sqlite`、`DB_DATABASE=:memory:`。它先啟動 Laravel 做資料庫設定前置檢查；有效連線若不是 SQLite `:memory:`，會擲出例外並拒絕建立 PHPUnit 程序。PHPUnit 子程序使用相同環境變數，但以 `--no-configuration` 執行獨立 Fixture。
+- Demo SQLite 檔案用於保存可跨命令恢復的任務與逐輪結果；測試子程序的 SQLite `:memory:` 則用於隔離該次測試，兩者用途不同。命令將 Agent Loop 建立與 Demo Migration 明確導向 `agent_demo`，不會對應用程式設定的預設資料庫執行 Migration、清空或 Refresh。這是程式碼中的連線選擇與前置檢查；請勿將其延伸解讀為對所有外部環境設定或主機故障的絕對保證。
+- 不會自動修改檔案。畫面上的 Patch 是提案，由人員檢視後自行決定是否修改 Demo Fixture。
+- 每次命令只執行一輪；輪次之間以人工確認為界線。
+- 預設離線分析是固定展示資料，不是 AI 推論。只有明確指定 `--real` 才會執行真實分析。
+- 本 Demo 不宣稱通用自主程式碼修復、Patch 正確性、基準測試成功率、Token 節省或效能結果。
+
+## 原 RentFlow 專案文件
+
+以下內容保留原 RentFlow Laravel 租車管理系統的功能、架構、API、資料模型、安裝與驗證文件，並與新增 Demo 分開說明。
+
+---
+
 RentFlow 是一套以 **B2B 租車業者**為主要目標的 Multi-Tenant SaaS 平台，目前已實作完整的租車核心營運系統，包含：
 
 - 多租戶隔離架構
@@ -539,7 +680,7 @@ GEMINI_DAILY_QUOTA=1000
 #### 1. 建立純分析任務
 使用 `--content` 參數直接傳入錯誤描述，不指定 `--test-path`（此時 test_path 會自動為 NULL），且不開啟 `--auto-apply-fixes`：
 ```bash
-php artisan ai:agent start --content="測試失敗：假設 UserController 的 store 方法發生資料庫錯誤，請分析可能根因並提供修復建議。這是待分析的錯誤描述，尚未經過實際測試驗證。" --max-loops=3
+php artisan ai:agent start --content="測試失敗：CustomerAuthController::register 註冊流程可能有資料一致性問題。請針對 POST /api/v1/{tenantSlug}/customer/auth/register 建立可重現的 PHPUnit Feature Test：請求提供有效的 name、email、password、phone，User 建立成功後，讓 JWTAuth::fromUser($user) 拋出 JWTException。驗證 API 是否回傳 HTTP 500，以及 users 資料表是否仍留下該筆 User；據此分析是否可能出現 API 回報註冊失敗但帳號已建立的狀態不一致。請先檢查現有測試、CustomerAuthController、User Model、資料庫交易設定及 JWT 測試方式。若目前沒有對應測試，請明確指出需要新增的測試與預期結果。請只提供根因分析與最小修正建議，不要修改程式碼或宣稱尚未執行的測試已通過。這是待分析的情境描述，尚未經過此 Agent 的 PHPUnit 驗證。" --max-loops=3
 ```
 
 #### 2. 確認任務建立成功
@@ -578,6 +719,74 @@ FROM agent_loops
 WHERE id = YOUR_TASK_ID;
 ```
 
+### 完整自動修復流程（CustomerAuth 註冊交易）
+
+上面的 `--content` 範例是**純分析模式**：沒有 `--test-path` 就不會由 Agent 執行 PHPUnit；沒有 `--auto-apply-fixes` 就不會套用修補。要執行「測試 → 分析 → 驗證修補 → 再測試」流程，請使用以下步驟。
+
+#### 1. 先確認 Feature Test 與目前基準
+
+```bash
+php artisan test --filter=CustomerAuthTest
+```
+
+`tests/Feature/CustomerAuthTest.php` 覆蓋兩種情境：`JWTAuth::fromUser()` 拋出 `JWTException` 時，API 回傳 HTTP 500 且 User 已回滾；正常註冊時，API 回傳既有 Token/User 欄位。若測試通過，表示目前程式已滿足這些斷言，Agent 會直接完成，不會呼叫 Gemini 或修改程式碼。
+
+#### 2. 建立具備測試路徑及修補權限的任務
+
+在確實有失敗的測試版本上，執行：
+
+```bash
+php artisan ai:agent start --test-path=tests/Feature/CustomerAuthTest.php --allowed-files=app/Http/Controllers/Api/CustomerAuthController.php --auto-apply-fixes --content="請執行 tests/Feature/CustomerAuthTest.php。若測試失敗，請根據 PHPUnit 實際輸出及目前程式碼，修正 CustomerAuthController::register 的交易一致性。User::create() 與 JWTAuth::fromUser($user) 必須在同一個 DB::transaction() callback；JWTException 必須離開 callback，使交易回滾。修補應維持既有驗證規則及 API 回應格式，且只能修改允許清單中的 Controller。使用與檔案實際內容完全相符的 search_code/replace_code，套用修補後重新執行同一測試並回報實際結果。" --max-loops=3
+```
+
+此命令指定測試檔、啟用 `--auto-apply-fixes`，並將可修改範圍限制在 `CustomerAuthController.php`。AI 提案仍須符合專案路徑驗證及精確程式碼替換條件，才會套用。
+
+#### 3. 依 Queue 設定執行任務
+
+命令會輸出 Agent Loop ID 及設定，例如：
+
+```text
+Created new agent loop with ID: {YOUR_TASK_ID}
+Loop configuration: max_loops=3, auto_apply=true, test_path=tests/Feature/CustomerAuthTest.php
+Job dispatched to queue. Processing will begin shortly.
+```
+
+若使用非同步 Queue，啟動 Worker：
+
+```bash
+php artisan queue:work --queue=default --tries=6
+```
+
+若預設 Queue 使用 `sync`，初始 Job 會同步處理；但當專案設定了 database Queue 連線時，Job 的後續迴圈會排入 database Queue，仍需 Worker 處理。每次測試若仍失敗，Agent 會分析輸出；提案通過驗證且自動套用成功後，才會安排下一輪重新測試。
+
+#### 4. 檢查每輪測試、分析及最終狀態
+
+使用命令輸出的 Loop ID 查詢：
+
+```sql
+SELECT id, status, current_loop, max_loops, test_path,
+       last_test_exit_code, last_test_output, ai_analysis,
+       modified_files, patch_history, failure_reason,
+       termination_reason, completed_at
+FROM agent_loops
+WHERE id = YOUR_TASK_ID;
+```
+
+- `last_test_exit_code` 與 `last_test_output`：確認 PHPUnit 是否實際執行及其輸出。
+- `ai_analysis`：檢視 AI 分析；分析文字本身不代表修補已套用。
+- `modified_files` 與 `patch_history`：確認程式是否實際修改及保存的修補歷史。
+- `status`、`current_loop`、`termination_reason`：判斷完成、失敗或達迴圈上限。
+- `php artisan ai:agent usage`：查詢既有 Agent 記錄的 Gemini 用量統計。
+
+也請檢視實際 Diff 並手動重新執行測試：
+
+```bash
+git diff -- app/Http/Controllers/Api/CustomerAuthController.php
+php artisan test --filter=CustomerAuthTest
+```
+
+只有在看到實際檔案變更，以及修補後測試通過，才能判定自動修復成功。若測試一開始就通過，任務會以測試成功結束，不會產生修補；若 AI 提案的路徑或搜尋片段不符、AI/配額失敗，或修補後測試仍失敗，則依 `failure_reason` 與 `termination_reason` 判讀，不能宣稱已修復。
+
 ### 驗證情境範例
 
 #### 情境 A：純分析成功 ✅
@@ -603,15 +812,16 @@ WHERE id = YOUR_TASK_ID;
   - `termination_reason` 為 `Analysis completed with invalid fix proposals (unable to apply fixes)`
   - 分析本身成功，但系統無法驗證修復路徑的有效性
 
-#### 情境 D：PHPUnit 驗證（自動修復模式）
-- 操作：指定有效的測試檔案路徑，建立自動修復任務
+#### 情境 D：CustomerAuth PHPUnit 自動修復驗證
+- 操作：使用上一節完整命令，指定 `tests/Feature/CustomerAuthTest.php`、`--auto-apply-fixes`，並限制 `--allowed-files` 為註冊 Controller。
 ```bash
-php artisan ai:agent start --test-path=tests/Feature/ExampleTest.php --max-loops=3
+php artisan ai:agent start --test-path=tests/Feature/CustomerAuthTest.php --allowed-files=app/Http/Controllers/Api/CustomerAuthController.php --auto-apply-fixes --max-loops=3
 ```
 - 判斷測試是否真的執行過：
   - `last_test_exit_code` 有數值（非NULL）
   - `last_test_output` 包含 PHPUnit 的執行輸出
-  - 可手動重新執行相同測試比對輸出：`./vendor/bin/phpunit tests/Feature/ExampleTest.php`
+  - 可手動重新執行相同測試比對輸出：`php artisan test --filter=CustomerAuthTest`
+  - 修補後必須再次看到測試退出碼為 0，且 `termination_reason` 為 `Tests passed successfully`
 
 ### 驗證結果判讀表
 

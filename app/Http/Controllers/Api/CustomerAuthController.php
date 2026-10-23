@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Support\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 use Tymon\JWTAuth\Facades\JWTAuth;
@@ -59,22 +60,27 @@ class CustomerAuthController extends Controller
             'phone' => 'required|string|max:20',
         ]);
 
-        // 創建平台會員帳號
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-        ]);
-
-        // 客戶註冊時不會自動創建Customer，需要用戶在進入具體租戶時補充完整資料
-        // 這裡只創建User帳號，返回JWT token
-
+        $tokenWasEmpty = false;
         try {
-            if (!$token = JWTAuth::fromUser($user)) {
-                return ApiResponse::error('無法建立認證token', null, [], 500);
-            }
+            [$user, $token] = DB::transaction(function () use ($request, &$tokenWasEmpty) {
+                // User 建立與 JWT 簽發共用同一交易，JWT 失敗時回滾註冊。
+                $user = User::create([
+                    'name' => $request->name,
+                    'email' => $request->email,
+                    'password' => Hash::make($request->password),
+                ]);
+
+                // 註冊時僅建立 User；使用者進入特定租戶後再補充 Customer 資料。
+                $token = JWTAuth::fromUser($user);
+                if (!$token) {
+                    $tokenWasEmpty = true;
+                    throw new JWTException('JWT generation returned an empty token.');
+                }
+
+                return [$user, $token];
+            });
         } catch (JWTException $e) {
-            return ApiResponse::error('無法建立token', null, [], 500);
+            return ApiResponse::error($tokenWasEmpty ? '無法建立認證token' : '無法建立token', null, [], 500);
         }
 
         return $this->respondWithToken($token, $user);
