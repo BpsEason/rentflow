@@ -111,8 +111,9 @@ class CalculateVehiclePriceTest extends TestCase
     public function test_rounds_up_partial_day_to_full_day()
     {
         // 只租5小時，應該進位為1天
-        $startAt = Carbon::now()->addDay()->setHour(10);
-        $endAt = Carbon::now()->addDay()->setHour(15); // 僅5小時
+        // 使用固定的平日日期（2026-10-13是週一，確保是平日）
+        $startAt = Carbon::parse('2026-10-13 10:00:00');
+        $endAt = Carbon::parse('2026-10-13 15:00:00'); // 僅5小時
 
         $response = $this->postJson("/api/v1/public/{$this->tenant->slug}/vehicles/{$this->vehicle->id}/calculate-price", [
             'start_at' => $startAt->toDateTimeString(),

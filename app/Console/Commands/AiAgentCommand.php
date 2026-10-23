@@ -7,8 +7,9 @@ use App\Models\AgentLoop;
 use App\Services\AiAgentService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
-use Symfony\Component\Process\Process;
 use Symfony\Component\Process\Exception\ProcessFailedException;
+use App\Support\AiAgentTestProcess;
+use Illuminate\Support\Facades\Log;
 
 class AiAgentCommand extends Command
 {
@@ -84,12 +85,14 @@ class AiAgentCommand extends Command
                         ->where('processing_started_at', '<=', $timeoutThreshold);
                 })->orWhere(function ($q) {
                     $q->where('status', 'pending')
-                        ->where(function ($subQ) {
-                            $subQ->whereNotNull('next_retry_at')
-                                ->where('next_retry_at', '<=', now());
-                        })->orWhere(function ($subQ) {
-                            $subQ->whereNull('next_retry_at')
-                                ->where('created_at', '<=', now()->subSeconds(60)); // 超過1分鐘的舊pending任務，即使next_retry_at是null也恢復
+                        ->where(function ($pending) {
+                            $pending->where(function ($subQ) {
+                                $subQ->whereNotNull('next_retry_at')
+                                    ->where('next_retry_at', '<=', now());
+                            })->orWhere(function ($subQ) {
+                                $subQ->whereNull('next_retry_at')
+                                    ->where('created_at', '<=', now()->subSeconds(60)); // 超過1分鐘的舊pending任務，即使next_retry_at是null也恢復
+                            });
                         })
                         ->where('created_at', '<=', now()->subSeconds(30)); // 新增保護：確保任務至少存在30秒才會被恢復，避免派送中的新任務被誤判
                 });
@@ -113,12 +116,14 @@ class AiAgentCommand extends Command
                                 ->where('processing_started_at', '<=', $timeoutThreshold);
                         })->orWhere(function ($q) {
                             $q->where('status', 'pending')
-                                ->where(function ($subQ) {
-                                    $subQ->whereNotNull('next_retry_at')
-                                        ->where('next_retry_at', '<=', now());
-                                })->orWhere(function ($subQ) {
-                                    $subQ->whereNull('next_retry_at')
-                                        ->where('created_at', '<=', now()->subSeconds(60));
+                                ->where(function ($pending) {
+                                    $pending->where(function ($subQ) {
+                                        $subQ->whereNotNull('next_retry_at')
+                                            ->where('next_retry_at', '<=', now());
+                                    })->orWhere(function ($subQ) {
+                                        $subQ->whereNull('next_retry_at')
+                                            ->where('created_at', '<=', now()->subSeconds(60));
+                                    });
                                 })
                                 ->where('created_at', '<=', now()->subSeconds(30));
                         });
@@ -220,6 +225,7 @@ class AiAgentCommand extends Command
         ];
 
         $agentLoop = AgentLoop::create($agentLoopData);
+        $this->logAgentLoopDispatchContext($agentLoop);
 
         $this->info("Created new agent loop with ID: {$agentLoop->id}");
         $this->line("Loop configuration: max_loops={$agentLoop->max_loops}, auto_apply=" . ($agentLoop->auto_apply_fixes ? 'true' : 'false') . ', test_path=' . ($agentLoop->test_path ?? 'none'));
@@ -315,7 +321,12 @@ class AiAgentCommand extends Command
         $this->newLine();
 
         // 建立並執行程序
-        $process = new Process($command, base_path());
+        try {
+            $process = AiAgentTestProcess::create($command, base_path());
+        } catch (\RuntimeException $e) {
+            $this->error($e->getMessage());
+            return 1;
+        }
         $process->setTimeout(3600); // 最長等待1小時
 
         try {
@@ -371,6 +382,7 @@ class AiAgentCommand extends Command
                     ];
 
                     $agentLoop = AgentLoop::create($agentLoopData);
+                    $this->logAgentLoopDispatchContext($agentLoop);
 
                     $this->info("Created new agent loop with ID: {$agentLoop->id}");
                     $this->line("Loop configuration: max_loops={$agentLoop->max_loops}, auto_apply=" . ($agentLoop->auto_apply_fixes ? 'true' : 'false'));
@@ -393,6 +405,21 @@ class AiAgentCommand extends Command
             $this->error('Unexpected error while running tests: ' . $e->getMessage());
             return 1;
         }
+    }
+
+    private function logAgentLoopDispatchContext(AgentLoop $agentLoop): void
+    {
+        $connection = $agentLoop->getConnection();
+        Log::info('Dispatching AI agent loop', [
+            'agent_loop_id' => $agentLoop->getKey(),
+            'connection' => $agentLoop->getConnectionName(),
+            'database' => $connection->getDatabaseName(),
+            'exists_after_create' => AgentLoop::on($agentLoop->getConnectionName())
+                ->whereKey($agentLoop->getKey())->exists(),
+            'exists_before_dispatch' => AgentLoop::on($agentLoop->getConnectionName())
+                ->whereKey($agentLoop->getKey())->exists(),
+            'queue_connection' => config('queue.default'),
+        ]);
     }
 
     /**

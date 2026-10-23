@@ -266,7 +266,7 @@ EOT;
         ], $validPaths);
 
         try {
-            $process = new \Symfony\Component\Process\Process($command, base_path());
+            $process = \App\Support\AiAgentTestProcess::create($command, base_path());
             $process->setTimeout($timeout);
             $process->run();
 
